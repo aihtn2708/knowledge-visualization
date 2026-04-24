@@ -33,7 +33,7 @@
         }
 
         .active-tab {
-            border-left: 4px solid var(--accent);
+            border-bottom: 4px solid var(--accent);
             background: rgba(139, 92, 246, 0.1);
             color: var(--accent);
         }
@@ -165,28 +165,28 @@
         </p>
     </header>
 
-    <main class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8">
+    <main class="max-w-7xl mx-auto flex flex-col gap-8">
         
-        <!-- Controls & Explanations -->
-        <section class="xl:col-span-4 space-y-6">
+        <!-- Controls & Explanations (Top) -->
+        <section class="w-full space-y-6">
             <div class="glass-panel p-6 rounded-2xl shadow-xl">
-                <h2 class="text-xl font-bold mb-4 flex items-center">
+                <h2 class="text-xl font-bold mb-4 flex items-center justify-center">
                     <i class="fas fa-layer-group mr-2 text-purple-400"></i> Normalization Stages
                 </h2>
-                <div class="flex flex-col space-y-2" id="stage-selectors">
-                    <button onclick="switchStage('unf')" id="btn-unf" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition active-tab">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="stage-selectors">
+                    <button onclick="switchStage('unf')" id="btn-unf" class="w-full text-center px-4 py-3 rounded-lg hover:bg-slate-700/50 transition active-tab">
                         <span class="font-semibold block text-slate-200">UNF (Unnormalized)</span>
                         <span class="text-xs text-slate-400">The Raw Data</span>
                     </button>
-                    <button onclick="switchStage('nf1')" id="btn-nf1" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                    <button onclick="switchStage('nf1')" id="btn-nf1" class="w-full text-center px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
                         <span class="font-semibold block text-slate-200">1NF (First Normal Form)</span>
                         <span class="text-xs text-slate-400">Atomic Values</span>
                     </button>
-                    <button onclick="switchStage('nf2')" id="btn-nf2" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                    <button onclick="switchStage('nf2')" id="btn-nf2" class="w-full text-center px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
                         <span class="font-semibold block text-slate-200">2NF (Second Normal Form)</span>
                         <span class="text-xs text-slate-400">No Partial Dependencies</span>
                     </button>
-                    <button onclick="switchStage('nf3')" id="btn-nf3" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                    <button onclick="switchStage('nf3')" id="btn-nf3" class="w-full text-center px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
                         <span class="font-semibold block text-slate-200">3NF (Third Normal Form)</span>
                         <span class="text-xs text-slate-400">No Transitive Dependencies</span>
                     </button>
@@ -194,15 +194,15 @@
             </div>
 
             <div class="glass-panel p-6 rounded-2xl shadow-xl h-auto">
-                <div id="stage-info" class="space-y-4">
+                <div id="stage-info">
                     <!-- Dynamic Info content goes here -->
                 </div>
             </div>
         </section>
 
-        <!-- Visualization Canvas -->
-        <section class="xl:col-span-8 flex flex-col">
-            <div class="glass-panel p-6 rounded-2xl shadow-2xl flex-grow flex flex-col min-h-[600px]">
+        <!-- Visualization Canvas (Bottom) -->
+        <section class="w-full flex flex-col">
+            <div class="glass-panel p-6 rounded-2xl shadow-2xl flex-grow flex flex-col min-h-[500px]">
                 
                 <!-- Legend -->
                 <div class="flex flex-wrap gap-3 mb-6 pb-4 border-b border-slate-700">
@@ -365,26 +365,30 @@
 
             const data = dataset[stageId];
 
-            // Render Info
+            // Render Info in horizontal layout
             infoBox.innerHTML = `
-                <div class="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold mb-2">
-                    ${stageId.toUpperCase()}
+                <div class="flex flex-col mb-4">
+                    <div class="inline-block self-start px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold mb-2">
+                        ${stageId.toUpperCase()}
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-100">${data.title}</h3>
                 </div>
-                <h3 class="text-xl font-bold text-slate-100">${data.title}</h3>
                 
-                <div class="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                    <h4 class="text-sm font-bold text-blue-400 mb-1"><i class="fas fa-book mr-1"></i> The Rule</h4>
-                    <p class="text-sm text-slate-300">${data.rule}</p>
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                        <h4 class="text-sm font-bold text-blue-400 mb-1"><i class="fas fa-book mr-1"></i> The Rule</h4>
+                        <p class="text-sm text-slate-300">${data.rule}</p>
+                    </div>
 
-                <div class="mt-4 p-4 bg-red-900/20 rounded-lg border border-red-900/50">
-                    <h4 class="text-sm font-bold text-red-400 mb-1"><i class="fas fa-times-circle mr-1"></i> The Problem</h4>
-                    <p class="text-sm text-slate-300">${data.problem}</p>
-                </div>
+                    <div class="p-4 bg-red-900/20 rounded-lg border border-red-900/50">
+                        <h4 class="text-sm font-bold text-red-400 mb-1"><i class="fas fa-times-circle mr-1"></i> The Problem</h4>
+                        <p class="text-sm text-slate-300">${data.problem}</p>
+                    </div>
 
-                <div class="mt-4 p-4 bg-emerald-900/20 rounded-lg border border-emerald-900/50">
-                    <h4 class="text-sm font-bold text-emerald-400 mb-1"><i class="fas fa-check-circle mr-1"></i> The Solution</h4>
-                    <p class="text-sm text-slate-300">${data.solution}</p>
+                    <div class="p-4 bg-emerald-900/20 rounded-lg border border-emerald-900/50">
+                        <h4 class="text-sm font-bold text-emerald-400 mb-1"><i class="fas fa-check-circle mr-1"></i> The Solution</h4>
+                        <p class="text-sm text-slate-300">${data.solution}</p>
+                    </div>
                 </div>
             `;
 
