@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Normalization Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent: #8b5cf6;
+            --pk-color: #fbbf24; /* Amber */
+            --fk-color: #38bdf8; /* Sky */
+            --error-color: #ef4444; /* Red */
+            --success-color: #10b981; /* Emerald */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .active-tab {
+            border-left: 4px solid var(--accent);
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--accent);
+        }
+
+        /* Table Styling */
+        .db-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-color: var(--bg-secondary);
+            margin-bottom: 1.5rem;
+            animation: slideUp 0.5s ease-out forwards;
+            transition: all 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .db-table th {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+
+        .db-table td {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'Fira Code', monospace;
+            transition: all 0.5s ease;
+        }
+
+        .db-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .db-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Column Highlights */
+        .pk-col {
+            color: var(--pk-color);
+            font-weight: bold;
+        }
+        .pk-icon { color: var(--pk-color); margin-right: 4px; }
+        
+        .fk-col {
+            color: var(--fk-color);
+            font-style: italic;
+        }
+        .fk-icon { color: var(--fk-color); margin-right: 4px; }
+
+        .violation-col {
+            background-color: rgba(239, 68, 68, 0.15);
+            border-left: 1px solid var(--error-color) !important;
+            border-right: 1px solid var(--error-color) !important;
+        }
+        
+        .violation-header {
+            color: #fca5a5;
+            border-left: 1px solid var(--error-color) !important;
+            border-right: 1px solid var(--error-color) !important;
+        }
+
+        .table-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Transformation Animations */
+        @keyframes extractPulse {
+            0% { background-color: rgba(239, 68, 68, 0.15); box-shadow: inset 0 0 0 rgba(139, 92, 246, 0); }
+            50% { background-color: rgba(139, 92, 246, 0.4); box-shadow: inset 0 0 15px rgba(139, 92, 246, 0.8); color: #fff; border-color: #8b5cf6 !important; }
+            100% { background-color: rgba(239, 68, 68, 0.15); box-shadow: inset 0 0 0 rgba(139, 92, 246, 0); }
+        }
+        .extracting-anim {
+            animation: extractPulse 1.5s ease-in-out forwards;
+            border-left: 2px dashed #8b5cf6 !important;
+            border-right: 2px dashed #8b5cf6 !important;
+        }
+
+        @keyframes newTableGlow {
+            0% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); border-color: rgba(16, 185, 129, 0.8); transform: scale(1.02); }
+            100% { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); border-color: rgba(255, 255, 255, 0.1); transform: scale(1); }
+        }
+        .new-table-highlight {
+            animation: slideUp 0.5s ease-out forwards, newTableGlow 2s ease-out 0.2s forwards;
+            border: 2px solid transparent; /* Placeholder for animation */
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="max-w-7xl mx-auto mb-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Database Normalization Simulator
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+            Watch how a messy, unorganized spreadsheet transforms into a scalable, relational database structure.
+        </p>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-12 gap-8">
+        
+        <!-- Controls & Explanations -->
+        <section class="xl:col-span-4 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl shadow-xl">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-layer-group mr-2 text-purple-400"></i> Normalization Stages
+                </h2>
+                <div class="flex flex-col space-y-2" id="stage-selectors">
+                    <button onclick="switchStage('unf')" id="btn-unf" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition active-tab">
+                        <span class="font-semibold block text-slate-200">UNF (Unnormalized)</span>
+                        <span class="text-xs text-slate-400">The Raw Data</span>
+                    </button>
+                    <button onclick="switchStage('nf1')" id="btn-nf1" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block text-slate-200">1NF (First Normal Form)</span>
+                        <span class="text-xs text-slate-400">Atomic Values</span>
+                    </button>
+                    <button onclick="switchStage('nf2')" id="btn-nf2" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block text-slate-200">2NF (Second Normal Form)</span>
+                        <span class="text-xs text-slate-400">No Partial Dependencies</span>
+                    </button>
+                    <button onclick="switchStage('nf3')" id="btn-nf3" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block text-slate-200">3NF (Third Normal Form)</span>
+                        <span class="text-xs text-slate-400">No Transitive Dependencies</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl shadow-xl h-auto">
+                <div id="stage-info" class="space-y-4">
+                    <!-- Dynamic Info content goes here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Visualization Canvas -->
+        <section class="xl:col-span-8 flex flex-col">
+            <div class="glass-panel p-6 rounded-2xl shadow-2xl flex-grow flex flex-col min-h-[600px]">
+                
+                <!-- Legend -->
+                <div class="flex flex-wrap gap-3 mb-6 pb-4 border-b border-slate-700">
+                    <div class="legend-badge text-amber-400"><i class="fas fa-key"></i> Primary Key (PK)</div>
+                    <div class="legend-badge text-sky-400"><i class="fas fa-link"></i> Foreign Key (FK)</div>
+                    <div class="legend-badge text-red-400"><i class="fas fa-exclamation-triangle"></i> Normalization Violation</div>
+                </div>
+
+                <!-- Tables Container -->
+                <div id="tables-container" class="flex-grow">
+                    <!-- Dynamic Tables go here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const infoBox = document.getElementById('stage-info');
+        const tablesContainer = document.getElementById('tables-container');
+
+        const dataset = {
+            unf: {
+                title: "Unnormalized Form (UNF)",
+                rule: "Raw, flat file data. Often contains multiple values in a single cell (repeating groups).",
+                problem: "The 'Projects' column contains comma-separated values. You can't easily query 'Who is working on P1?' without parsing strings.",
+                solution: "Split the multiple values into separate rows to make every cell 'atomic' (indivisible).",
+                tables: [
+                    {
+                        name: "Raw_Employee_Data",
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID' },
+                            { key: 'Name', label: 'Name' },
+                            { key: 'Projects', label: 'Projects (Violation)', isViolation: true },
+                            { key: 'DeptID', label: 'DeptID' },
+                            { key: 'DeptName', label: 'DeptName' }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Name: 'John Doe', Projects: 'P1, P2', DeptID: 'D1', DeptName: 'IT' },
+                            { EmpID: 'E102', Name: 'Mary Jane', Projects: 'P1', DeptID: 'D2', DeptName: 'HR' },
+                            { EmpID: 'E103', Name: 'Alan Smith', Projects: 'P3, P1', DeptID: 'D1', DeptName: 'IT' }
+                        ]
+                    }
+                ]
+            },
+            nf1: {
+                title: "First Normal Form (1NF)",
+                rule: "Rule: Every cell must contain a single (atomic) value. Each row must be unique.",
+                problem: "To make rows unique, our Primary Key is now a composite: (EmpID + Project). BUT, 'Name', 'DeptID', and 'DeptName' only depend on 'EmpID', not the Project. This is a Partial Dependency.",
+                solution: "Create a new table for the Employee details, and keep a mapping table for Employees and Projects.",
+                tables: [
+                    {
+                        name: "Employee_Projects_1NF",
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID', isPk: true },
+                            { key: 'Project', label: 'Project', isPk: true },
+                            { key: 'Name', label: 'Name', isViolation: true },
+                            { key: 'DeptID', label: 'DeptID', isViolation: true },
+                            { key: 'DeptName', label: 'DeptName', isViolation: true }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Project: 'P1', Name: 'John Doe', DeptID: 'D1', DeptName: 'IT' },
+                            { EmpID: 'E101', Project: 'P2', Name: 'John Doe', DeptID: 'D1', DeptName: 'IT' },
+                            { EmpID: 'E102', Project: 'P1', Name: 'Mary Jane', DeptID: 'D2', DeptName: 'HR' },
+                            { EmpID: 'E103', Project: 'P3', Name: 'Alan Smith', DeptID: 'D1', DeptName: 'IT' },
+                            { EmpID: 'E103', Project: 'P1', Name: 'Alan Smith', DeptID: 'D1', DeptName: 'IT' }
+                        ]
+                    }
+                ]
+            },
+            nf2: {
+                title: "Second Normal Form (2NF)",
+                rule: "Rule: Must be in 1NF + No Partial Dependencies (Non-key columns must depend on the ENTIRE primary key).",
+                problem: "Look at the Employees table. 'DeptName' depends on 'DeptID', NOT on 'EmpID'. This is a Transitive Dependency. If the IT department changes its name, we have to update multiple employee rows.",
+                solution: "Move Department information into its own separate table, linked by a Foreign Key.",
+                tables: [
+                    {
+                        name: "Employees",
+                        isNew: true, // Flags this as an extracted table for animation
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID', isPk: true },
+                            { key: 'Name', label: 'Name' },
+                            { key: 'DeptID', label: 'DeptID', isViolation: true },
+                            { key: 'DeptName', label: 'DeptName', isViolation: true }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Name: 'John Doe', DeptID: 'D1', DeptName: 'IT' },
+                            { EmpID: 'E102', Name: 'Mary Jane', DeptID: 'D2', DeptName: 'HR' },
+                            { EmpID: 'E103', Name: 'Alan Smith', DeptID: 'D1', DeptName: 'IT' }
+                        ]
+                    },
+                    {
+                        name: "Project_Assignments",
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID', isPk: true, isFk: true },
+                            { key: 'Project', label: 'Project', isPk: true }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Project: 'P1' },
+                            { EmpID: 'E101', Project: 'P2' },
+                            { EmpID: 'E102', Project: 'P1' },
+                            { EmpID: 'E103', Project: 'P3' },
+                            { EmpID: 'E103', Project: 'P1' }
+                        ]
+                    }
+                ]
+            },
+            nf3: {
+                title: "Third Normal Form (3NF)",
+                rule: "Rule: Must be in 2NF + No Transitive Dependencies (Non-key columns must depend ONLY on the primary key).",
+                problem: "None! The database is now in 3NF. Data is structured, scalable, and free of insertion, update, or deletion anomalies.",
+                solution: "Architecture Complete. (Most business databases stop at 3NF).",
+                tables: [
+                    {
+                        name: "Employees",
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID', isPk: true },
+                            { key: 'Name', label: 'Name' },
+                            { key: 'DeptID', label: 'DeptID', isFk: true }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Name: 'John Doe', DeptID: 'D1' },
+                            { EmpID: 'E102', Name: 'Mary Jane', DeptID: 'D2' },
+                            { EmpID: 'E103', Name: 'Alan Smith', DeptID: 'D1' }
+                        ]
+                    },
+                    {
+                        name: "Departments",
+                        isNew: true, // Flags this as an extracted table for animation
+                        cols: [
+                            { key: 'DeptID', label: 'DeptID', isPk: true },
+                            { key: 'DeptName', label: 'DeptName' }
+                        ],
+                        rows: [
+                            { DeptID: 'D1', DeptName: 'IT' },
+                            { DeptID: 'D2', DeptName: 'HR' }
+                        ]
+                    },
+                    {
+                        name: "Project_Assignments",
+                        cols: [
+                            { key: 'EmpID', label: 'EmpID', isPk: true, isFk: true },
+                            { key: 'Project', label: 'Project', isPk: true }
+                        ],
+                        rows: [
+                            { EmpID: 'E101', Project: 'P1' },
+                            { EmpID: 'E101', Project: 'P2' },
+                            { EmpID: 'E102', Project: 'P1' },
+                            { EmpID: 'E103', Project: 'P3' },
+                            { EmpID: 'E103', Project: 'P1' }
+                        ]
+                    }
+                ]
+            }
+        };
+
+        function switchStage(stageId, isTransforming = false) {
+            // Update UI tabs
+            document.querySelectorAll('#stage-selectors button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById(`btn-${stageId}`).classList.add('active-tab');
+
+            const data = dataset[stageId];
+
+            // Render Info
+            infoBox.innerHTML = `
+                <div class="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold mb-2">
+                    ${stageId.toUpperCase()}
+                </div>
+                <h3 class="text-xl font-bold text-slate-100">${data.title}</h3>
+                
+                <div class="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <h4 class="text-sm font-bold text-blue-400 mb-1"><i class="fas fa-book mr-1"></i> The Rule</h4>
+                    <p class="text-sm text-slate-300">${data.rule}</p>
+                </div>
+
+                <div class="mt-4 p-4 bg-red-900/20 rounded-lg border border-red-900/50">
+                    <h4 class="text-sm font-bold text-red-400 mb-1"><i class="fas fa-times-circle mr-1"></i> The Problem</h4>
+                    <p class="text-sm text-slate-300">${data.problem}</p>
+                </div>
+
+                <div class="mt-4 p-4 bg-emerald-900/20 rounded-lg border border-emerald-900/50">
+                    <h4 class="text-sm font-bold text-emerald-400 mb-1"><i class="fas fa-check-circle mr-1"></i> The Solution</h4>
+                    <p class="text-sm text-slate-300">${data.solution}</p>
+                </div>
+            `;
+
+            // Render Tables
+            tablesContainer.innerHTML = '';
+            
+            data.tables.forEach((table, index) => {
+                const animationDelay = index * 0.15;
+                
+                // Add highlight class if this table was just newly extracted via Transformation
+                let tableClasses = "db-table";
+                if (isTransforming && table.isNew) {
+                    tableClasses += " new-table-highlight";
+                }
+
+                let tableHtml = `
+                    <div style="animation-delay: ${animationDelay}s">
+                        <div class="table-title">
+                            <i class="fas ${isTransforming && table.isNew ? 'fa-plus-circle text-emerald-400' : 'fa-table text-slate-500'}"></i> ${table.name}
+                            ${isTransforming && table.isNew ? '<span class="ml-2 text-xs text-emerald-400 font-bold bg-emerald-900/30 px-2 py-0.5 rounded">Newly Extracted</span>' : ''}
+                        </div>
+                        <table class="${tableClasses}">
+                            <thead>
+                                <tr>
+                `;
+
+                // Render Headers
+                table.cols.forEach(col => {
+                    let classes = [];
+                    let icon = '';
+                    if (col.isPk) { classes.push('pk-col'); icon = '<i class="fas fa-key pk-icon"></i>'; }
+                    if (col.isFk) { classes.push('fk-col'); icon += '<i class="fas fa-link fk-icon"></i>'; }
+                    if (col.isViolation) { classes.push('violation-header'); }
+
+                    tableHtml += `<th class="${classes.join(' ')}">${icon}${col.label}</th>`;
+                });
+
+                tableHtml += `</tr></thead><tbody>`;
+
+                // Render Rows
+                table.rows.forEach(row => {
+                    tableHtml += `<tr>`;
+                    table.cols.forEach(col => {
+                        let cellClasses = [];
+                        if (col.isPk) cellClasses.push('pk-col');
+                        if (col.isFk) cellClasses.push('fk-col');
+                        if (col.isViolation) cellClasses.push('violation-col');
+
+                        tableHtml += `<td class="${cellClasses.join(' ')}">${row[col.key]}</td>`;
+                    });
+                    tableHtml += `</tr>`;
+                });
+
+                tableHtml += `</tbody></table></div>`;
+                tablesContainer.innerHTML += tableHtml;
+            });
+
+            // Append Next Transformation Action Button
+            let nextStage = null;
+            let actionText = "";
+            
+            if (stageId === 'unf') { nextStage = 'nf1'; actionText = "Transform to 1NF (Split Repeating Groups)"; }
+            else if (stageId === 'nf1') { nextStage = 'nf2'; actionText = "Transform to 2NF (Extract Partial Dependencies)"; }
+            else if (stageId === 'nf2') { nextStage = 'nf3'; actionText = "Transform to 3NF (Extract Transitive Dependencies)"; }
+
+            if (nextStage) {
+                tablesContainer.innerHTML += `
+                    <div class="mt-6 flex justify-end pb-4">
+                        <button id="transform-btn" onclick="playTransformation('${nextStage}')" class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 px-8 rounded-xl shadow-[0_4px_15px_rgba(139,92,246,0.3)] transition transform hover:-translate-y-1 active:translate-y-0 flex items-center gap-3 border border-purple-400/30">
+                            <i class="fas fa-magic"></i> <span id="btn-text">${actionText}</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                tablesContainer.innerHTML += `
+                    <div class="mt-6 flex justify-center p-4 bg-emerald-900/20 rounded-xl border border-emerald-500/30 pb-4">
+                        <span class="text-emerald-400 font-bold flex items-center gap-2"><i class="fas fa-check-circle text-xl"></i> Database is fully normalized to 3NF!</span>
+                    </div>
+                `;
+            }
+        }
+
+        function playTransformation(nextStageId) {
+            // 1. Highlight all violating columns to show what is being extracted
+            const violations = document.querySelectorAll('.violation-col, .violation-header');
+            violations.forEach(v => {
+                // Remove the static violation class and apply the animated extracting class
+                v.classList.remove('violation-col', 'violation-header');
+                v.classList.add('extracting-anim');
+            });
+            
+            // 2. Update button to show processing state
+            const btn = document.getElementById('transform-btn');
+            if(btn) {
+                btn.innerHTML = `<i class="fas fa-cog fa-spin"></i> <span>Extracting Anomalies...</span>`;
+                btn.disabled = true;
+                btn.classList.add('opacity-75', 'cursor-not-allowed');
+                btn.classList.remove('hover:-translate-y-1', 'active:translate-y-0');
+            }
+
+            // 3. Wait for the extraction pulse animation to finish (1.5s), then switch to next stage
+            setTimeout(() => {
+                switchStage(nextStageId, true); // true = indicates we arrived via animation
+            }, 1500); 
+        }
+
+        // Initialize with UNF
+        window.onload = () => {
+            switchStage('unf');
+        };
+    </script>
+</body>
+</html>
