@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Data Architecture Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent: #38bdf8;
+            --bronze: #cd7f32;
+            --silver: #c0c0c0;
+            --gold: #ffd700;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .architecture-canvas {
+            height: 550px;
+            position: relative;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .data-node {
+            position: absolute;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .data-flow-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            transform-origin: left center;
+            z-index: 1;
+            opacity: 0.3;
+        }
+
+        .active-tab {
+            border-left: 4px solid var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+        }
+
+        .node-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(56, 189, 248, 0.4); }
+            100% { box-shadow: 0 0 0 15px rgba(56, 189, 248, 0); }
+        }
+
+        .code-block {
+            font-family: 'Fira Code', monospace;
+            background: #000;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            border-left: 4px solid var(--accent);
+            color: #38bdf8;
+        }
+
+        .analogy-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="max-w-6xl mx-auto mb-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent">
+            Data Architecture Simulator
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+            Explore 4 classic data models through practical, easy-to-understand analogies and visual data flows.
+        </p>
+    </header>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Controls & Info -->
+        <section class="lg:col-span-4 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl shadow-xl">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-layer-group mr-2 text-sky-400"></i> Select Architecture
+                </h2>
+                <div class="flex flex-col space-y-2" id="arch-selectors">
+                    <button onclick="switchArch('inmon')" id="btn-inmon" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition active-tab">
+                        <span class="font-semibold block">Bill Inmon</span>
+                        <span class="text-xs text-slate-400 italic">"Wholesale Warehouse" - Strict, centralized</span>
+                    </button>
+                    <button onclick="switchArch('kimball')" id="btn-kimball" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block">Ralph Kimball</span>
+                        <span class="text-xs text-slate-400 italic">"Convenience Store" - Fast, accessible</span>
+                    </button>
+                    <button onclick="switchArch('datavault')" id="btn-datavault" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block">Data Vault 2.0</span>
+                        <span class="text-xs text-slate-400 italic">"LEGO Set" - Flexible, scalable</span>
+                    </button>
+                    <button onclick="switchArch('medallion')" id="btn-medallion" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-700/50 transition">
+                        <span class="font-semibold block">Medallion (Lakehouse)</span>
+                        <span class="text-xs text-slate-400 italic">"3-Stage Filter" - Modern, refined</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl shadow-xl">
+                <h3 class="text-lg font-bold mb-3 flex items-center">
+                    <i class="fas fa-lightbulb mr-2 text-amber-400"></i> Visual Explanation
+                </h3>
+                <div id="arch-info" class="text-sm text-slate-300 leading-relaxed space-y-4">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulation Viewport -->
+        <section class="lg:col-span-8 flex flex-col space-y-6">
+            <div class="architecture-canvas border border-slate-700 shadow-2xl relative" id="canvas">
+                <div id="connections-layer" class="absolute inset-0 pointer-events-none"></div>
+                <div id="nodes-layer" class="absolute inset-0"></div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-center md:text-left">
+                    <h4 class="font-bold text-slate-200">Simulation Status</h4>
+                    <p class="text-xs text-slate-400" id="status-text">Ready to load data...</p>
+                </div>
+                <button onclick="runSimulation()" class="bg-sky-500 hover:bg-sky-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition transform hover:scale-105 active:scale-95 flex items-center w-full md:w-auto justify-center">
+                    <i class="fas fa-bolt mr-2"></i> Trigger Data Flow
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('nodes-layer');
+        const connections = document.getElementById('connections-layer');
+        const infoBox = document.getElementById('arch-info');
+        const statusText = document.getElementById('status-text');
+
+        let currentArch = 'inmon';
+
+        const architectures = {
+            inmon: {
+                title: "Bill Inmon: Corporate Wholesale Warehouse",
+                analogy: "Example: A 5-star kitchen where all ingredients must be washed, peeled, and labeled before entering the main storage.",
+                analogyColor: "bg-blue-500",
+                info: `<p>Click "Trigger" to see <b>data flow stop at the Central Warehouse</b> for centralized processing before distribution. Without the Central Warehouse, nobody gets data.</p>
+                       <ul class="list-disc ml-4 space-y-1 text-slate-400">
+                           <li><b>Top-Down:</b> Gather all -> Normalize to 3NF -> Distribute.</li>
+                           <li><b>Characteristics:</b> Prone to bottleneck in the middle but data is 100% consistent.</li>
+                       </ul>`,
+                code: `-- 3NF Normalization Logic\nSELECT Customer, Address \nFROM Central_Warehouse \nWHERE Cust_ID = 123;`,
+                nodes: [
+                    { id: 'src1', label: 'Sales System', x: 10, y: 20, type: 'source' },
+                    { id: 'src2', label: 'HR System', x: 10, y: 50, type: 'source' },
+                    { id: 'src3', label: 'Finance System', x: 10, y: 80, type: 'source' },
+                    { id: 'edw', label: 'Central EDW (3NF)', x: 45, y: 50, type: 'process', color: '#38bdf8', icon: 'fa-database', pulse: true },
+                    { id: 'mart1', label: 'Sales Data Mart', x: 85, y: 20, type: 'output', icon: 'fa-chart-line' },
+                    { id: 'mart2', label: 'HR Data Mart', x: 85, y: 50, type: 'output', icon: 'fa-users' },
+                    { id: 'mart3', label: 'Finance Data Mart', x: 85, y: 80, type: 'output', icon: 'fa-file-invoice-dollar' }
+                ],
+                links: [
+                    // Array: [From, To, Animation Step]
+                    ['src1', 'edw', 0], ['src2', 'edw', 0], ['src3', 'edw', 0],
+                    ['edw', 'mart1', 1], ['edw', 'mart2', 1], ['edw', 'mart3', 1]
+                ]
+            },
+            kimball: {
+                title: "Ralph Kimball: Convenience Store Chain",
+                analogy: "Example: Supermarket shelves where business users can immediately grab ready-to-use processed data.",
+                analogyColor: "bg-emerald-500",
+                info: `<p>Click "Trigger" to see <b>there is no Central Warehouse</b>. Data from sources flows DIRECTLY into the Star Schema (Fact table in the center, Dimensions around) for immediate reporting.</p>
+                       <ul class="list-disc ml-4 space-y-1 text-slate-400">
+                           <li><b>Bottom-Up:</b> Extract from source -> Direct to Data Mart (Star Schema).</li>
+                           <li><b>Characteristics:</b> Extremely fast for reporting, highly user-friendly for business departments.</li>
+                       </ul>`,
+                code: `-- Star Schema Query\nSELECT sum(Revenue), Date \nFROM Sales_Fact_Table \nGROUP BY Date;`,
+                nodes: [
+                    { id: 'src1', label: 'Raw Data', x: 10, y: 50, type: 'source' },
+                    { id: 'dim1', label: 'Dim Customer', x: 40, y: 20, type: 'process', color: '#10b981', icon: 'fa-user-tag' },
+                    { id: 'dim2', label: 'Dim Product', x: 40, y: 80, type: 'process', color: '#10b981', icon: 'fa-box-open' },
+                    { id: 'dim3', label: 'Dim Time', x: 65, y: 50, type: 'process', color: '#10b981', icon: 'fa-calendar-alt' },
+                    { id: 'fact', label: 'Fact Sales', x: 40, y: 50, type: 'process', color: '#ec4899', icon: 'fa-star', pulse: true },
+                    { id: 'bi', label: 'BI Report', x: 85, y: 50, type: 'output', icon: 'fa-chart-pie' }
+                ],
+                links: [
+                    // Step 0: Load into Fact and Dim
+                    ['src1', 'fact', 0], ['src1', 'dim1', 0], ['src1', 'dim2', 0], ['src1', 'dim3', 0],
+                    // Step -1: Static lines showing Star Schema relations (no data particles)
+                    ['dim1', 'fact', -1], ['dim2', 'fact', -1], ['dim3', 'fact', -1],
+                    // Step 1: Query to BI
+                    ['fact', 'bi', 1]
+                ]
+            },
+            datavault: {
+                title: "Data Vault 2.0: The LEGO Set",
+                analogy: "Example: LEGO blocks that can be assembled, disassembled, and scaled infinitely without tearing down the whole structure.",
+                analogyColor: "bg-purple-500",
+                info: `<p>Click "Trigger" to clearly see the step-by-step assembly process:</p>
+                       <ul class="list-disc ml-4 space-y-1 text-slate-400">
+                           <li><b>Step 1:</b> Form the Core blocks (Customer Hub, Product Hub).</li>
+                           <li><b>Step 2:</b> Attach the Satellite piece (Customer Details) to the Customer Hub.</li>
+                           <li><b>Step 3:</b> Use a Link piece to connect the 2 Hubs together, forming a Purchase transaction.</li>
+                       </ul>`,
+                code: `-- Hub-Link-Sat Structure\nHub_Cust (Cust_ID)\nLink_Purchase (Cust_ID, Prod_ID)\nSat_Details (Name, Address, DOB)`,
+                nodes: [
+                    { id: 'src1', label: 'Raw Data', x: 10, y: 50, type: 'source' },
+                    { id: 'hub_kh', label: 'HUB (Cust Core)', x: 45, y: 25, type: 'process', color: '#ef4444', icon: 'fa-user' },
+                    { id: 'hub_sp', label: 'HUB (Prod Core)', x: 45, y: 75, type: 'process', color: '#3b82f6', icon: 'fa-box' },
+                    { id: 'sat_kh', label: 'SAT (Cust Details)', x: 75, y: 25, type: 'process', color: '#10b981', icon: 'fa-tags' },
+                    { id: 'link_mua', label: 'LINK (Connection)', x: 75, y: 50, type: 'process', color: '#f59e0b', icon: 'fa-link' }
+                ],
+                links: [
+                    // Step 0: Form the 2 Hub Cores
+                    ['src1', 'hub_kh', 0, { color: '#ef4444', count: 3 }], 
+                    ['src1', 'hub_sp', 0, { color: '#3b82f6', count: 3 }], 
+                    // Step 1: Attach Satellite to Customer Hub
+                    ['hub_kh', 'sat_kh', 1, { color: '#10b981', count: 2 }], 
+                    // Step 2: Assemble the Link between 2 Hubs
+                    ['hub_kh', 'link_mua', 2, { color: '#f59e0b', count: 2 }], 
+                    ['hub_sp', 'link_mua', 2, { color: '#f59e0b', count: 2 }],
+                    // Draw static structural lines to look like a molecular/LEGO structure
+                    ['hub_kh', 'sat_kh', -1], ['hub_kh', 'link_mua', -1], ['hub_sp', 'link_mua', -1]
+                ]
+            },
+            medallion: {
+                title: "Medallion: 3-Stage Water Filter",
+                analogy: "Example: A water filtration process from river water (Bronze) through a filter (Silver) to bottled water (Gold).",
+                analogyColor: "bg-amber-500",
+                info: `<p>Click "Trigger" to clearly see the data refinement progression:</p>
+                       <ul class="list-disc ml-4 space-y-1 text-slate-400">
+                           <li><b>Bronze Layer:</b> Many small, murky particles (Raw/dirty data).</li>
+                           <li><b>Silver Layer:</b> Larger, brighter particles, reduced quantity (Cleansed/joined data).</li>
+                           <li><b>Gold Layer:</b> Only a few giant gold particles remain (Highly aggregated/Executive data).</li>
+                       </ul>`,
+                code: `-- Silver to Gold Process\nINSERT INTO Gold_Revenue \nSELECT Region, Sum(Amount)\nFROM Silver_Transactions\nGROUP BY 1;`,
+                nodes: [
+                    { id: 'src1', label: 'Raw Source', x: 10, y: 50, type: 'source', icon: 'fa-cloud-download-alt' },
+                    { id: 'bronze', label: 'BRONZE (Raw)', x: 35, y: 50, type: 'process', color: '#8B4513', icon: 'fa-vial' },
+                    { id: 'silver', label: 'SILVER (Clean)', x: 60, y: 50, type: 'process', color: '#94a3b8', icon: 'fa-tint' },
+                    { id: 'gold', label: 'GOLD (Aggregated)', x: 85, y: 50, type: 'process', color: '#facc15', icon: 'fa-glass-whiskey', pulse: true }
+                ],
+                links: [
+                    // Customize color, quantity, and size to visually represent "filtering"
+                    ['src1', 'bronze', 0, { color: '#8B4513', count: 12, size: '6px' }], 
+                    ['bronze', 'silver', 1, { color: '#94a3b8', count: 6, size: '10px' }], 
+                    ['silver', 'gold', 2, { color: '#facc15', count: 2, size: '18px' }]
+                ]
+            }
+        };
+
+        function switchArch(id) {
+            currentArch = id;
+            
+            // Update UI tabs
+            document.querySelectorAll('#arch-selectors button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById(`btn-${id}`).classList.add('active-tab');
+
+            // Update info panel
+            const arch = architectures[id];
+            infoBox.innerHTML = `
+                <div class="analogy-tag ${arch.analogyColor}">${arch.analogy.split(':')[0]}</div>
+                <h4 class="text-sky-300 font-bold text-base mb-1">${arch.title}</h4>
+                <p class="text-xs italic text-amber-200 mb-3">${arch.analogy}</p>
+                ${arch.info}
+                <div class="code-block text-xs mt-3 opacity-80 overflow-x-auto">
+                    <pre>${arch.code}</pre>
+                </div>
+            `;
+
+            renderCanvas();
+            statusText.innerText = `Switched to: ${arch.title}. Waiting for command...`;
+        }
+
+        function renderCanvas() {
+            canvas.innerHTML = '';
+            connections.innerHTML = '';
+            const arch = architectures[currentArch];
+
+            // Render Nodes
+            arch.nodes.forEach(node => {
+                const el = document.createElement('div');
+                el.id = node.id;
+                el.className = `data-node ${node.pulse ? 'pulse' : ''}`;
+                el.style.left = `${node.x}%`;
+                el.style.top = `${node.y}%`;
+                el.style.transform = 'translate(-50%, -50%)';
+                
+                const bgColor = node.color || '#334155';
+                const icon = node.icon || (node.type === 'source' ? 'fa-upload' : 'fa-check-circle');
+
+                el.innerHTML = `
+                    <div class="w-14 h-14 flex items-center justify-center rounded-2xl shadow-lg border border-white/10 transition-transform hover:scale-110 cursor-help" style="background: ${bgColor}">
+                        <i class="fas ${icon} text-white text-2xl"></i>
+                    </div>
+                    <span class="node-label">${node.label}</span>
+                `;
+                canvas.appendChild(el);
+            });
+
+            // Draw connecting lines
+            setTimeout(() => drawLinks(arch.links), 50);
+        }
+
+        function drawLinks(links) {
+            links.forEach(pair => {
+                const from = document.getElementById(pair[0]);
+                const to = document.getElementById(pair[1]);
+                if (!from || !to) return;
+
+                const line = document.createElement('div');
+                line.className = 'data-flow-line';
+                
+                // Make static relationship lines (e.g., Star Schema/Vault joins) dashed and dimmer
+                if (pair[2] === -1) {
+                    line.style.borderTop = '2px dashed #10b981';
+                    line.style.background = 'transparent';
+                    line.style.opacity = '0.5';
+                }
+                
+                const fromX = from.offsetLeft;
+                const fromY = from.offsetTop;
+                const toX = to.offsetLeft;
+                const toY = to.offsetTop;
+
+                const dx = toX - fromX;
+                const dy = toY - fromY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                line.style.width = `${dist}px`;
+                line.style.left = `${fromX}px`;
+                line.style.top = `${fromY}px`;
+                line.style.transform = `rotate(${angle}deg)`;
+
+                connections.appendChild(line);
+            });
+        }
+
+        function runSimulation() {
+            statusText.innerText = "Starting to load and process data...";
+            const arch = architectures[currentArch];
+            
+            arch.links.forEach(link => {
+                const fromNode = document.getElementById(link[0]);
+                const toNode = document.getElementById(link[1]);
+                if (!fromNode || !toNode) return;
+
+                const step = link[2] !== undefined ? link[2] : 0;
+                const config = link[3] || {}; // Get particle config (color, size, count)
+                
+                // Skip animation for static structural lines
+                if (step === -1) return;
+
+                // Steps run sequentially (each step is offset by 1200ms)
+                const baseDelay = step * 1200;
+                const particleCount = config.count || 4; // Default to 4 particles
+
+                for (let i = 0; i < particleCount; i++) {
+                    setTimeout(() => {
+                        createDataParticle(fromNode, toNode, config);
+                    }, baseDelay + (i * (1200 / particleCount)));
+                }
+            });
+
+            // Calculate total animation time to display completion text
+            const maxStep = Math.max(...arch.links.map(l => l[2] || 0));
+            setTimeout(() => {
+                statusText.innerText = "Data successfully loaded and ready for consumption!";
+            }, (maxStep * 1200) + 2000);
+        }
+
+        function createDataParticle(from, to, config = {}) {
+            const particle = document.createElement('div');
+            const color = config.color || '#38bdf8';
+            const size = config.size || '10px';
+
+            particle.style.position = 'absolute';
+            particle.style.width = size;
+            particle.style.height = size;
+            particle.style.backgroundColor = color;
+            particle.style.borderRadius = '50%';
+            particle.style.boxShadow = `0 0 15px ${color}`;
+            particle.style.zIndex = '100';
+            particle.style.left = `${from.offsetLeft}px`;
+            particle.style.top = `${from.offsetTop}px`;
+            particle.style.transition = 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            connections.appendChild(particle);
+
+            // Animate movement
+            requestAnimationFrame(() => {
+                particle.style.left = `${to.offsetLeft}px`;
+                particle.style.top = `${to.offsetTop}px`;
+                particle.style.opacity = '0.5';
+                particle.style.transform = 'scale(0.5)';
+            });
+
+            setTimeout(() => {
+                particle.remove();
+            }, 1200);
+        }
+
+        // Initialize
+        window.onload = () => {
+            switchArch('inmon');
+            window.addEventListener('resize', renderCanvas);
+        };
+    </script>
+</body>
+</html>
