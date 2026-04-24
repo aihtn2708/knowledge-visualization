@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Tối Ưu SQL Indexing</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (để biên dịch JSX ngay trên trình duyệt) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // ==========================================
+        // 0. CÁC ICON SVG TÙY CHỈNH (Thay thế Lucide để chạy offline 100%)
+        // ==========================================
+        const Icon = ({ path, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{__html: path}} />
+        );
+        const Search = (p) => <Icon path='<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>' {...p} />;
+        const Database = (p) => <Icon path='<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>' {...p} />;
+        const Network = (p) => <Icon path='<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>' {...p} />;
+        const Play = (p) => <Icon path='<polygon points="6 3 20 12 6 21 6 3"/>' {...p} />;
+        const RotateCcw = (p) => <Icon path='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' {...p} />;
+        const Info = (p) => <Icon path='<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>' {...p} />;
+        const Layers = (p) => <Icon path='<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>' {...p} />;
+        const Key = (p) => <Icon path='<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>' {...p} />;
+        const FilePlus2 = (p) => <Icon path='<path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M3 15h6"/><path d="M6 12v6"/>' {...p} />;
+        const BoxSelect = (p) => <Icon path='<path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/>' {...p} />;
+
+
+        // ==========================================
+        // 1. DỮ LIỆU GỐC & CẤU TRÚC CÁC LOẠI INDEX
+        // ==========================================
+        const MOCK_DATA = [
+          { id: 12, name: 'Nguyễn Văn A', age: 25 },
+          { id: 5, name: 'Trần Thị B', age: 30 },
+          { id: 9, name: 'Lê Văn C', age: 22 },
+          { id: 1, name: 'Phạm Thị D', age: 28 },
+          { id: 14, name: 'Hoàng Văn E', age: 35 },
+          { id: 3, name: 'Vũ Thị F', age: 26 },
+          { id: 8, name: 'Đặng Văn G', age: 40 },
+          { id: 15, name: 'Bùi Thị H', age: 24 },
+          { id: 2, name: 'Đỗ Văn I', age: 31 },
+          { id: 11, name: 'Hồ Thị J', age: 27 },
+          { id: 6, name: 'Ngô Văn K', age: 33 },
+          { id: 13, name: 'Dương Thị L', age: 29 },
+          { id: 4, name: 'Lý Văn M', age: 38 },
+          { id: 10, name: 'Đào Thị N', age: 23 },
+          { id: 7, name: 'Đinh Văn O', age: 36 },
+        ];
+
+        const CLUSTERED_DATA = [...MOCK_DATA].sort((a, b) => a.id - b.id);
+
+        const NC_INDEX_TREE = {
+          name: "Root Page", keys: [4, 8, 12],
+          children: [
+            { name: "Leaf 1", cond: "ID < 4", keys: [{ id: 1, row: 3 }, { id: 2, row: 8 }, { id: 3, row: 5 }] },
+            { name: "Leaf 2", cond: "4 ≤ ID < 8", keys: [{ id: 4, row: 12 }, { id: 5, row: 1 }, { id: 6, row: 10 }, { id: 7, row: 14 }] },
+            { name: "Leaf 3", cond: "8 ≤ ID < 12", keys: [{ id: 8, row: 6 }, { id: 9, row: 2 }, { id: 10, row: 13 }, { id: 11, row: 9 }] },
+            { name: "Leaf 4", cond: "ID ≥ 12", keys: [{ id: 12, row: 0 }, { id: 13, row: 11 }, { id: 14, row: 4 }, { id: 15, row: 7 }] }
+          ]
+        };
+
+        const C_INDEX_TREE = {
+          name: "Root Page (Clustered)", keys: [4, 8, 12],
+          children: [
+            { name: "Data Page 1", cond: "ID < 4", data: [{ id: 1, name: 'Phạm Thị D', age: 28 }, { id: 2, name: 'Đỗ Văn I', age: 31 }, { id: 3, name: 'Vũ Thị F', age: 26 }] },
+            { name: "Data Page 2", cond: "4 ≤ ID < 8", data: [{ id: 4, name: 'Lý Văn M', age: 38 }, { id: 5, name: 'Trần Thị B', age: 30 }, { id: 6, name: 'Ngô Văn K', age: 33 }, { id: 7, name: 'Đinh Văn O', age: 36 }] },
+            { name: "Data Page 3", cond: "8 ≤ ID < 12", data: [{ id: 8, name: 'Đặng Văn G', age: 40 }, { id: 9, name: 'Lê Văn C', age: 22 }, { id: 10, name: 'Đào Thị N', age: 23 }, { id: 11, name: 'Hồ Thị J', age: 27 }] },
+            { name: "Data Page 4", cond: "ID ≥ 12", data: [{ id: 12, name: 'Nguyễn Văn A', age: 25 }, { id: 13, name: 'Dương Thị L', age: 29 }, { id: 14, name: 'Hoàng Văn E', age: 35 }, { id: 15, name: 'Bùi Thị H', age: 24 }] }
+          ]
+        };
+
+        const COMP_INDEX_TREE = {
+          name: "Root Page (Age, ID)", keys: [26, 31, 36],
+          children: [
+            { name: "Leaf 1", cond: "Age < 26", keys: [{ val: 22, id: 9, row: 2 }, { val: 23, id: 10, row: 13 }, { val: 24, id: 15, row: 7 }, { val: 25, id: 12, row: 0 }] },
+            { name: "Leaf 2", cond: "26 ≤ Age < 31", keys: [{ val: 26, id: 3, row: 5 }, { val: 27, id: 11, row: 9 }, { val: 28, id: 1, row: 3 }, { val: 29, id: 13, row: 11 }, { val: 30, id: 5, row: 1 }] },
+            { name: "Leaf 3", cond: "31 ≤ Age < 36", keys: [{ val: 31, id: 2, row: 8 }, { val: 33, id: 6, row: 10 }, { val: 35, id: 14, row: 4 }] },
+            { name: "Leaf 4", cond: "Age ≥ 36", keys: [{ val: 36, id: 7, row: 14 }, { val: 38, id: 4, row: 12 }, { val: 40, id: 8, row: 6 }] }
+          ]
+        };
+
+        // ==========================================
+        // 2. COMPONENT CHÍNH
+        // ==========================================
+        function AdvancedIndexingSimulation() {
+          const [activeTab, setActiveTab] = useState('non-clustered');
+          const [inputValue, setInputValue] = useState(7);
+          const [insertName, setInsertName] = useState('Người Dùng Mới');
+          
+          const [isSimulating, setIsSimulating] = useState(false);
+          const [activePage, setActivePage] = useState(null);
+          const [activeIndexKey, setActiveIndexKey] = useState(null);
+          const [activeTableRow, setActiveTableRow] = useState(null);
+          const [foundTableRow, setFoundTableRow] = useState(null);
+          
+          const [logs, setLogs] = useState([]);
+          const [stepCount, setStepCount] = useState(0);
+          const [scanType, setScanType] = useState('index');
+          const timeoutRefs = useRef([]);
+
+          const clearTimeouts = () => {
+            timeoutRefs.current.forEach(clearTimeout);
+            timeoutRefs.current = [];
+          };
+
+          useEffect(() => {
+            return () => clearTimeouts();
+          }, []);
+
+          useEffect(() => {
+            resetSimulation();
+            if (activeTab === 'composite') setInputValue(27);
+            else if (activeTab === 'unique') setInputValue(7);
+            else setInputValue(7);
+          }, [activeTab]);
+
+          const addLog = (msg) => setLogs((prev) => [...prev, msg]);
+
+          const resetSimulation = () => {
+            clearTimeouts();
+            setIsSimulating(false);
+            setActivePage(null);
+            setActiveIndexKey(null);
+            setActiveTableRow(null);
+            setFoundTableRow(null);
+            setLogs([]);
+            setStepCount(0);
+            setScanType('index');
+          };
+
+          const delayTime = 1200;
+          const scanDelayTime = 300;
+
+          const runTableScan = () => {
+            resetSimulation(); setIsSimulating(true); setScanType('scan');
+            const target = Number(inputValue);
+            const searchKey = activeTab === 'composite' ? 'age' : 'id';
+            const dataToScan = activeTab === 'clustered' ? CLUSTERED_DATA : MOCK_DATA;
+            let delay = 0;
+
+            if (activeTab === 'unique') {
+               addLog(`BẮT ĐẦU: Table Scan để kiểm tra TRÙNG LẶP trước khi INSERT ID=${target}`);
+               addLog(`Vì không dùng Index, hệ thống bắt buộc phải quét TOÀN BỘ BẢNG (Full Table Scan) để đảm bảo ID chưa tồn tại.`);
+            } else {
+               addLog(`BẮT ĐẦU: Table Scan tìm ${searchKey.toUpperCase()} = ${target}`);
+               addLog(`Hệ thống đang quét từng dòng từ trên xuống dưới bảng dữ liệu...`);
+            }
+
+            let found = false;
+
+            for (let i = 0; i < dataToScan.length; i++) {
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveTableRow(i);
+                setStepCount(i + 1);
+                
+                if (dataToScan[i][searchKey] === target) {
+                  setFoundTableRow(i);
+                  found = true;
+                  if (activeTab === 'unique') {
+                     addLog(`❌ BƯỚC ${i + 1}: Phát hiện ID=${target} đã tồn tại ở Row ${i}! Lệnh INSERT thất bại.`);
+                  } else {
+                     addLog(`✅ BƯỚC ${i + 1}: Tìm thấy tại Row ${i}! Dừng quét.`);
+                  }
+                  setIsSimulating(false);
+                } else {
+                  addLog(`❌ BƯỚC ${i + 1}: Row ${i} không khớp, tiếp tục...`);
+                }
+
+                if (i === dataToScan.length - 1 && !found) {
+                   if (activeTab === 'unique') {
+                      addLog(`✅ KẾT THÚC: Đã quét hết ${dataToScan.length} dòng. Không thấy ID trùng lặp.`);
+                      addLog(`🚀 Có thể tiến hành INSERT an toàn.`);
+                   } else {
+                      addLog(`❌ KẾT THÚC: Đã quét hết bảng nhưng không tìm thấy dữ liệu.`);
+                   }
+                   setIsSimulating(false);
+                }
+              }, delay));
+
+              if (dataToScan[i][searchKey] === target) break;
+              delay += scanDelayTime;
+            }
+          };
+
+          const runNonClustered = () => {
+            resetSimulation(); setIsSimulating(true);
+            const target = Number(inputValue);
+            let delay = 0;
+
+            addLog(`BẮT ĐẦU: Non-Clustered Seek tìm ID = ${target}`);
+            addLog(`Tree lữu trữ con trỏ. Phải nhảy 2 bước: Tree -> Bảng Gốc.`);
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage('root'); setStepCount(1);
+              addLog(`🔎 Đọc Root Page. So sánh ID với [4, 8, 12].`);
+            }, delay)); delay += delayTime;
+
+            let childIdx = target < 4 ? 0 : target < 8 ? 1 : target < 12 ? 2 : 3;
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage(childIdx); setStepCount(2);
+              addLog(`🔎 Đọc Leaf Page ${childIdx + 1}. Tìm ID trong lá.`);
+            }, delay)); delay += delayTime;
+
+            const leaf = NC_INDEX_TREE.children[childIdx];
+            const keyIdx = leaf.keys.findIndex(k => k.id === target);
+
+            if (keyIdx !== -1) {
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveIndexKey(keyIdx);
+                addLog(`✅ Thấy ID=${target}. Con trỏ trỏ về Row ${leaf.keys[keyIdx].row}.`);
+              }, delay)); delay += delayTime;
+
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveTableRow(leaf.keys[keyIdx].row); setFoundTableRow(leaf.keys[keyIdx].row);
+                setStepCount(3);
+                addLog(`🚀 Key Lookup: Nhảy đến Bảng Gốc lấy dữ liệu. Hoàn tất (3 Bước)!`);
+                setIsSimulating(false);
+              }, delay));
+            } else {
+              timeoutRefs.current.push(setTimeout(() => {
+                addLog(`❌ KẾT THÚC: Không tìm thấy ID.`); setIsSimulating(false);
+              }, delay));
+            }
+          };
+
+          const runClustered = () => {
+            resetSimulation(); setIsSimulating(true);
+            const target = Number(inputValue);
+            let delay = 0;
+
+            addLog(`BẮT ĐẦU: Clustered Index Seek tìm ID = ${target}`);
+            addLog(`Lưu ý: Không có bảng Heap. Dữ liệu nằm ngay trong Leaf Page!`);
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage('root'); setStepCount(1);
+              addLog(`🔎 Đọc Root Page. So sánh ID với [4, 8, 12].`);
+            }, delay)); delay += delayTime;
+
+            let childIdx = target < 4 ? 0 : target < 8 ? 1 : target < 12 ? 2 : 3;
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage(childIdx); setStepCount(2);
+              addLog(`🔎 Đọc Data Page ${childIdx + 1}. Quét dữ liệu trực tiếp.`);
+            }, delay)); delay += delayTime;
+
+            const leaf = C_INDEX_TREE.children[childIdx];
+            const keyIdx = leaf.data.findIndex(k => k.id === target);
+
+            if (keyIdx !== -1) {
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveIndexKey(keyIdx);
+                addLog(`🚀 Đã bốc được toàn bộ dòng dữ liệu (ID, Tên, Tuổi). Không cần nhảy đi đâu nữa. Hoàn tất (2 Bước)!`);
+                setIsSimulating(false);
+              }, delay));
+            } else {
+              timeoutRefs.current.push(setTimeout(() => {
+                addLog(`❌ KẾT THÚC: Không tìm thấy ID.`); setIsSimulating(false);
+              }, delay));
+            }
+          };
+
+          const runComposite = () => {
+            resetSimulation(); setIsSimulating(true);
+            const target = Number(inputValue);
+            let delay = 0;
+
+            addLog(`BẮT ĐẦU: Composite Index Seek tìm Tuổi = ${target}`);
+            addLog(`Tree sắp xếp theo Tuổi. (Nếu có 2 người trùng tuổi, sẽ sắp xếp tiếp theo ID).`);
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage('root'); setStepCount(1);
+              addLog(`🔎 Đọc Root Page. So sánh Tuổi với [26, 31, 36].`);
+            }, delay)); delay += delayTime;
+
+            let childIdx = target < 26 ? 0 : target < 31 ? 1 : target < 36 ? 2 : 3;
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage(childIdx); setStepCount(2);
+              addLog(`🔎 Đọc Leaf Page ${childIdx + 1} chứa khoảng tuổi tương ứng.`);
+            }, delay)); delay += delayTime;
+
+            const leaf = COMP_INDEX_TREE.children[childIdx];
+            const keyIdx = leaf.keys.findIndex(k => k.val === target);
+
+            if (keyIdx !== -1) {
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveIndexKey(keyIdx);
+                addLog(`✅ Tìm thấy Tuổi=${target}. Lấy ID=${leaf.keys[keyIdx].id} và Row=${leaf.keys[keyIdx].row}.`);
+              }, delay)); delay += delayTime;
+
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveTableRow(leaf.keys[keyIdx].row); setFoundTableRow(leaf.keys[keyIdx].row);
+                setStepCount(3);
+                addLog(`🚀 Key Lookup: Vào bảng gốc lấy Tên. Hoàn tất!`);
+                setIsSimulating(false);
+              }, delay));
+            } else {
+              timeoutRefs.current.push(setTimeout(() => {
+                addLog(`❌ KẾT THÚC: Không có ai Tuổi = ${target}.`); setIsSimulating(false);
+              }, delay));
+            }
+          };
+
+          const runUnique = () => {
+            resetSimulation(); setIsSimulating(true);
+            const target = Number(inputValue);
+            let delay = 0;
+
+            addLog(`BẮT ĐẦU: Lệnh INSERT INTO Users (ID, Name) VALUES (${target}, '${insertName}')`);
+            addLog(`Ràng buộc UNIQUE: DB phải duyệt cây kiểm tra xem ID đã tồn tại chưa trước khi ghi.`);
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage('root'); setStepCount(1);
+              addLog(`🔎 Đọc Root Page xác định vị trí lá cần kiểm tra.`);
+            }, delay)); delay += delayTime;
+
+            let childIdx = target < 4 ? 0 : target < 8 ? 1 : target < 12 ? 2 : 3;
+
+            timeoutRefs.current.push(setTimeout(() => {
+              setActivePage(childIdx); setStepCount(2);
+              addLog(`🔎 Đọc Leaf Page ${childIdx + 1}. Kiểm tra sự tồn tại của ID ${target}...`);
+            }, delay)); delay += delayTime;
+
+            const leaf = NC_INDEX_TREE.children[childIdx];
+            const keyIdx = leaf.keys.findIndex(k => k.id === target);
+
+            if (keyIdx !== -1) {
+              timeoutRefs.current.push(setTimeout(() => {
+                setActiveIndexKey(keyIdx);
+                addLog(`❌ LỖI RÀNG BUỘC (CONSTRAINT VIOLATION)!`);
+                addLog(`Phát hiện ID=${target} đã tồn tại trong Index. Lệnh INSERT bị hủy bỏ!`);
+                setIsSimulating(false);
+              }, delay));
+            } else {
+              timeoutRefs.current.push(setTimeout(() => {
+                addLog(`✅ An toàn! ID=${target} chưa tồn tại.`);
+              }, delay)); delay += delayTime;
+
+              timeoutRefs.current.push(setTimeout(() => {
+                addLog(`🚀 Tiến hành ghi dữ liệu mới vào Bảng và cập nhật B-Tree. Hoàn tất!`);
+                setIsSimulating(false);
+              }, delay));
+            }
+          };
+
+          const TabButton = ({ id, icon: IconComponent, title }) => (
+            <button
+              onClick={() => setActiveTab(id)}
+              className={`flex-1 py-3 px-4 flex flex-col items-center justify-center gap-1 border-b-2 transition-colors
+                ${activeTab === id ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}
+            >
+              <IconComponent className="w-5 h-5" />
+              <span className="font-semibold text-sm text-center">{title}</span>
+            </button>
+          );
+
+          const renderHeapTable = (isClusteredView = false) => {
+            const data = isClusteredView ? CLUSTERED_DATA : MOCK_DATA;
+            const title = isClusteredView ? "Bảng Dữ Liệu Thực Tế (Clustered)" : "Bảng Dữ Liệu Gốc (Heap)";
+            const subtitle = isClusteredView ? "Đã được sắp xếp vật lý theo ID" : "Lưu trữ lộn xộn, không thứ tự";
+
+            return (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-1 min-h-[300px]">
+                <div className="bg-slate-100 p-3 border-b border-slate-200 flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4 text-slate-500" />
+                    <h2 className="font-bold text-slate-700 text-sm">{title}</h2>
+                  </div>
+                  <span className="text-[10px] text-slate-500 italic">{subtitle}</span>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="text-slate-400 border-b border-slate-100 bg-slate-50">
+                        <th className="py-1 px-2">Row</th>
+                        <th className="py-1 px-2">ID</th>
+                        <th className="py-1 px-2">Tên</th>
+                        <th className="py-1 px-2">Tuổi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.map((row, idx) => (
+                        <tr key={idx} className={`border-b border-slate-50 transition-colors
+                          ${activeTableRow === idx && foundTableRow !== idx ? 'bg-yellow-100' : ''}
+                          ${foundTableRow === idx ? 'bg-green-100 font-bold text-green-800' : 'text-slate-600'}
+                        `}>
+                          <td className="py-1 px-2 font-mono text-[10px] text-slate-400">R{idx}</td>
+                          <td className="py-1 px-2 font-mono">{row.id}</td>
+                          <td className="py-1 px-2">{row.name}</td>
+                          <td className="py-1 px-2">{row.age}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          };
+
+          const renderTree = (treeData, isClustered = false, isComposite = false) => (
+            <div className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col flex-[2]`}>
+              <div className="bg-indigo-50 p-3 border-b border-indigo-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Network className="w-4 h-4 text-indigo-600" />
+                  <h2 className="font-bold text-indigo-800 text-sm">B+ Tree Index {isClustered && "(Bao gồm Dữ liệu)"}</h2>
+                </div>
+              </div>
+              <div className="p-4 flex-1 flex flex-col items-center bg-slate-50 relative overflow-x-auto min-h-[350px]">
+                  
+                  {/* Root */}
+                  <div className={`mt-2 border-2 rounded-xl p-2 flex flex-col items-center gap-1 z-10 transition-all shadow-sm
+                    ${activePage === 'root' ? 'border-indigo-500 bg-indigo-100 scale-105' : 'border-slate-300 bg-white'}`}>
+                    <div className="text-[10px] font-bold text-slate-500 uppercase">{treeData.name}</div>
+                    <div className="flex gap-1">
+                      {treeData.keys.map((k, idx) => <div key={idx} className="px-2 bg-slate-200 border border-slate-300 rounded font-mono text-xs">{k}</div>)}
+                    </div>
+                  </div>
+
+                  {/* SVG Lines */}
+                  <svg className="absolute w-full h-[60px] top-[70px] pointer-events-none" preserveAspectRatio="none">
+                     <path d="M 50% 0 L 15% 100%" stroke="#CBD5E1" strokeWidth="2" fill="none" className={activePage === 0 ? "stroke-indigo-400 stroke-[3px]" : ""} />
+                     <path d="M 50% 0 L 38% 100%" stroke="#CBD5E1" strokeWidth="2" fill="none" className={activePage === 1 ? "stroke-indigo-400 stroke-[3px]" : ""} />
+                     <path d="M 50% 0 L 62% 100%" stroke="#CBD5E1" strokeWidth="2" fill="none" className={activePage === 2 ? "stroke-indigo-400 stroke-[3px]" : ""} />
+                     <path d="M 50% 0 L 85% 100%" stroke="#CBD5E1" strokeWidth="2" fill="none" className={activePage === 3 ? "stroke-indigo-400 stroke-[3px]" : ""} />
+                  </svg>
+
+                  {/* Leaves */}
+                  <div className="w-full flex justify-between gap-2 mt-16 z-10">
+                    {treeData.children.map((leaf, leafIdx) => (
+                      <div key={leafIdx} className={`border-2 rounded-xl p-2 flex flex-col gap-1 transition-all shadow-sm
+                        ${isClustered ? 'w-[24%]' : 'w-[23%]'}
+                        ${activePage === leafIdx ? 'border-indigo-500 bg-indigo-50 scale-[1.02]' : 'border-slate-300 bg-white'}`}>
+                        <div className="text-[9px] text-center font-bold text-slate-500">{leaf.name}</div>
+                        <div className="text-[9px] text-center bg-slate-100 text-slate-500 rounded">{leaf.cond}</div>
+                        
+                        <div className="flex flex-col mt-1">
+                          {isClustered && leaf.data && (
+                            <table className="w-full text-left text-[9px] mt-1">
+                              <thead><tr className="text-slate-400 border-b"><th>ID</th><th>Tên</th><th>Tuổi</th></tr></thead>
+                              <tbody>
+                                {leaf.data.map((r, kIdx) => (
+                                   <tr key={kIdx} className={`border-b border-slate-100 ${activePage === leafIdx && activeIndexKey === kIdx && scanType === 'index' ? 'bg-indigo-600 text-white font-bold' : ''}`}>
+                                     <td>{r.id}</td><td>{r.name.split(' ').pop()}</td><td>{r.age}</td>
+                                   </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+
+                          {!isClustered && leaf.keys && (
+                             <>
+                              <div className="flex justify-between px-1 text-[8px] font-bold text-slate-400">
+                                <span>{isComposite ? 'Age' : 'ID'}</span><span>Pointer</span>
+                              </div>
+                              <div className="flex flex-col gap-[2px]">
+                                {leaf.keys.map((k, kIdx) => (
+                                  <div key={kIdx} className={`px-1 flex justify-between rounded font-mono text-[10px] border
+                                    ${activePage === leafIdx && activeIndexKey === kIdx && scanType === 'index' ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-slate-50 border-slate-200'}`}>
+                                    <span>{isComposite ? k.val : k.id}</span>
+                                    <span className={activePage === leafIdx && activeIndexKey === kIdx && scanType === 'index' ? 'text-indigo-200' : 'text-slate-400'}>➡ R{k.row}</span>
+                                  </div>
+                                ))}
+                              </div>
+                             </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+              </div>
+            </div>
+          );
+
+          return (
+            <div className="min-h-screen bg-slate-100 p-2 md:p-6 font-sans text-slate-800">
+              <div className="max-w-6xl mx-auto space-y-4">
+                
+                {/* Header Tabs */}
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col md:flex-row">
+                  <TabButton id="non-clustered" icon={Layers} title="Non-Clustered Index" />
+                  <TabButton id="clustered" icon={BoxSelect} title="Clustered Index" />
+                  <TabButton id="composite" icon={Network} title="Composite Index" />
+                  <TabButton id="unique" icon={Key} title="Unique Index" />
+                </div>
+
+                {/* Controls */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-end gap-4">
+                  {activeTab !== 'unique' ? (
+                    <div className="flex-1 min-w-[200px]">
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        {activeTab === 'composite' ? 'Tuổi Cần Tìm (Ví dụ: 22, 27, 33)' : 'ID Cần Tìm (1-15)'}
+                      </label>
+                      <input 
+                        type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50 focus:bg-white transition-colors"
+                        disabled={isSimulating}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex-1 min-w-[120px]">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">ID (Khóa Unique)</label>
+                        <input type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-slate-50" disabled={isSimulating}/>
+                      </div>
+                      <div className="flex-[2] min-w-[200px]">
+                        <label className="block text-xs font-bold text-slate-600 mb-1">Tên Người Dùng</label>
+                        <input type="text" value={insertName} onChange={(e) => setInsertName(e.target.value)} className="w-full border rounded-lg px-3 py-2 bg-slate-50" disabled={isSimulating}/>
+                      </div>
+                    </>
+                  )}
+
+                  <button 
+                    onClick={runTableScan}
+                    disabled={isSimulating}
+                    className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 text-white shadow-sm transition disabled:opacity-50 bg-orange-500 hover:bg-orange-600`}
+                  >
+                    <Search className="w-4 h-4" />
+                    Table Scan (O(N))
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      if(activeTab === 'non-clustered') runNonClustered();
+                      if(activeTab === 'clustered') runClustered();
+                      if(activeTab === 'composite') runComposite();
+                      if(activeTab === 'unique') runUnique();
+                    }}
+                    disabled={isSimulating}
+                    className={`px-6 py-2 rounded-lg font-bold flex items-center gap-2 text-white shadow-sm transition disabled:opacity-50
+                      ${activeTab === 'unique' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                  >
+                    {activeTab === 'unique' ? <FilePlus2 className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {activeTab === 'unique' ? 'Chạy Lệnh INSERT' : 'Bắt Đầu Tìm Kiếm'}
+                  </button>
+                  
+                  <button onClick={resetSimulation} className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition">
+                    <RotateCcw className="w-4 h-4" /> Reset
+                  </button>
+                </div>
+
+                {/* Visual Area */}
+                <div className="flex flex-col lg:flex-row gap-4 h-auto min-h-[400px]">
+                   {activeTab === 'non-clustered' && (
+                     <>{renderTree(NC_INDEX_TREE, false, false)}{renderHeapTable(false)}</>
+                   )}
+                   {activeTab === 'clustered' && (
+                     <>{renderTree(C_INDEX_TREE, true, false)}{renderHeapTable(true)}</>
+                   )}
+                   {activeTab === 'composite' && (
+                     <>{renderTree(COMP_INDEX_TREE, false, true)}{renderHeapTable(false)}</>
+                   )}
+                   {activeTab === 'unique' && (
+                     <>{renderTree(NC_INDEX_TREE, false, false)}
+                       <div className="flex-1 flex flex-col gap-4">
+                         <div className="bg-white border rounded-xl p-6 flex flex-col justify-center items-center text-center flex-[1]">
+                           <Key className={`w-12 h-12 mb-3 ${stepCount > 0 && activeIndexKey !== null ? 'text-red-500' : 'text-slate-300'}`} />
+                           <h3 className="text-lg font-bold text-slate-700 mb-2">Ràng Buộc Unique (Duy Nhất)</h3>
+                           <p className="text-[11px] text-slate-500">Thử chạy <strong>Table Scan</strong> và <strong>Index Seek</strong> để thấy sự khác biệt về tốc độ khi CSDL phải kiểm tra trùng lặp trước khi INSERT.</p>
+                           <div className="mt-4 p-3 bg-slate-50 border rounded w-full text-left font-mono text-xs text-slate-600">
+                              <span className="text-purple-600 font-bold">INSERT INTO</span> users (id, name)<br/>
+                              <span className="text-purple-600 font-bold">VALUES</span> ({inputValue}, '{insertName}');
+                           </div>
+                         </div>
+                         {renderHeapTable(false)}
+                       </div>
+                     </>
+                   )}
+                </div>
+
+                {/* Logs Console */}
+                <div className="bg-slate-900 text-slate-300 p-4 rounded-xl font-mono text-xs md:text-sm flex flex-col md:flex-row gap-4 shadow-inner">
+                  <div className="flex-1 space-y-2 h-[160px] overflow-y-auto pr-2 custom-scrollbar">
+                    {logs.length === 0 ? <div className="text-slate-500">Sẵn sàng. Nhấn nút để xem Execution Plan...</div> : 
+                      logs.map((log, idx) => (
+                        <div key={idx} className={`leading-relaxed
+                          ${log.includes('✅')||log.includes('🚀')||log.includes('An toàn') ? 'text-green-400' : 
+                            log.includes('❌')||log.includes('LỖI') ? 'text-red-400 font-bold' : 
+                            log.includes('BẮT ĐẦU') ? 'text-yellow-300 font-bold border-b border-slate-700 pb-1 mb-2' : 
+                            log.includes('🔎') ? 'text-indigo-300' : ''}`}
+                        >{log}</div>
+                      ))}
+                  </div>
+                  <div className="w-full md:w-48 bg-slate-800 rounded border border-slate-700 flex flex-col items-center justify-center py-4">
+                    <span className="text-slate-400 mb-1 flex items-center gap-1"><Info className="w-3 h-3"/> Số Bước</span>
+                    <span className={`text-5xl font-bold ${scanType === 'scan' ? 'text-orange-400' : 'text-indigo-400'}`}>{stepCount}</span>
+                    <span className="text-[10px] text-slate-500 mt-2 text-center px-2">
+                      {scanType === 'scan' ? 'Quét từng dòng O(N). Rất chậm.' : activeTab === 'clustered' ? 'Nhanh nhất vì dữ liệu nằm ở Node Lá' : 'Tốn thêm 1 bước Key Lookup về Bảng Gốc'}
+                    </span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AdvancedIndexingSimulation />);
+    </script>
+</body>
+</html>
