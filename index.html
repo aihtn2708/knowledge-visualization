@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knowledge Visualization - Trực quan hóa Kiến thức</title>
+    
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tải Babel để biên dịch React JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Ẩn thanh cuộn nhưng vẫn cho phép cuộn */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Hiệu ứng mượt mà cho Iframe */
+        iframe {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen overflow-hidden">
+    <!-- Nơi render giao diện React -->
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState } from 'https://esm.sh/react@18';
+        import { createRoot } from 'https://esm.sh/react-dom@18/client';
+        import { 
+            LayoutDashboard, Database, Network, BrainCircuit, 
+            ChevronRight, Menu, Layers, User
+        } from 'https://esm.sh/lucide-react@0.292.0';
+
+        function KnowledgeHub() {
+            const [isSidebarOpen, setSidebarOpen] = useState(true);
+            
+            // ==========================================
+            // QUẢN LÝ DANH SÁCH MODULE Ở ĐÂY
+            // Để thêm module mới, chỉ cần thêm 1 dòng vào mảng này
+            // ==========================================
+            const menuItems = [
+                { id: 'dashboard', label: 'Tổng quan Hệ thống', icon: LayoutDashboard, path: 'modules/template.html' },
+                { id: 'vector', label: 'AI: Vector Hóa', icon: BrainCircuit, path: 'modules/ai-vector.html' },
+                { id: 'lineage', label: 'SQL Data Lineage', icon: Network, path: 'modules/template.html' }, // Sẽ đổi thành lineage.html sau
+                { id: 'governance', label: 'DMBOK Governance', icon: Database, path: 'modules/template.html' },
+            ];
+
+            // Đặt mặc định hiển thị tab Vector (Vị trí số 1 trong mảng)
+            const [activeMenu, setActiveMenu] = useState(menuItems[1]); 
+
+            return (
+                <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
+                    
+                    {/* --- CỘT TRÁI: SIDEBAR ĐIỀU HƯỚNG --- */}
+                    <aside className={`bg-slate-900 text-slate-300 transition-all duration-300 flex flex-col z-20 shadow-2xl relative ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                        
+                        {/* Logo & Nút Toggle */}
+                        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-slate-950 shrink-0">
+                            {isSidebarOpen && (
+                                <div className="flex items-center gap-2 text-white font-bold text-lg truncate">
+                                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                        <Layers className="w-5 h-5 text-white" />
+                                    </div>
+                                    <span className="tracking-wide text-sm uppercase">Knowledge Hub</span>
+                                </div>
+                            )}
+                            <button 
+                                onClick={() => setSidebarOpen(!isSidebarOpen)} 
+                                className="p-2 hover:bg-slate-800 rounded-lg transition-colors mx-auto shrink-0 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                title="Thu gọn/Mở rộng menu"
+                            >
+                                <Menu className="w-5 h-5 text-slate-400 hover:text-white" />
+                            </button>
+                        </div>
+
+                        {/* Danh sách Menu */}
+                        <nav className="flex-1 py-6 space-y-1 overflow-y-auto scrollbar-hide px-3">
+                            {isSidebarOpen && <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Danh sách Modules</p>}
+                            
+                            {menuItems.map((item) => (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => setActiveMenu(item)}
+                                    className={`w-full flex items-center px-3 py-3 rounded-xl transition-all duration-200 group ${
+                                        activeMenu.id === item.id 
+                                            ? 'bg-indigo-600 text-white shadow-md' 
+                                            : 'hover:bg-slate-800 hover:text-white text-slate-400'
+                                    }`}
+                                >
+                                    <item.icon className={`w-5 h-5 flex-shrink-0 ${isSidebarOpen ? 'mr-3' : 'mx-auto'} ${activeMenu.id === item.id ? 'text-white' : 'group-hover:text-indigo-400'}`} />
+                                    
+                                    {isSidebarOpen && (
+                                        <span className="flex-1 text-left text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                                            {item.label}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </nav>
+
+                        {/* Thông tin User ở đáy Sidebar */}
+                        <div className="p-4 border-t border-slate-800 bg-slate-950/50 shrink-0">
+                            <div className={`flex items-center ${!isSidebarOpen && 'justify-center'}`}>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner ring-2 ring-transparent hover:ring-indigo-400 transition-all cursor-pointer">
+                                    <User className="w-5 h-5" />
+                                </div>
+                                {isSidebarOpen && (
+                                    <div className="ml-3 truncate">
+                                        <p className="text-sm font-semibold text-slate-200 truncate">Administrator</p>
+                                        <p className="text-xs text-slate-500 truncate">Workspace cá nhân</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* --- CỘT PHẢI: KHU VỰC HIỂN THỊ NỘI DUNG (IFRAME) --- */}
+                    <main className="flex-1 flex flex-col h-screen overflow-hidden bg-white relative">
+                        
+                        {/* Thanh Topbar hiển thị tên Module đang chọn */}
+                        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 lg:px-10 shadow-sm z-10 shrink-0">
+                            <div className="flex items-center text-sm text-slate-500">
+                                <span className="hover:text-indigo-600 cursor-pointer">Hệ thống</span>
+                                <ChevronRight className="w-4 h-4 mx-2" />
+                                <span className="font-semibold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full">
+                                    {activeMenu.label}
+                                </span>
+                            </div>
+                        </header>
+
+                        {/* Iframe Nhúng File HTML Con */}
+                        <div className="flex-1 w-full h-full bg-slate-50 relative">
+                            {/* Bạn có thể thêm một hiệu ứng Loading mờ ở đây nếu cần */}
+                            <iframe 
+                                src={activeMenu.path} 
+                                className="absolute inset-0 w-full h-full border-0"
+                                title={activeMenu.label}
+                                // Sandbox giúp tăng tính bảo mật nhưng vẫn cho phép script chạy
+                                sandbox="allow-scripts allow-same-origin allow-popups"
+                            >
+                                Trình duyệt của bạn không hỗ trợ iframe.
+                            </iframe>
+                        </div>
+                    </main>
+
+                </div>
+            );
+        }
+
+        // Khởi chạy ứng dụng
+        const root = createRoot(document.getElementById('root'));
+        root.render(<KnowledgeHub />);
+    </script>
+</body>
+</html>
