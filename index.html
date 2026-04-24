@@ -30,7 +30,7 @@
         import React, { useState } from 'https://esm.sh/react@18';
         import { createRoot } from 'https://esm.sh/react-dom@18/client';
         import { 
-            LayoutDashboard, Database, Network, BrainCircuit, 
+            LayoutDashboard, Blocks, Database, Network, BrainCircuit, 
             ChevronRight, Menu, Layers, User
         } from 'https://esm.sh/lucide-react@0.292.0';
 
@@ -43,7 +43,7 @@
             // ==========================================
             const menuItems = [
                 { id: 'datamodeling', label: 'Data modeling', icon: LayoutDashboard, path: 'modules/data-modeling.html' },
-                { id: 'dbnormalization', label: 'Data normalization', icon: LayoutDashboard, path: 'modules/database-normalization.html' }
+                { id: 'dbnormalization', label: 'Data normalization', icon: Blocks, path: 'modules/database-normalization.html' }
                 { id: 'vector', label: 'AI: Vector Hóa', icon: BrainCircuit, path: 'modules/ai-vector.html' },
                 { id: 'sqlindex', label: 'SQL Index', icon: Network, path: 'modules/sql-index.html' },
                 { id: 'governance', label: 'DMBOK Governance', icon: Database, path: 'https://aihtn2708.github.io/DAMArecapbyaihtn/' },
