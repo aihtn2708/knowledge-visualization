@@ -22,40 +22,193 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+        .dot { transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen overflow-y-auto" x-data="coreConceptsApp()">
 
-    <div class="min-h-screen p-4 md:p-8 max-w-5xl mx-auto" x-cloak>
+    <div class="min-h-screen p-4 md:p-8 max-w-6xl mx-auto" x-cloak>
         
         <div class="mb-8 text-center space-y-4">
             <h1 class="text-3xl md:text-5xl font-extrabold text-indigo-700 flex items-center justify-center gap-3">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z"/><path d="M16 8V5c0-1.1.9-2 2-2"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8"/><circle cx="16" cy="13" r="2"/><circle cx="18" cy="3" r="2"/><circle cx="20" cy="21" r="2"/><circle cx="20" cy="8" r="2"/></svg>
                 AI Concepts Interactive Lab
             </h1>
-            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
-                Experience the core mechanisms powering Enterprise AI applications through visual simulators.
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto">
+                From foundational Machine Learning algorithms to advanced Enterprise AI architectures.
             </p>
         </div>
 
         <div class="mb-8 border-b-2 border-slate-200 flex space-x-2 overflow-x-auto scrollbar-hide pb-[2px]">
+            <button @click="tab = 'foundation'" :class="tab === 'foundation' ? 'border-blue-600 text-blue-700 bg-blue-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                1. AI Foundations
+            </button>
             <button @click="tab = 'tokens'" :class="tab === 'tokens' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> 
-                Context & Tokens
+                2. Tokens & Context
             </button>
             <button @click="tab = 'rag'" :class="tab === 'rag' ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-                RAG Architecture
+                3. RAG Architecture
             </button>
             <button @click="tab = 'agents'" :class="tab === 'agents' ? 'border-orange-600 text-orange-700 bg-orange-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
-                AI Agents
+                4. AI Agents
             </button>
         </div>
 
         <div class="min-h-[500px]">
 
-            <div x-show="tab === 'tokens'" x-transition.opacity.duration.300ms class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+            <div x-show="tab === 'foundation'" x-transition.opacity.duration.300ms class="space-y-6">
+                
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6">1. The AI Hierarchy</h3>
+                    <div class="relative p-6 rounded-xl border-2 border-blue-200 bg-blue-50 text-blue-900 min-h-[280px]">
+                        <div class="font-bold text-lg mb-2">Artificial Intelligence (AI)</div>
+                        <p class="text-sm opacity-80 mb-4">Any technique that enables computers to mimic human intelligence (e.g., rule-based if/then statements, chess engines).</p>
+                        
+                        <div class="absolute bottom-6 right-6 left-6 top-28 p-6 rounded-xl border-2 border-emerald-300 bg-emerald-50 text-emerald-900 transition-all">
+                            <div class="font-bold text-lg mb-2">Machine Learning (ML)</div>
+                            <p class="text-sm opacity-80 mb-4">Algorithms that learn patterns from data without being explicitly programmed to do so.</p>
+                            
+                            <div class="absolute bottom-4 right-4 left-4 top-24 p-4 rounded-xl border-2 border-purple-300 bg-purple-100 text-purple-900 shadow-inner">
+                                <div class="font-bold mb-1">Deep Learning (DL)</div>
+                                <p class="text-xs opacity-80">A subset of ML using multi-layered artificial neural networks. Powers LLMs like ChatGPT.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">2. Types of Machine Learning Algorithms</h3>
+                    <p class="text-sm text-slate-500 mb-6">How do algorithms actually learn? Choose a paradigm below.</p>
+
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
+                        <button @click="mlType = 'supervised'" :class="mlType === 'supervised' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="p-3 rounded-lg font-bold transition">Supervised</button>
+                        <button @click="mlType = 'unsupervised'" :class="mlType === 'unsupervised' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="p-3 rounded-lg font-bold transition">Unsupervised</button>
+                        <button @click="mlType = 'rl'" :class="mlType === 'rl' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" class="p-3 rounded-lg font-bold transition">Reinforcement</button>
+                    </div>
+
+                    <div x-show="mlType === 'supervised'" class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 min-h-[250px]">
+                        <h4 class="font-bold text-indigo-800 mb-2">Supervised Learning (Classification / Prediction)</h4>
+                        <p class="text-sm text-indigo-600 mb-6">The AI is trained on data that already has "answers" (labels). <br/><strong>Task:</strong> Build an email spam filter.</p>
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex-1 bg-white p-4 rounded shadow-sm border border-slate-200">
+                                <div class="text-sm font-bold text-slate-500 mb-3">Incoming Email Contains:</div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button @click="spamWords.urgent = !spamWords.urgent" :class="spamWords.urgent ? 'bg-red-100 border-red-500 text-red-700' : 'bg-slate-100 border-slate-300 text-slate-500'" class="px-3 py-1 rounded-full border text-sm font-bold transition">"Urgent"</button>
+                                    <button @click="spamWords.money = !spamWords.money" :class="spamWords.money ? 'bg-red-100 border-red-500 text-red-700' : 'bg-slate-100 border-slate-300 text-slate-500'" class="px-3 py-1 rounded-full border text-sm font-bold transition">"Money"</button>
+                                    <button @click="spamWords.meeting = !spamWords.meeting" :class="spamWords.meeting ? 'bg-green-100 border-green-500 text-green-700' : 'bg-slate-100 border-slate-300 text-slate-500'" class="px-3 py-1 rounded-full border text-sm font-bold transition">"Meeting"</button>
+                                    <button @click="spamWords.report = !spamWords.report" :class="spamWords.report ? 'bg-green-100 border-green-500 text-green-700' : 'bg-slate-100 border-slate-300 text-slate-500'" class="px-3 py-1 rounded-full border text-sm font-bold transition">"Report"</button>
+                                </div>
+                            </div>
+                            <div class="flex-1 bg-white p-4 rounded shadow-sm border border-slate-200 flex flex-col items-center justify-center">
+                                <div class="text-sm font-bold text-slate-500 mb-1">AI Prediction:</div>
+                                <div class="text-3xl font-extrabold" :class="spamScore > 0 ? 'text-red-500' : 'text-green-500'" x-text="spamScore > 0 ? '🚨 SPAM' : '✅ SAFE'"></div>
+                                <div class="text-xs text-slate-400 mt-2">Because history shows these words heavily correlate with <span x-text="spamScore > 0 ? 'Spam' : 'Safe emails'"></span>.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="mlType === 'unsupervised'" style="display: none;" class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 min-h-[250px]">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 class="font-bold text-indigo-800 mb-1">Unsupervised Learning (Clustering)</h4>
+                                <p class="text-sm text-indigo-600">The AI is given raw data with NO labels and must find hidden structures (e.g. Customer Segmentation).</p>
+                            </div>
+                            <button @click="clusterData()" class="bg-indigo-600 text-white px-4 py-2 rounded shadow font-bold text-sm hover:bg-indigo-700">Find Clusters</button>
+                        </div>
+                        <div class="w-full h-48 bg-white rounded border border-slate-200 relative overflow-hidden">
+                            <template x-for="dot in dots">
+                                <div class="absolute w-3 h-3 rounded-full dot opacity-80" 
+                                     :class="dot.color"
+                                     :style="`left: ${dot.x}%; top: ${dot.y}%;`"></div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div x-show="mlType === 'rl'" style="display: none;" class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 min-h-[250px]">
+                        <h4 class="font-bold text-indigo-800 mb-2">Reinforcement Learning</h4>
+                        <p class="text-sm text-indigo-600 mb-6">The AI learns by trial and error, aiming to maximize a "Reward". This trains autonomous agents and game bots.</p>
+                        <div class="flex items-center justify-center gap-4">
+                            <div class="flex gap-2 p-2 bg-white rounded-lg shadow-inner">
+                                <template x-for="i in 5">
+                                    <div class="w-12 h-12 border-2 border-slate-200 rounded flex items-center justify-center text-2xl relative" :class="i === 5 ? 'bg-yellow-50' : ''">
+                                        <span x-show="i === 5">🏆</span>
+                                        <span x-show="rlStep === i" x-transition class="absolute">🤖</span>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="space-y-2 text-center">
+                                <button @click="stepRL()" class="bg-orange-500 text-white px-4 py-2 rounded shadow font-bold hover:bg-orange-600 block w-full">Take Action</button>
+                                <div class="text-sm font-bold text-slate-700 bg-white px-3 py-1 rounded shadow-sm border border-slate-200">
+                                    Score: <span :class="rlScore > 0 ? 'text-green-600' : 'text-slate-500'" x-text="rlScore"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">3. Deep Learning (Neural Networks)</h3>
+                    <p class="text-sm text-slate-500 mb-6">Deep Learning uses multiple "hidden layers" of artificial neurons to process complex inputs (like images or language) into an output.</p>
+                    
+                    <div class="grid md:grid-cols-4 gap-6">
+                        <div class="col-span-1 space-y-4">
+                            <label class="font-bold text-sm text-slate-700 block">Complexity of Input Data:</label>
+                            <input type="range" min="1" max="3" x-model.number="nnComplexity" class="w-full accent-purple-600">
+                            <div class="text-xs text-slate-400">
+                                <span x-show="nnComplexity === 1">Simple (Numbers)</span>
+                                <span x-show="nnComplexity === 2" style="display: none;">Moderate (Audio)</span>
+                                <span x-show="nnComplexity === 3" style="display: none;">Complex (Language/Images)</span>
+                            </div>
+                        </div>
+                        <div class="col-span-3 bg-slate-900 rounded-xl p-6 flex justify-between items-center min-h-[160px] relative">
+                            <div class="flex flex-col gap-2 z-10">
+                                <div class="text-xs text-slate-400 text-center mb-2">Input Layer</div>
+                                <template x-for="i in 3">
+                                    <div class="w-6 h-6 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+                                </template>
+                            </div>
+
+                            <div class="flex flex-col gap-2 z-10 transition-opacity duration-500" :class="nnComplexity >= 1 ? 'opacity-100' : 'opacity-20'">
+                                <div class="text-xs text-purple-400 text-center mb-2">Hidden L1</div>
+                                <template x-for="i in 4">
+                                    <div class="w-6 h-6 rounded-full bg-purple-500" :class="nnComplexity >= 1 ? 'shadow-[0_0_15px_rgba(168,85,247,0.8)]' : ''"></div>
+                                </template>
+                            </div>
+
+                            <div class="flex flex-col gap-2 z-10 transition-opacity duration-500" :class="nnComplexity >= 2 ? 'opacity-100' : 'opacity-20'">
+                                <div class="text-xs text-purple-400 text-center mb-2">Hidden L2</div>
+                                <template x-for="i in 5">
+                                    <div class="w-6 h-6 rounded-full bg-purple-500" :class="nnComplexity >= 2 ? 'shadow-[0_0_15px_rgba(168,85,247,0.8)]' : ''"></div>
+                                </template>
+                            </div>
+
+                            <div class="flex flex-col gap-2 z-10 transition-opacity duration-500" :class="nnComplexity >= 3 ? 'opacity-100' : 'opacity-20'">
+                                <div class="text-xs text-purple-400 text-center mb-2">Hidden L3</div>
+                                <template x-for="i in 4">
+                                    <div class="w-6 h-6 rounded-full bg-purple-500" :class="nnComplexity >= 3 ? 'shadow-[0_0_15px_rgba(168,85,247,0.8)]' : ''"></div>
+                                </template>
+                            </div>
+
+                            <div class="flex flex-col gap-2 z-10">
+                                <div class="text-xs text-emerald-400 text-center mb-2">Output</div>
+                                <div class="w-8 h-8 rounded-full bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,1)] border-2 border-white flex items-center justify-center text-white font-bold">✔</div>
+                            </div>
+
+                            <svg class="absolute inset-0 w-full h-full opacity-30 pointer-events-none">
+                                <path d="M 50 80 Q 200 80 400 80" stroke="#a855f7" stroke-width="1" fill="none"/>
+                                <path d="M 50 40 L 400 120" stroke="#a855f7" stroke-width="1" fill="none"/>
+                                <path d="M 50 120 L 400 40" stroke="#a855f7" stroke-width="1" fill="none"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="tab === 'tokens'" style="display: none;" x-transition.opacity.duration.300ms class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
@@ -213,9 +366,55 @@
     <script>
         function coreConceptsApp() {
             return {
-                tab: 'tokens',
+                tab: 'foundation', // Starts on the new Foundation tab
                 
-                // --- Token Simulator Data ---
+                // --- 1. Foundation Data ---
+                mlType: 'supervised', // supervised, unsupervised, rl
+                nnComplexity: 1,
+                
+                // Supervised State
+                spamWords: { urgent: false, money: true, meeting: false, report: false },
+                get spamScore() {
+                    let score = 0;
+                    if (this.spamWords.urgent) score += 1;
+                    if (this.spamWords.money) score += 2;
+                    if (this.spamWords.meeting) score -= 1;
+                    if (this.spamWords.report) score -= 1;
+                    return score;
+                },
+
+                // Unsupervised State (Random dots on a grid)
+                dots: Array.from({length: 40}, () => ({
+                    x: Math.floor(Math.random() * 90) + 5,
+                    y: Math.floor(Math.random() * 90) + 5,
+                    color: 'bg-slate-300'
+                })),
+                clusterData() {
+                    // Simulates K-Means clustering visually
+                    this.dots = this.dots.map(dot => {
+                        let c = 'bg-red-400';
+                        if (dot.x > 50 && dot.y > 50) c = 'bg-blue-400';
+                        else if (dot.x <= 50 && dot.y <= 50) c = 'bg-emerald-400';
+                        return { ...dot, color: c };
+                    });
+                },
+
+                // RL State
+                rlStep: 1,
+                rlScore: 0,
+                stepRL() {
+                    if (this.rlStep < 5) {
+                        this.rlStep++;
+                        if (this.rlStep === 5) this.rlScore += 10;
+                        else this.rlScore -= 1; // minor penalty for steps taken
+                    } else {
+                        // Reset
+                        this.rlStep = 1;
+                        this.rlScore = 0;
+                    }
+                },
+
+                // --- 2. Token Simulator Data ---
                 text: "Enterprise AI systems use Large Language Models (LLMs) to process vast amounts of unstructured data. Context limits are important!",
                 limit: 25,
                 get tokens() {
@@ -232,7 +431,7 @@
                     return t;
                 },
 
-                // --- RAG Simulator Data ---
+                // --- 3. RAG Simulator Data ---
                 ragStep: 0,
                 runRag() {
                     this.ragStep = 0;
@@ -241,7 +440,7 @@
                     setTimeout(() => this.ragStep = 3, 3500);
                 },
 
-                // --- Agent Simulator Data ---
+                // --- 4. Agent Simulator Data ---
                 agentStep: 0,
                 runAgent() {
                     this.agentStep = 0;
