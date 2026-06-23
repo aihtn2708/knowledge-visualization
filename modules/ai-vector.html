@@ -4,524 +4,328 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mô Phỏng Vector Hóa Trong AI</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        @keyframes slideInFade {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-in {
-            animation: slideInFade 0.5s ease-out forwards;
-        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-slate-50">
-    <div id="root"></div>
+<body class="bg-slate-50 text-slate-800 font-sans" x-data="vectorSimulation()">
 
-    <script type="text/babel">
-        // 1. Lấy React từ biến toàn cục (thay vì dùng lệnh import)
-        const { useState, useEffect } = React;
-        const { createRoot } = ReactDOM;
+<div class="min-h-screen p-4 md:p-8 max-w-5xl mx-auto">
+    <div class="mb-8 text-center space-y-4">
+        <h1 class="text-3xl md:text-5xl font-extrabold text-indigo-700 flex items-center justify-center gap-3">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z"/><path d="M16 8V5c0-1.1.9-2 2-2"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8"/><circle cx="16" cy="13" r="2"/><circle cx="18" cy="3" r="2"/><circle cx="20" cy="21" r="2"/><circle cx="20" cy="8" r="2"/></svg>
+            Giải Mã "Vector Hóa" Trong AI
+        </h1>
+        <p class="text-lg text-slate-600 max-w-3xl mx-auto">
+            Máy tính không hiểu hình ảnh hay ngôn từ, chúng chỉ hiểu <strong>các con số</strong>.
+            Khám phá cách AI dùng các tọa độ số để hiểu thế giới qua mô phỏng dưới đây!
+        </p>
+    </div>
 
-        // 2. Định nghĩa các Icon trực tiếp
-        const Icon = ({ path, className }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{__html: path}} />
-        );
-        
-        const Sparkles = (p) => <Icon path='<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>' {...p} />;
-        const Navigation = (p) => <Icon path='<polygon points="3 11 22 2 13 21 11 13 3 11"/>' {...p} />;
-        const BrainCircuit = (p) => <Icon path='<path d="M12 4.5a2.5 2.5 0 0 0-4.96-.46 2.5 2.5 0 0 0-1.98 3 2.5 2.5 0 0 0-1.32 4.24 3 3 0 0 0 .34 5.58 2.5 2.5 0 0 0 2.96 3.08 2.5 2.5 0 0 0 4.91.05L12 20V4.5Z"/><path d="M16 8V5c0-1.1.9-2 2-2"/><path d="M12 13h4"/><path d="M12 18h6a2 2 0 0 1 2 2v1"/><path d="M12 8h8"/><circle cx="16" cy="13" r="2"/><circle cx="18" cy="3" r="2"/><circle cx="20" cy="21" r="2"/><circle cx="20" cy="8" r="2"/>' {...p} />;
-        const Layers = (p) => <Icon path='<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>' {...p} />;
-        const BookOpen = (p) => <Icon path='<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' {...p} />;
-        const Lightbulb = (p) => <Icon path='<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>' {...p} />;
-        const ImageIcon = (p) => <Icon path='<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>' {...p} />;
-        const MessageSquare = (p) => <Icon path='<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>' {...p} />;
-        const ShoppingCart = (p) => <Icon path='<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>' {...p} />;
-        const Calculator = (p) => <Icon path='<rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>' {...p} />;
-        const MousePointerClick = (p) => <Icon path='<path d="M14 4.1 12 6"/><path d="m5.1 8-2.9-.8"/><path d="m6 12-1.9 2"/><path d="M7.2 2.2 8 5.1"/><path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/>' {...p} />;
-        const Heart = (p) => <Icon path='<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>' {...p} />;
-        const X = (p) => <Icon path='<path d="M18 6 6 18"/><path d="m6 6 12 12"/>' {...p} />;
-        const ArrowRight = (p) => <Icon path='<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>' {...p} />;
-        const RotateCcw = (p) => <Icon path='<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>' {...p} />;
+    <div class="mb-8 border-b-2 border-slate-200 flex space-x-2 overflow-x-auto scrollbar-hide pb-[2px]">
+        <button @click="tab = 'simulation'" :class="tab === 'simulation' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
+            📍 Mô phỏng 2D
+        </button>
+        <button @click="tab = 'concept'" :class="tab === 'concept' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
+            📖 Khái niệm Cốt lõi
+        </button>
+        <button @click="tab = 'examples'" :class="tab === 'examples' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50' : 'border-transparent text-slate-500 hover:bg-slate-100'" class="flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 rounded-t-lg -mb-[2px]">
+            💡 Ví dụ Thực tế
+        </button>
+    </div>
 
-        const ITEMS = [
-            { id: 1, name: "Trà sữa", icon: "🧋", x: 85, y: 75, color: "bg-orange-100" },
-            { id: 2, name: "Cà phê đen nóng", icon: "☕", x: 5, y: 10, color: "bg-stone-200" },
-            { id: 3, name: "Kem tươi", icon: "🍦", x: 95, y: 95, color: "bg-pink-100" },
-            { id: 4, name: "Trà đá", icon: "🧊", x: 10, y: 85, color: "bg-blue-100" },
-            { id: 5, name: "Bánh ngọt", icon: "🍰", x: 90, y: 15, color: "bg-yellow-100" },
-            { id: 6, name: "Nước lọc", icon: "💧", x: 0, y: 50, color: "bg-cyan-50" },
-            { id: 7, name: "Súp nóng", icon: "🥣", x: 15, y: 5, color: "bg-red-100" },
-            { id: 8, name: "Sinh tố đá xay", icon: "🥤", x: 70, y: 90, color: "bg-green-100" }
-        ];
+    <div>
+        <div x-show="tab === 'simulation'" x-transition class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div class="md:col-span-5 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center">1</span>
+                        Tạo Vector Của Bạn
+                    </h2>
+                    <p class="text-sm text-slate-500 mb-6">Hãy điều chỉnh thông số. Máy tính sẽ ghi nhận món của bạn dưới dạng <strong class="text-indigo-600">Vector 2 chiều</strong>.</p>
 
-        const NLPExample = () => {
-            const [eqIdx, setEqIdx] = useState(0);
-            const equations = [
-                { a: "Vua", b: "Đàn Ông", c: "Phụ Nữ", res: "Nữ Hoàng", color: "text-amber-600" },
-                { a: "Paris", b: "Pháp", c: "Việt Nam", res: "Hà Nội", color: "text-rose-600" },
-                { a: "Mùa Hè", b: "Nóng", c: "Lạnh", res: "Mùa Đông", color: "text-sky-600" }
-            ];
-
-            const current = equations[eqIdx];
-
-            return (
-                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-center">
-                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <MessageSquare className="w-8 h-8" />
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <label class="font-semibold text-slate-700">🍬 Độ Ngọt (Trục X)</label>
+                                <span class="font-mono font-bold text-indigo-600 w-8 text-right" x-text="userX"></span>
+                            </div>
+                            <input type="range" min="0" max="100" x-model.number="userX" class="w-full accent-indigo-600">
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <label class="font-semibold text-slate-700">❄️ Độ Lạnh (Trục Y)</label>
+                                <span class="font-mono font-bold text-sky-600 w-8 text-right" x-text="userY"></span>
+                            </div>
+                            <input type="range" min="0" max="100" x-model.number="userY" class="w-full accent-sky-500">
+                        </div>
                     </div>
-                    <div className="flex-1 w-full">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">1. AI Ngôn ngữ (ChatGPT làm toán với chữ)</h3>
-                        <p className="text-slate-600 mb-4 text-sm">
-                        Thay vì hiểu nghĩa, ChatGPT chuyển các từ thành vector tọa độ. Nhờ vậy, nó có thể làm phép cộng trừ ngôn ngữ y như làm toán!
+
+                    <div class="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                        <p class="text-sm text-slate-600 text-center">Món của bạn đã được AI biến thành Vector:</p>
+                        <div class="text-2xl font-mono text-center font-bold text-slate-800 mt-2">V = [<span x-text="userX"></span>, <span x-text="userY"></span>]</div>
+                    </div>
+                </div>
+
+                <div class="bg-indigo-50 p-6 rounded-2xl shadow-sm border border-indigo-100">
+                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-900">
+                        ✨ Kết Quả AI Gợi Ý
+                    </h2>
+                    <div x-show="closestItem" class="text-center space-y-3">
+                        <div class="text-6xl my-4" x-text="closestItem?.icon"></div>
+                        <p class="text-slate-700">Khoảng cách ngắn nhất! Món của bạn giống với:</p>
+                        <div class="text-2xl font-extrabold text-indigo-700" x-text="closestItem?.name"></div>
+                        <p class="text-sm font-mono bg-white inline-block px-3 py-1 rounded-full shadow-sm">
+                            Vector: [<span x-text="closestItem?.x"></span>, <span x-text="closestItem?.y"></span>]
                         </p>
-                        <div className="bg-slate-50 p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col items-center">
-                        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 font-mono font-bold text-lg md:text-xl">
-                            <span className="bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-200">{current.a}</span>
-                            <span className="text-slate-400">-</span>
-                            <span className="bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-200">{current.b}</span>
-                            <span className="text-slate-400">+</span>
-                            <span className="bg-white px-3 py-2 rounded-lg shadow-sm border border-slate-200">{current.c}</span>
-                            <span className="text-slate-400">=</span>
-                            <span className={`bg-indigo-50 px-4 py-2 rounded-lg shadow-md border-b-4 border-indigo-200 ${current.color} animate-bounce`}>
-                            {current.res}
-                            </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="md:col-span-7 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                <h2 class="text-xl font-bold mb-2 flex items-center gap-2">
+                    <span class="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center">2</span>
+                    Không Gian Vector
+                </h2>
+                <p class="text-sm text-slate-500 mb-6">AI tìm món giống nhau bằng cách dùng thước đo xem 2 điểm nào ở gần nhau nhất trên bản đồ.</p>
+
+                <div class="relative w-full flex-grow min-h-[400px] bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden mt-2">
+                    <div class="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-20 pointer-events-none">
+                        <template x-for="i in 100"><div class="border-r border-b border-slate-400"></div></template>
+                    </div>
+
+                    <template x-for="item in items" :key="item.id">
+                        <div class="absolute w-10 h-10 -ml-5 -mb-5 flex flex-col items-center justify-center transition-all duration-300 group z-10"
+                             :style="`left: ${item.x}%; bottom: ${item.y}%;`">
+                            <div class="text-2xl hover:scale-125 transition-transform cursor-help bg-white/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-sm"
+                                 :class="closestItem?.id === item.id ? 'ring-4 ring-indigo-300 ring-offset-2' : ''"
+                                 x-text="item.icon">
+                            </div>
+                            <div class="absolute bottom-full mb-1 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20">
+                                <span x-text="item.name"></span> [<span x-text="item.x"></span>, <span x-text="item.y"></span>]
+                            </div>
                         </div>
-                        <button 
-                            onClick={() => setEqIdx((prev) => (prev + 1) % equations.length)}
-                            className="mt-6 flex items-center gap-2 text-sm font-semibold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100 transition"
-                        >
-                            <RotateCcw className="w-4 h-4" /> Thử ví dụ khác
-                        </button>
+                    </template>
+
+                    <div class="absolute w-12 h-12 -ml-6 -mb-6 flex items-center justify-center transition-all duration-100 ease-out z-20"
+                         :style="`left: ${userX}%; bottom: ${userY}%;`">
+                        <div class="relative">
+                            <div class="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-75"></div>
+                            <div class="relative w-8 h-8 bg-indigo-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-sm font-bold">Bạn</div>
+                        </div>
+                    </div>
+
+                    <svg class="absolute inset-0 w-full h-full pointer-events-none">
+                        <line x-show="closestItem"
+                              :x1="`${userX}%`" :y1="`${100 - userY}%`"
+                              :x2="`${closestItem?.x}%`" :y2="`${100 - closestItem?.y}%`"
+                              stroke="#6366f1" stroke-width="2" stroke-dasharray="6,6" class="animate-pulse"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="tab === 'concept'" style="display: none;" x-transition class="space-y-8">
+             <div class="grid md:grid-cols-3 gap-6">
+                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                     <h3 class="text-xl font-bold text-slate-800 mb-2">1. Vector là gì?</h3>
+                     <p class="text-slate-600 text-sm mb-4">Thay vì đọc chữ "Quả Táo", AI đọc các con số. Thử tạo vector:</p>
+                     <div class="space-y-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm flex-grow">
+                         <div class="flex items-center gap-2"><span class="w-16">🔴 Đỏ</span><input type="range" x-model.number="traits.color" class="flex-1 accent-red-500"></div>
+                         <div class="flex items-center gap-2"><span class="w-16">🍬 Ngọt</span><input type="range" x-model.number="traits.sweet" class="flex-1 accent-pink-500"></div>
+                         <div class="flex items-center gap-2"><span class="w-16">📏 Cỡ</span><input type="range" x-model.number="traits.size" class="flex-1 accent-amber-500"></div>
+                     </div>
+                     <div class="bg-blue-50 p-3 rounded-lg text-sm font-mono border border-blue-100 text-center">
+                         Vector = <br>
+                         <span class="text-lg font-bold text-blue-700">[<span x-text="(traits.color/100).toFixed(1)"></span>, <span x-text="(traits.sweet/100).toFixed(1)"></span>, <span x-text="(traits.size/100).toFixed(1)"></span>]</span>
+                     </div>
+                 </div>
+
+                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                     <h3 class="text-xl font-bold text-slate-800 mb-2">2. "Số chiều" là gì?</h3>
+                     <p class="text-slate-600 text-sm mb-4">Càng nhiều tiêu chí (nhiều chiều), AI phân biệt càng chính xác.</p>
+                     <div class="relative flex-grow bg-slate-50 border border-slate-200 rounded-lg p-2 min-h-[140px] flex items-center justify-center overflow-hidden">
+                         <div class="absolute text-2xl transition-all duration-700" :style="`left: 30%; bottom: ${is2D ? '20%' : '40%'}`">🐶</div>
+                         <div class="absolute text-2xl transition-all duration-700" :style="`left: 40%; bottom: ${is2D ? '80%' : '40%'}`">🐺</div>
+                         <div class="absolute left-4 right-4 bottom-[40%] h-0.5 bg-slate-300"><span class="absolute -bottom-4 right-0 text-[10px] text-slate-400">Kích thước (X)</span></div>
+                         <div class="absolute left-[10%] top-4 bottom-4 w-0.5 bg-slate-300 transition-opacity duration-500" :class="is2D ? 'opacity-100' : 'opacity-0'"><span class="absolute -top-4 -left-4 text-[10px] text-slate-400 whitespace-nowrap">Hoang dã (Y)</span></div>
+                     </div>
+                     <button @click="is2D = !is2D" class="mt-4 w-full py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold" x-text="is2D ? 'Quay về 1 Chiều' : 'Thêm Chiều 2'"></button>
+                 </div>
+
+                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                     <h3 class="text-xl font-bold text-slate-800 mb-2">3. Khoảng cách</h3>
+                     <p class="text-slate-600 text-sm mb-4">Nhấp vào lưới để xem AI tính khoảng cách hình học:</p>
+                     <div class="relative flex-grow w-full aspect-square max-h-[160px] bg-slate-50 border-2 border-slate-200 rounded-lg cursor-crosshair overflow-hidden mx-auto" @click="handleGridClick">
+                         <div class="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-10 pointer-events-none">
+                             <template x-for="i in 100"><div class="border-r border-b border-slate-800"></div></template>
+                         </div>
+                         <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                             <line :x1="origin.x * 10" :y1="100 - origin.y * 10" :x2="target.x * 10" :y2="100 - origin.y * 10" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,2"/>
+                             <line :x1="target.x * 10" :y1="100 - origin.y * 10" :x2="target.x * 10" :y2="100 - target.y * 10" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,2"/>
+                             <line :x1="origin.x * 10" :y1="100 - origin.y * 10" :x2="target.x * 10" :y2="100 - target.y * 10" stroke="#10b981" stroke-width="2"/>
+                         </svg>
+                         <div class="absolute w-3 h-3 bg-blue-500 rounded-full -ml-[6px] -mb-[6px]" :style="`left: ${origin.x*10}%; bottom: ${origin.y*10}%`"></div>
+                         <div class="absolute w-3 h-3 bg-emerald-500 rounded-full -ml-[6px] -mb-[6px] transition-all" :style="`left: ${target.x*10}%; bottom: ${target.y*10}%`"></div>
+                     </div>
+                     <div class="mt-4 bg-emerald-50 p-2 rounded-lg text-xs font-mono text-center">
+                         K/cách = √(<span x-text="Math.abs(dx)"></span>² + <span x-text="Math.abs(dy)"></span>²) = <span class="font-bold text-sm text-emerald-700" x-text="dist"></span>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+        <div x-show="tab === 'examples'" style="display: none;" x-transition class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">1. AI Ngôn ngữ (Toán học với chữ)</h3>
+                <p class="text-slate-600 mb-4 text-sm">ChatGPT làm phép cộng trừ ngôn ngữ nhờ tọa độ Vector!</p>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col items-center">
+                    <div class="flex flex-wrap items-center justify-center gap-2 font-mono font-bold text-lg">
+                        <span class="bg-white px-3 py-2 rounded-lg shadow-sm" x-text="currentEq.a"></span>
+                        <span class="text-slate-400">-</span>
+                        <span class="bg-white px-3 py-2 rounded-lg shadow-sm" x-text="currentEq.b"></span>
+                        <span class="text-slate-400">+</span>
+                        <span class="bg-white px-3 py-2 rounded-lg shadow-sm" x-text="currentEq.c"></span>
+                        <span class="text-slate-400">=</span>
+                        <span class="bg-indigo-50 px-4 py-2 rounded-lg shadow-md border-b-4 border-indigo-200 animate-bounce" :class="currentEq.color" x-text="currentEq.res"></span>
+                    </div>
+                    <button @click="eqIdx = (eqIdx + 1) % equations.length" class="mt-6 text-sm font-semibold text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full hover:bg-indigo-100">Thử ví dụ khác</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">2. Thị giác Máy tính (Ảnh -> Vector)</h3>
+                <div class="flex flex-col md:flex-row items-center gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div>
+                        <p class="text-xs font-bold text-slate-400 mb-2 text-center">Click để vẽ pixel</p>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-300 p-1 rounded-lg cursor-pointer shadow-inner">
+                            <template x-for="(val, idx) in pixels">
+                                <div @click="togglePixel(idx)" class="w-12 h-12 rounded-sm transition-colors" :class="val === 1 ? 'bg-slate-800' : 'bg-white'"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex-1 w-full overflow-hidden">
+                        <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Vector hình ảnh mà AI đọc:</p>
+                        <div class="bg-slate-800 text-emerald-400 font-mono p-4 rounded-lg break-all">
+                            [<span x-text="pixelVector"></span>]
                         </div>
                     </div>
                 </div>
-            );
-        };
-
-        const VisionExample = () => {
-            const [pixels, setPixels] = useState([0, 0, 0,  0, 1, 0,  0, 0, 0]);
-
-            const togglePixel = (idx) => {
-                const newPixels = [...pixels];
-                newPixels[idx] = newPixels[idx] === 0 ? 1 : 0;
-                setPixels(newPixels);
-            };
-
-            return (
-                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-center">
-                    <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="w-8 h-8" />
+            </div>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 mb-2">3. Gợi ý nội dung (Tiktok / Shopee)</h3>
+                <div class="flex flex-col md:flex-row items-center gap-6">
+                    <div class="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center w-full md:w-1/2">
+                        <div class="text-5xl mb-2" x-text="currentVideo.icon"></div>
+                        <div class="font-bold text-slate-800 mb-4" x-text="currentVideo.title"></div>
+                        <div class="flex justify-center gap-4">
+                            <button @click="handleAction(false)" class="w-12 h-12 rounded-full bg-slate-200 hover:bg-slate-300 text-xl transition-colors">❌</button>
+                            <button @click="handleAction(true)" class="w-12 h-12 rounded-full bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white text-xl transition-colors">❤️</button>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2">Lướt hoặc Thả tim</p>
                     </div>
-                    <div className="flex-1 w-full">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">2. Thị giác Máy tính (FaceID, Xe tự lái)</h3>
-                        <p className="text-slate-600 mb-4 text-sm">
-                        Máy tính không "nhìn" thấy hình ảnh. Nó trải phẳng lưới điểm ảnh (pixel) thành một mảng các con số trải dài. <strong className="text-emerald-600">Hãy click vào các ô vuông bên dưới để vẽ!</strong>
-                        </p>
-                        <div className="flex flex-col md:flex-row items-center gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <div className="relative group">
-                            <div className="absolute -top-3 -left-3 bg-emerald-500 text-white text-[10px] px-2 py-1 rounded-full animate-pulse flex items-center gap-1 z-10">
-                            <MousePointerClick className="w-3 h-3" /> Click để vẽ
-                            </div>
-                            <div className="grid grid-cols-3 gap-1 bg-slate-300 p-1 rounded-lg">
-                            {pixels.map((val, idx) => (
-                                <div 
-                                key={idx}
-                                onClick={() => togglePixel(idx)}
-                                className={`w-12 h-12 rounded-sm cursor-pointer transition-colors duration-200 ${val === 1 ? 'bg-slate-800' : 'bg-white'}`}
-                                ></div>
-                            ))}
-                            </div>
+                    <div class="w-full md:w-1/2 space-y-4">
+                        <p class="text-sm font-bold text-slate-500">Vector Sở thích của bạn:</p>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-amber-600 mb-1"><span>Hài hước</span><span x-text="userVector.comedy + '%'"></span></div>
+                            <div class="h-3 w-full bg-slate-200 rounded-full"><div class="h-full bg-amber-500 transition-all duration-300" :style="`width: ${userVector.comedy}%`"></div></div>
                         </div>
-                        <ArrowRight className="hidden md:block w-8 h-8 text-slate-300" />
-                        <div className="flex-1 w-full overflow-hidden">
-                            <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Vector hình ảnh mà AI nhận được:</p>
-                            <div className="bg-slate-800 text-emerald-400 font-mono text-sm md:text-base p-4 rounded-lg break-all">
-                            [{pixels.map(p => p === 1 ? '255' : '  0').join(', ')}]
-                            </div>
-                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-blue-600 mb-1"><span>Học thuật</span><span x-text="userVector.education + '%'"></span></div>
+                            <div class="h-3 w-full bg-slate-200 rounded-full"><div class="h-full bg-blue-500 transition-all duration-300" :style="`width: ${userVector.education}%`"></div></div>
                         </div>
                     </div>
                 </div>
-            );
-        };
+            </div>
+        </div>
 
-        const RecSysExample = () => {
-            const [userVector, setUserVector] = useState({ comedy: 50, education: 50 });
-            const [itemIdx, setItemIdx] = useState(0);
+    </div>
+</div>
 
-            const mockVideos = [
-                { title: "Mèo trượt ngã hài hước", type: "comedy", icon: "😹" },
-                { title: "Học Toán siêu nhanh", type: "education", icon: "📐" },
-                { title: "Hài độc thoại cuối tuần", type: "comedy", icon: "🎤" },
-                { title: "Lịch sử thế giới 5 phút", type: "education", icon: "🌍" },
-            ];
+<script>
+    function vectorSimulation() {
+        return {
+            tab: 'simulation',
+            
+            // DỮ LIỆU TAB 1: BẢN ĐỒ VECTOR
+            userX: 50,
+            userY: 50,
+            items: [
+                { id: 1, name: "Trà sữa", icon: "🧋", x: 85, y: 75 },
+                { id: 2, name: "Cà phê", icon: "☕", x: 5, y: 10 },
+                { id: 3, name: "Kem tươi", icon: "🍦", x: 95, y: 95 },
+                { id: 4, name: "Trà đá", icon: "🧊", x: 10, y: 85 },
+                { id: 5, name: "Bánh ngọt", icon: "🍰", x: 90, y: 15 },
+                { id: 6, name: "Nước lọc", icon: "💧", x: 0, y: 50 },
+                { id: 7, name: "Súp nóng", icon: "🥣", x: 15, y: 5 },
+                { id: 8, name: "Sinh tố", icon: "🥤", x: 70, y: 90 }
+            ],
+            get closestItem() {
+                let minDistance = Infinity;
+                let closest = null;
+                this.items.forEach(item => {
+                    const d = Math.sqrt(Math.pow(item.x - this.userX, 2) + Math.pow(item.y - this.userY, 2));
+                    if (d < minDistance) {
+                        minDistance = d;
+                        closest = item;
+                    }
+                });
+                return closest;
+            },
 
-            const handleAction = (isLike) => {
-                const currentVideo = mockVideos[itemIdx];
-                if (isLike) {
-                setUserVector(prev => ({
-                    comedy: currentVideo.type === 'comedy' ? Math.min(100, prev.comedy + 15) : Math.max(0, prev.comedy - 5),
-                    education: currentVideo.type === 'education' ? Math.min(100, prev.education + 15) : Math.max(0, prev.education - 5),
-                }));
-                }
-                setItemIdx((prev) => (prev + 1) % mockVideos.length);
-            };
-
-            return (
-                <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-6 items-center">
-                    <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <ShoppingCart className="w-8 h-8" />
-                    </div>
-                    <div className="flex-1 w-full">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">3. Thuật toán Gợi ý (Tiktok, Shopee)</h3>
-                        <p className="text-slate-600 mb-4 text-sm">
-                        Mỗi khi bạn "Thả tim", thuật toán sẽ cập nhật <strong className="text-orange-600">Vector Sở Thích</strong> của bạn dịch chuyển lại gần loại nội dung đó hơn. Thử tương tác nhé!
-                        </p>
-                        <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
-                            <div className="text-5xl mb-2">{mockVideos[itemIdx].icon}</div>
-                            <div className="font-bold text-slate-800 mb-4">{mockVideos[itemIdx].title}</div>
-                            <div className="flex justify-center gap-4">
-                            <button onClick={() => handleAction(false)} className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors">
-                                <X className="w-6 h-6" />
-                            </button>
-                            <button onClick={() => handleAction(true)} className="w-12 h-12 rounded-full bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white flex items-center justify-center transition-colors shadow-sm">
-                                <Heart className="w-6 h-6" />
-                            </button>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-3">Lướt hoặc Thả tim</p>
-                        </div>
-                        <div className="flex flex-col justify-center space-y-4">
-                            <p className="text-sm font-bold text-slate-500 mb-1">Tọa độ Sở thích của bạn:</p>
-                            <div>
-                            <div className="flex justify-between text-xs font-bold text-amber-600 mb-1">
-                                <span>😹 Hài hước</span>
-                                <span>{userVector.comedy}%</span>
-                            </div>
-                            <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-amber-500 transition-all duration-300" style={{ width: `${userVector.comedy}%` }}></div>
-                            </div>
-                            </div>
-                            <div>
-                            <div className="flex justify-between text-xs font-bold text-blue-600 mb-1">
-                                <span>📚 Học thuật</span>
-                                <span>{userVector.education}%</span>
-                            </div>
-                            <div className="h-3 w-full bg-slate-200 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 transition-all duration-300" style={{ width: `${userVector.education}%` }}></div>
-                            </div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const ConceptVectorBuilder = () => {
-            const [traits, setTraits] = useState({ color: 90, sweet: 80, size: 50 });
-            return (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                    <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
-                        <Layers className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">1. Vector là gì?</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4 flex-grow">
-                        Thay vì đọc chữ "Quả Táo", AI đọc một danh sách các con số. Thử kéo thanh trượt để tạo vector:
-                    </p>
-                    <div className="space-y-3 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm">
-                        <div className="flex justify-between items-center gap-2">
-                        <span className="w-16">🔴 Độ đỏ</span>
-                        <input type="range" min="0" max="100" value={traits.color} onChange={e => setTraits({...traits, color: +e.target.value})} className="flex-1 accent-red-500 h-1" />
-                        </div>
-                        <div className="flex justify-between items-center gap-2">
-                        <span className="w-16">🍬 Độ ngọt</span>
-                        <input type="range" min="0" max="100" value={traits.sweet} onChange={e => setTraits({...traits, sweet: +e.target.value})} className="flex-1 accent-pink-500 h-1" />
-                        </div>
-                        <div className="flex justify-between items-center gap-2">
-                        <span className="w-16">📏 Cỡ</span>
-                        <input type="range" min="0" max="100" value={traits.size} onChange={e => setTraits({...traits, size: +e.target.value})} className="flex-1 accent-amber-500 h-1" />
-                        </div>
-                    </div>
-                    <div className="bg-blue-50 p-3 rounded-lg text-sm font-mono border border-blue-100 text-center text-slate-700">
-                        Vector = <br/>
-                        <span className="text-lg font-bold text-blue-700">
-                        [{(traits.color / 100).toFixed(1)}, {(traits.sweet / 100).toFixed(1)}, {(traits.size / 100).toFixed(1)}]
-                        </span>
-                    </div>
-                </div>
-            );
-        };
-
-        const ConceptDimensions = () => {
-            const [is2D, setIs2D] = useState(false);
-            return (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                    <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                        <BrainCircuit className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">2. "Số chiều" là gì?</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                        Càng nhiều tiêu chí (nhiều chiều), AI phân biệt càng chính xác.
-                    </p>
-                    <div className="relative flex-grow bg-slate-50 border border-slate-200 rounded-lg p-2 min-h-[140px] flex items-center justify-center overflow-hidden">
-                        <div className="absolute text-2xl transition-all duration-700 ease-in-out" style={{ left: '30%', bottom: is2D ? '20%' : '40%' }}>
-                        🐶<span className="absolute top-full left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Chó</span>
-                        </div>
-                        <div className="absolute text-2xl transition-all duration-700 ease-in-out" style={{ left: '40%', bottom: is2D ? '80%' : '40%' }}>
-                        🐺<span className="absolute top-full left-1/2 -translate-x-1/2 text-[10px] font-bold text-slate-500">Sói</span>
-                        </div>
-                        <div className="absolute left-4 right-4 bottom-[40%] h-0.5 bg-slate-300">
-                        <span className="absolute -bottom-4 right-0 text-[10px] text-slate-400">Kích thước (X)</span>
-                        </div>
-                        <div className={`absolute left-[10%] top-4 bottom-4 w-0.5 bg-slate-300 transition-opacity duration-500 ${is2D ? 'opacity-100' : 'opacity-0'}`}>
-                        <span className="absolute -top-4 -left-4 text-[10px] text-slate-400 whitespace-nowrap">Hoang dã (Y)</span>
-                        </div>
-                        <div className="absolute top-2 text-[10px] font-semibold px-2 py-1 bg-white/80 rounded border border-slate-200 text-slate-600 text-center w-3/4">
-                        {is2D ? "Tuyệt! Thêm chiều hoang dã, ta thấy rõ sự khác biệt." : "Chỉ đo kích thước, Chó và Sói nằm quá gần nhau!"}
-                        </div>
-                    </div>
-                    <button onClick={() => setIs2D(!is2D)} className="mt-4 w-full py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-bold hover:bg-indigo-100 transition-colors">
-                        {is2D ? "Quay về 1 Chiều" : "Thêm Chiều 2 (Hoang dã)"}
-                    </button>
-                </div>
-            );
-        };
-
-        const ConceptDistance = () => {
-            const [target, setTarget] = useState({x: 8, y: 7});
-            const origin = {x: 2, y: 2};
-            const dx = target.x - origin.x;
-            const dy = target.y - origin.y;
-            const dist = Math.sqrt(dx*dx + dy*dy).toFixed(1);
-
-            const handleGridClick = (e) => {
+            // DỮ LIỆU TAB 2: KHÁI NIỆM
+            traits: { color: 90, sweet: 80, size: 50 },
+            is2D: false,
+            target: { x: 8, y: 7 },
+            origin: { x: 2, y: 2 },
+            get dx() { return this.target.x - this.origin.x; },
+            get dy() { return this.target.y - this.origin.y; },
+            get dist() { return Math.sqrt(this.dx*this.dx + this.dy*this.dy).toFixed(1); },
+            handleGridClick(e) {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = Math.round((e.clientX - rect.left) / rect.width * 10);
                 const y = 10 - Math.round((e.clientY - rect.top) / rect.height * 10);
-                setTarget({x: Math.max(0, Math.min(10, x)), y: Math.max(0, Math.min(10, y))});
-            };
+                this.target.x = Math.max(0, Math.min(10, x));
+                this.target.y = Math.max(0, Math.min(10, y));
+            },
 
-            return (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                    <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
-                        <Calculator className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">3. Tính khoảng cách</h3>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                        Nhấp vào lưới để xem AI tính khoảng cách (độ tương đồng) bằng hình học:
-                    </p>
-                    <div className="relative flex-grow w-full aspect-square max-h-[160px] bg-slate-50 border-2 border-slate-200 rounded-lg cursor-crosshair overflow-hidden mx-auto" onClick={handleGridClick}>
-                        <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-10 pointer-events-none">
-                        {[...Array(100)].map((_, i) => <div key={i} className="border-r border-b border-slate-800"></div>)}
-                        </div>
-                        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                        <line x1={origin.x * 10} y1={100 - origin.y * 10} x2={target.x * 10} y2={100 - origin.y * 10} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4,2"/>
-                        <line x1={target.x * 10} y1={100 - origin.y * 10} x2={target.x * 10} y2={100 - target.y * 10} stroke="#94a3b8" strokeWidth="1" strokeDasharray="4,2"/>
-                        <line x1={origin.x * 10} y1={100 - origin.y * 10} x2={target.x * 10} y2={100 - target.y * 10} stroke="#10b981" strokeWidth="2" />
-                        </svg>
-                        <div className="absolute w-3 h-3 bg-blue-500 rounded-full -ml-[6px] -mb-[6px] border border-white shadow-sm" style={{left: `${origin.x * 10}%`, bottom: `${origin.y * 10}%`}}></div>
-                        <div className="absolute w-3 h-3 bg-emerald-500 rounded-full -ml-[6px] -mb-[6px] border border-white shadow-sm transition-all duration-100 pointer-events-none" style={{left: `${target.x * 10}%`, bottom: `${target.y * 10}%`}}></div>
-                    </div>
-                    <div className="mt-4 bg-emerald-50 p-2 rounded-lg text-xs font-mono text-emerald-800 text-center tracking-tighter">
-                        Khoảng cách = √({Math.abs(dx)}² + {Math.abs(dy)}²) = <span className="font-bold text-sm bg-white px-1 rounded">{dist}</span>
-                    </div>
-                </div>
-            );
-        };
+            // DỮ LIỆU TAB 3: VÍ DỤ THỰC TẾ
+            eqIdx: 0,
+            equations: [
+                { a: "Vua", b: "Đàn Ông", c: "Phụ Nữ", res: "Nữ Hoàng", color: "text-amber-600" },
+                { a: "Paris", b: "Pháp", c: "Việt Nam", res: "Hà Nội", color: "text-rose-600" },
+                { a: "Mùa Hè", b: "Nóng", c: "Lạnh", res: "Mùa Đông", color: "text-sky-600" }
+            ],
+            get currentEq() { return this.equations[this.eqIdx]; },
 
-        function VectorizationSimulation() {
-            const [activeTab, setActiveTab] = useState('simulation');
-            const [userX, setUserX] = useState(50);
-            const [userY, setUserY] = useState(50);
-            const [closestItem, setClosestItem] = useState(null);
+            pixels: [0, 0, 0,  0, 1, 0,  0, 0, 0],
+            togglePixel(idx) { this.pixels[idx] = this.pixels[idx] === 0 ? 1 : 0; },
+            get pixelVector() { return this.pixels.map(p => p === 1 ? '255' : '  0').join(', '); },
 
-            useEffect(() => {
-                let minDistance = Infinity;
-                let closest = null;
-                ITEMS.forEach(item => {
-                const distance = Math.sqrt(Math.pow(item.x - userX, 2) + Math.pow(item.y - userY, 2));
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closest = item;
-                }
-                });
-                setClosestItem(closest);
-            }, [userX, userY]);
-
-            const renderSimulation = () => (
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 animate-in">
-                    <div className="md:col-span-5 space-y-6">
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                            <span className="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center">1</span>
-                            Tạo Vector Của Bạn
-                        </h2>
-                        <p className="text-sm text-slate-500 mb-6">
-                            Hãy pha chế một món mới bằng cách điều chỉnh 2 thông số. Máy tính sẽ ghi nhận món của bạn dưới dạng một <strong className="text-indigo-600">Vector 2 chiều</strong>.
-                        </p>
-                        <div className="space-y-6">
-                            <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="font-semibold text-slate-700 flex items-center gap-2">🍬 Độ Ngọt (Trục X)</label>
-                                <span className="font-mono font-bold text-indigo-600 w-8 text-right">{userX}</span>
-                            </div>
-                            <input type="range" min="0" max="100" value={userX} onChange={(e) => setUserX(Number(e.target.value))} className="w-full accent-indigo-600"/>
-                            <div className="flex justify-between text-xs text-slate-400"><span>Không đường (0)</span><span>Rất ngọt (100)</span></div>
-                            </div>
-                            <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                                <label className="font-semibold text-slate-700 flex items-center gap-2">❄️ Độ Lạnh (Trục Y)</label>
-                                <span className="font-mono font-bold text-sky-600 w-8 text-right">{userY}</span>
-                            </div>
-                            <input type="range" min="0" max="100" value={userY} onChange={(e) => setUserY(Number(e.target.value))} className="w-full accent-sky-500"/>
-                            <div className="flex justify-between text-xs text-slate-400"><span>Nóng bỏng (0)</span><span>Buốt giá (100)</span></div>
-                            </div>
-                        </div>
-                        <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-                            <p className="text-sm text-slate-600 text-center">Món của bạn đã được AI biến thành Vector:</p>
-                            <div className="text-2xl font-mono text-center font-bold text-slate-800 mt-2">V = [{userX}, {userY}]</div>
-                        </div>
-                        </div>
-                        <div className="bg-indigo-50 p-6 rounded-2xl shadow-sm border border-indigo-100">
-                        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-900">
-                            <Sparkles className="w-5 h-5 text-indigo-600" /> Kết Quả AI Gợi Ý
-                        </h2>
-                        {closestItem && (
-                            <div className="text-center space-y-3">
-                            <div className="text-6xl my-4">{closestItem.icon}</div>
-                            <p className="text-slate-700">Khoảng cách ngắn nhất! Món của bạn giống với:</p>
-                            <div className="text-2xl font-extrabold text-indigo-700">{closestItem.name}</div>
-                            <p className="text-sm font-mono bg-white inline-block px-3 py-1 rounded-full shadow-sm">
-                                Vector của {closestItem.name}: [{closestItem.x}, {closestItem.y}]
-                            </p>
-                            </div>
-                        )}
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-7 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                        <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                            <span className="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center">2</span>
-                            Không Gian Vector (Vector Space)
-                        </h2>
-                        <p className="text-sm text-slate-500 mb-6">
-                            Tất cả các món ăn được "chấm tọa độ" trên bản đồ này. AI tìm món giống nhau bằng cách dùng thước đo xem 2 điểm nào ở gần nhau nhất.
-                        </p>
-                        <div className="relative w-full flex-grow min-h-[400px] bg-slate-50 border-2 border-slate-200 rounded-xl overflow-hidden mt-2">
-                        <div className="absolute inset-0 grid grid-cols-10 grid-rows-10 opacity-20 pointer-events-none">
-                            {[...Array(100)].map((_, i) => <div key={i} className="border-r border-b border-slate-400"></div>)}
-                        </div>
-                        <div className="absolute bottom-2 right-4 text-xs font-bold text-slate-400 opacity-70 flex items-center gap-1">
-                            Độ Ngọt <Navigation className="w-3 h-3 rotate-90" />
-                        </div>
-                        <div className="absolute top-4 left-2 text-xs font-bold text-slate-400 opacity-70 flex items-center gap-1 -rotate-90 origin-left">
-                            Độ Lạnh <Navigation className="w-3 h-3 rotate-90" />
-                        </div>
-                        {closestItem && (
-                            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                            <line x1={`${userX}%`} y1={`${100 - userY}%`} x2={`${closestItem.x}%`} y2={`${100 - closestItem.y}%`} stroke="#6366f1" strokeWidth="2" strokeDasharray="6,6" className="animate-pulse"/>
-                            </svg>
-                        )}
-                        {ITEMS.map((item) => (
-                            <div key={item.id} className="absolute w-10 h-10 -ml-5 -mb-5 flex flex-col items-center justify-center transition-all duration-300 group z-10" style={{ left: `${item.x}%`, bottom: `${item.y}%` }}>
-                            <div className={`text-2xl hover:scale-125 transition-transform cursor-help bg-white/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-sm ${closestItem?.id === item.id ? 'ring-4 ring-indigo-300 ring-offset-2' : ''}`}>
-                                {item.icon}
-                            </div>
-                            <div className="absolute bottom-full mb-1 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20">
-                                {item.name} [{item.x}, {item.y}]
-                            </div>
-                            </div>
-                        ))}
-                        <div className="absolute w-12 h-12 -ml-6 -mb-6 flex items-center justify-center transition-all duration-100 ease-out z-20" style={{ left: `${userX}%`, bottom: `${userY}%` }}>
-                            <div className="relative">
-                            <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-75"></div>
-                            <div className="relative w-8 h-8 bg-indigo-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-sm">Bạn</div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            );
-
-            const renderConcepts = () => (
-                <div className="max-w-5xl mx-auto space-y-8 animate-in">
-                    <div className="grid md:grid-cols-3 gap-6">
-                        <ConceptVectorBuilder />
-                        <ConceptDimensions />
-                        <ConceptDistance />
-                    </div>
-                    <div className="bg-slate-800 text-slate-100 p-8 rounded-2xl shadow-lg relative overflow-hidden">
-                        <Sparkles className="absolute top-4 right-4 w-24 h-24 text-slate-700 opacity-50" />
-                        <h3 className="text-2xl font-bold mb-4 relative z-10">Tóm lại</h3>
-                        <p className="text-lg text-slate-300 relative z-10 max-w-3xl leading-relaxed">
-                        Vector hóa (Vectorization) là cây cầu nối giữa <strong className="text-white">Thế giới thực</strong> (ngôn ngữ, hình ảnh, cảm xúc) và <strong className="text-white">Thế giới của Máy tính</strong> (các con số và phép toán). Không có khái niệm này, sẽ không có AI hiện đại ngày nay.
-                        </p>
-                    </div>
-                </div>
-            );
-
-            const renderExamples = () => (
-                <div className="max-w-5xl mx-auto space-y-6 animate-in">
-                    <NLPExample />
-                    <VisionExample />
-                    <RecSysExample />
-                </div>
-            );
-
-            return (
-                <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
-                    <div className="max-w-5xl mx-auto mb-8 text-center space-y-4">
-                        <h1 className="text-3xl md:text-5xl font-extrabold text-indigo-700 flex items-center justify-center gap-3">
-                        <BrainCircuit className="w-10 h-10" />
-                        Giải Mã "Vector Hóa" Trong AI
-                        </h1>
-                        <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-                        Máy tính không hiểu hình ảnh hay ngôn từ, chúng chỉ hiểu <strong>các con số</strong>. 
-                        Khám phá cách AI dùng các tọa độ số để hiểu thế giới qua mô phỏng dưới đây!
-                        </p>
-                    </div>
-
-                    <div className="max-w-5xl mx-auto mb-8">
-                        <div className="flex space-x-2 border-b-2 border-slate-200 overflow-x-auto scrollbar-hide pb-[-2px]">
-                        <button onClick={() => setActiveTab('simulation')} className={`flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 -mb-[2px] ${activeTab === 'simulation' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50 rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-t-lg'}`}>
-                            <Navigation className="w-5 h-5" /> Mô phỏng 2D
-                        </button>
-                        <button onClick={() => setActiveTab('concept')} className={`flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 -mb-[2px] ${activeTab === 'concept' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50 rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-t-lg'}`}>
-                            <BookOpen className="w-5 h-5" /> Khái niệm Cốt lõi
-                        </button>
-                        <button onClick={() => setActiveTab('examples')} className={`flex items-center gap-2 px-6 py-4 font-semibold whitespace-nowrap transition-all border-b-2 -mb-[2px] ${activeTab === 'examples' ? 'border-indigo-600 text-indigo-700 bg-indigo-50/50 rounded-t-lg' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-t-lg'}`}>
-                            <Lightbulb className="w-5 h-5" /> Ví dụ Thực tế
-                        </button>
-                        </div>
-                    </div>
-
-                    <div className="min-h-[500px]">
-                        {activeTab === 'simulation' && renderSimulation()}
-                        {activeTab === 'concept' && renderConcepts()}
-                        {activeTab === 'examples' && renderExamples()}
-                    </div>
-                </div>
-            );
+            userVector: { comedy: 50, education: 50 },
+            itemIdx: 0,
+            mockVideos: [
+                { title: "Mèo trượt ngã", type: "comedy", icon: "😹" },
+                { title: "Học Toán siêu nhanh", type: "education", icon: "📐" },
+                { title: "Hài độc thoại cuối tuần", type: "comedy", icon: "🎤" },
+                { title: "Lịch sử thế giới 5 phút", type: "education", icon: "🌍" },
+            ],
+            get currentVideo() { return this.mockVideos[this.itemIdx]; },
+            handleAction(isLike) {
+                const type = this.currentVideo.type;
+                if (isLike) { this.userVector[type] = Math.min(100, this.userVector[type] + 15); }
+                else { this.userVector[type] = Math.max(0, this.userVector[type] - 5); }
+                this.itemIdx = (this.itemIdx + 1) % this.mockVideos.length;
+            }
         }
-
-        const root = createRoot(document.getElementById('root'));
-        root.render(<VectorizationSimulation />);
-    </script>
+    }
+</script>
 </body>
 </html>
