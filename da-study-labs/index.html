@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set vs Loop Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column, lesson tabs on top, code trio, then two steppers (set vs loop) side by side. */
+:root {
+  --bg: #f1f4f8;
+  --surface: #ffffff;
+  --ink: #14202e;
+  --muted: #566577;
+  --line: #d8e0e9;
+  --set: #0b6e69;
+  --set-soft: #d6efec;
+  --spark: #bf4a0b;
+  --spark-soft: #fbe3d2;
+  --loop: #4a3fb5;
+  --loop-soft: #e4e1fa;
+  --xl: #4a7c10;
+  --xl-soft: #e1efca;
+  --code-bg: #eaeff5;
+  --good: #1a7f45;
+  --bad: #b3261e;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+    --set: #46c4ba; --set-soft: #123230; --spark: #ff9b5e; --spark-soft: #3a2314;
+    --loop: #a99fff; --loop-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311; --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+  --set: #46c4ba; --set-soft: #123230; --spark: #ff9b5e; --spark-soft: #3a2314;
+  --loop: #a99fff; --loop-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311; --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.4vw, 3.4rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+
+/* header */
+header { display: flex; flex-direction: column; gap: 16px; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+header p.lead { max-width: 62ch; font-size: 1.08rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--line); background: var(--surface); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.dot.set { background: var(--set); } .dot.spark { background: var(--spark); } .dot.loop { background: var(--loop); }
+
+/* lesson tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.tab { font: inherit; font-weight: 600; min-height: 44px; padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-align: left; }
+.tab small { display: block; font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+.tab[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+button:focus-visible { outline: 3px solid var(--spark); outline-offset: 2px; }
+
+/* lesson */
+.lesson { display: flex; flex-direction: column; gap: 24px; }
+.goal { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: grid; gap: 6px; }
+.goal .q { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; }
+.codes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.codebox { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.codehead { display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 0.82rem; font-weight: 600; border-bottom: 1px solid var(--line); }
+.codehead span.sub { color: var(--muted); font-weight: 400; }
+pre.code { margin: 0; padding: 10px 0; background: var(--code-bg); overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.7; flex: 1; }
+.ln { display: block; padding: 0 14px; border-left: 3px solid transparent; white-space: pre; min-height: 1.7em; }
+.ln.on.set { background: var(--set-soft); border-left-color: var(--set); }
+.ln.on.spark { background: var(--spark-soft); border-left-color: var(--spark); }
+.ln.on.loop { background: var(--loop-soft); border-left-color: var(--loop); }
+
+.exec { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 14px; }
+.stage { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.stage.set { border-top: 4px solid var(--set); }
+.stage.loop { border-top: 4px solid var(--loop); }
+.stage-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+.counter { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: inherit; font-size: 0.9rem; font-weight: 600; min-height: 40px; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn[disabled] { opacity: 0.4; cursor: default; }
+.btn.primary.set { background: var(--set); border-color: var(--set); color: var(--surface); }
+.btn.primary.loop { background: var(--loop); border-color: var(--loop); color: var(--surface); }
+.steptitle { font-family: var(--font-mono); font-size: 0.9rem; font-weight: 500; }
+.stepnote { color: var(--muted); font-size: 0.93rem; min-height: 3em; }
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 12px; white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 500; color: var(--muted); background: var(--code-bg); letter-spacing: 0.02em; }
+td { border-top: 1px solid var(--line); }
+tr.dim td { color: var(--muted); opacity: 0.55; }
+tr.hl td { background: var(--loop-soft); font-weight: 600; }
+tr.skip td { background: color-mix(in srgb, var(--bad) 16%, transparent); }
+th.new, td.new { background: var(--set-soft); }
+.stage.loop th.new, .stage.loop td.new { background: var(--loop-soft); }
+.state { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.state .sl { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); margin-right: 4px; }
+.chip { font-family: var(--font-mono); font-size: 0.8rem; padding: 2px 10px; border-radius: 6px; background: var(--loop-soft); display: inline-flex; gap: 6px; }
+.chip b { font-weight: 600; }
+.state .empty { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); }
+
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+.verdict .bar { height: 10px; border-radius: 5px; margin: 8px 0 6px; }
+.verdict .bar.set { background: var(--set); } .verdict .bar.loop { background: var(--loop); }
+.verdict .big { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.takeaway { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* sections */
+section { display: flex; flex-direction: column; gap: 16px; }
+.sec-intro { max-width: 64ch; color: var(--muted); }
+.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.rosetta th, .rosetta td { padding: 10px 14px; }
+.rosetta th { font-size: 0.78rem; }
+.rosetta td:first-child { font-weight: 600; font-family: var(--font-body); }
+.rosetta td { font-family: var(--font-mono); font-size: 0.82rem; }
+.rosetta th.c-set, .rosetta td.c-set { color: var(--set); }
+.rosetta th.c-spark, .rosetta td.c-spark { color: var(--spark); }
+.rosetta th.c-loop, .rosetta td.c-loop { color: var(--loop); }
+
+.pit { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.pitcard { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.pitcard .lab { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.pitcard .lab.bad { color: var(--bad); } .pitcard .lab.good { color: var(--good); }
+.pitcard pre { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--code-bg); overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; }
+
+/* quiz */
+.quiz { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+.qmeta { display: flex; justify-content: space-between; gap: 12px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.qtext { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; line-height: 1.3; }
+.opts { display: grid; gap: 8px; }
+.opt { font: inherit; text-align: left; min-height: 44px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.opt:hover:not([disabled]) { border-color: var(--ink); }
+.opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 16%, transparent); }
+.opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.opt[disabled] { cursor: default; }
+.explain { padding: 12px 14px; border-radius: 10px; background: var(--code-bg); font-size: 0.93rem; }
+
+
+.dot.xl { background: var(--xl); }
+.ln.on.xl { background: var(--xl-soft); border-left-color: var(--xl); }
+.stage.xl { border-top: 4px solid var(--xl); grid-column: 1 / -1; }
+.btn.primary.xl { background: var(--xl); border-color: var(--xl); color: var(--surface); }
+.verdict .bar.xl { background: var(--xl); }
+.fbar { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); min-height: 34px; }
+.fbar .nm { min-width: 3.6rem; font-weight: 500; border-right: 1px solid var(--line); padding-right: 10px; }
+.fbar .fxl { color: var(--xl); font-style: italic; }
+.fbar .fm { overflow-x: auto; white-space: nowrap; min-width: 0; }
+table.xt th { text-align: center; padding: 3px 10px; font-weight: 500; border: 1px solid var(--line); }
+table.xt th.rn { padding: 3px 8px; }
+table.xt td { border: 1px solid var(--line); min-width: 3.4rem; padding: 4px 10px; height: 28px; }
+table.xt td.n { text-align: right; }
+table.xt td.xh { font-weight: 600; background: var(--code-bg); }
+table.xt td.fresh { background: var(--xl-soft); }
+table.xt td.sel { box-shadow: inset 0 0 0 2px var(--xl); }
+.rosetta th.c-xl, .rosetta td.c-xl { color: var(--xl); }
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.how .card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--xl); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.takeaway + .takeaway { border-top: 0; padding-top: 0; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sc-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+.sc-head label { font-weight: 600; }
+.bign { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: var(--set); height: 28px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.sc-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.sc-row { display: grid; grid-template-columns: 150px 130px 110px 1fr; gap: 6px 14px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); }
+.sc-row:first-child { border-top: 0; }
+.sc-row .nm { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.sc-row .tm { font-family: var(--font-mono); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.sc-row .why { color: var(--muted); font-size: 0.88rem; min-width: 0; }
+.pill { display: inline-block; font-size: 0.78rem; font-weight: 600; padding: 2px 10px; border-radius: 999px; border: 1px solid currentColor; width: fit-content; }
+.pill.ok { color: var(--good); } .pill.slow { color: var(--spark); } .pill.poor, .pill.no { color: var(--bad); } .pill.over { color: var(--muted); }
+.note-line { padding: 10px 14px; border-radius: 10px; background: var(--code-bg); font-size: 0.93rem; }
+details.assume { color: var(--muted); font-size: 0.88rem; }
+details.assume summary { cursor: pointer; font-weight: 600; color: var(--ink); }
+details.assume ul { margin: 8px 0 0; padding-left: 1.2rem; display: grid; gap: 4px; }
+.fit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.fit { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; border-top: 4px solid var(--line); }
+.fit.xl { border-top-color: var(--xl); } .fit.loop { border-top-color: var(--loop); } .fit.set { border-top-color: var(--set); } .fit.spark { border-top-color: var(--spark); }
+.fit .task { font-family: var(--font-display); font-weight: 500; font-size: 1.02rem; line-height: 1.3; }
+.fit .lab { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+.inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.fld { display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; color: var(--muted); min-width: 0; }
+.fld input { font: inherit; font-family: var(--font-mono); font-size: 0.9rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-height: 40px; }
+.fld input:focus-visible { outline: 3px solid var(--spark); outline-offset: 1px; }
+.result { padding: 12px 14px; border-radius: 10px; background: var(--loop-soft); font-size: 1rem; }
+.result.xl { background: var(--xl-soft); }
+.result b { font-family: var(--font-display); font-size: 1.3rem; }
+.mini pre.code { border-radius: 8px; padding: 8px 0; font-size: 0.78rem; }
+.mini .codehead { padding: 6px 0; border: 0; }
+table.wi td.in { padding: 2px 6px; }
+table.wi td.in input { width: 7rem; font: inherit; font-family: var(--font-mono); background: var(--xl-soft); border: 1px solid var(--xl); color: var(--ink); border-radius: 4px; padding: 4px 6px; text-align: right; min-height: 32px; }
+table.wi td.v { text-align: right; font-family: var(--font-mono); }
+table.wi td.f { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+@media (max-width: 680px) { .sc-row { grid-template-columns: 1fr 1fr; } .sc-row .why { grid-column: 1 / -1; } }
+.assign td { font-family: var(--font-body); font-size: 0.88rem; vertical-align: top; }
+.assign td.n { font-family: var(--font-mono); color: var(--muted); }
+.assign td .sk { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); display: block; margin-top: 4px; }
+.assign a.open { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--set); color: var(--set); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.assign a.open:hover { background: var(--set-soft); }
+.assign a.open:focus-visible { outline: 3px solid var(--spark); outline-offset: 2px; }
+.assign table { min-width: 860px; }
+.assign th, .assign td { white-space: normal; }
+.assign td:nth-child(2) { font-weight: 600; white-space: nowrap; }
+.assign td:nth-child(3) { min-width: 180px; }
+.assign td:nth-child(5) { font-family: var(--font-mono); font-size: 0.8rem; }
+.jump { color: var(--set); font-weight: 600; }
+footer { color: var(--muted); font-size: 0.85rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .ln, .opt, .btn, .tab { transition: background-color 0.15s, border-color 0.15s; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="jump" href="../index.html" target="_top" style="font-size:0.9rem">← Knowledge Hub</a>
+    <div class="eyebrow">SQL · PySpark · Python · Excel</div>
+    <h1>Think in sets, not in rows.</h1>
+    <p class="lead">The same question answered four ways. Step through each one and watch how a declarative query works on whole tables, a Python loop visits one row at a time and keeps its own state, and an Excel sheet places a formula in a cell and fills it down.</p>
+    <div class="legend" aria-label="Legend">
+      <span class="tag"><i class="dot set"></i>SQL, set-based</span>
+      <span class="tag"><i class="dot spark"></i>PySpark, set-based through Python</span>
+      <span class="tag"><i class="dot loop"></i>Python loop, row by row</span>
+      <span class="tag"><i class="dot xl"></i>Excel, formulas in cells</span>
+    </div>
+    <p style="margin:0"><a class="jump" href="#assign-h">Practise with three hands-on assignments ↓</a></p>
+  </header>
+
+  <main style="display:flex;flex-direction:column;gap:40px">
+    <section aria-labelledby="lab-h">
+      <h2 id="lab-h">Lab: one question, four approaches</h2>
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="lesson" id="lesson"></div>
+    </section>
+
+    <section aria-labelledby="fit-h">
+      <h2 id="fit-h">When only one tool fits</h2>
+      <p class="sec-intro">Each approach has a job it does far better than the others, and some jobs only one of them can do. Slide the data size to see where each tool stops, then try the two cases below it.</p>
+
+      <div class="panel">
+        <div class="sc-head"><label for="rows">Task: total amount per customer. How many rows?</label><output id="rows-out" class="bign" for="rows"></output></div>
+        <input type="range" id="rows" min="3" max="10" step="0.05" value="7.5">
+        <div class="presets" id="presets">
+          <button class="btn" data-p="4">10 thousand</button>
+          <button class="btn" data-p="6">1 million</button>
+          <button class="btn" data-p="7.5">30 million</button>
+          <button class="btn" data-p="9.3">2 billion</button>
+        </div>
+        <div class="sc-list" id="sc-list"></div>
+        <div class="note-line" id="sc-note"></div>
+        <details class="assume"><summary>Assumptions behind these estimates</summary>
+          <ul>
+            <li>Rough orders of magnitude for a simple sum per key, not benchmarks. Real speeds depend on hardware, data format and query.</li>
+            <li>Excel: hard limit of 1,048,576 rows per sheet, about 500 thousand rows per second.</li>
+            <li>Python loop: one laptop, about 1 million rows per second, about 50 million rows fit in memory.</li>
+            <li>SQL on one database server: about 20 million rows per second, up to about 5 billion rows.</li>
+            <li>Spark cluster: about 20 seconds to start, then about 300 million rows per second across machines.</li>
+          </ul>
+        </details>
+      </div>
+
+      <div class="fit-grid">
+        <div class="fit xl"><span class="lab">Excel wins</span><div class="task">Test how a price change moves the margin, then show it to a colleague.</div><p class="muted">Editing a cell recomputes everything on screen and anyone can audit it by clicking. A script or query has to be re-run, and few business users can read it.</p></div>
+        <div class="fit loop"><span class="lab">Python loop wins</span><div class="task">Simulate a balance month by month, where each month depends on the last and the stop point is not known.</div><p class="muted">Step-by-step state with a dynamic stop is natural in a loop. SQL needs a recursive query, Excel needs rows you extend by hand, and Spark would run one job per iteration.</p></div>
+        <div class="fit set"><span class="lab">SQL wins</span><div class="task">Revenue by region for the last 90 days from a table that already lives in the warehouse.</div><p class="muted">The query runs where the data is and reads only the partitions it needs. Exporting to Excel or Python would copy the data first.</p></div>
+        <div class="fit spark"><span class="lab">Spark wins</span><div class="task">Aggregate 2 billion log lines stored as files in object storage.</div><p class="muted">Too big for Excel and for one laptop, and there may be no database to load it into. Spark reads the files in parallel across a cluster. <button class="btn" data-p="9.3" id="spark-go" style="min-height:32px;padding:2px 10px">Try 2 billion above</button></p></div>
+      </div>
+
+      <div class="demo-grid">
+        <div class="panel mini" id="demo-loop">
+          <h3>Case: a savings plan that stops when the goal is reached</h3>
+          <p class="muted">Each month adds interest and a deposit, and the deposit rises every 12 months. Nobody knows in advance how many months it takes.</p>
+          <div class="inputs">
+            <label class="fld" for="sv-start">Start balance<input type="number" id="sv-start" value="5000" min="0" step="500"></label>
+            <label class="fld" for="sv-dep">Monthly deposit<input type="number" id="sv-dep" value="300" min="0" step="50"></label>
+            <label class="fld" for="sv-rate">Yearly rate %<input type="number" id="sv-rate" value="6" min="0" step="0.5"></label>
+            <label class="fld" for="sv-raise">Yearly raise %<input type="number" id="sv-raise" value="3" min="0" step="0.5"></label>
+            <label class="fld" for="sv-goal">Goal<input type="number" id="sv-goal" value="100000" min="1" step="5000"></label>
+          </div>
+          <div class="result" id="sv-res"></div>
+          <div class="codehead"><i class="dot loop"></i>Python loop <span class="sub">natural fit</span></div>
+          <pre class="code" id="sv-py"></pre>
+          <div class="codehead"><i class="dot set"></i>SQL <span class="sub">possible, with a recursive query</span></div>
+          <pre class="code" id="sv-sql"></pre>
+          <div class="codehead"><i class="dot xl"></i>Excel <span class="sub">one row per month, extended by hand</span></div>
+          <pre class="code" id="sv-xl"></pre>
+        </div>
+
+        <div class="panel mini" id="demo-xl">
+          <h3>Case: a pricing what-if</h3>
+          <p class="muted">Change a green input. Every cell that depends on it updates at once, and each formula is visible.</p>
+          <div class="tw"><table class="xt wi">
+            <thead><tr><th>Cell</th><th style="text-align:left">Item</th><th>Value</th><th style="text-align:left">Formula</th></tr></thead>
+            <tbody>
+              <tr><td class="n">B2</td><td>Price per unit</td><td class="in"><input type="number" id="wi-price" value="25" step="1" aria-label="Price per unit"></td><td class="f">input</td></tr>
+              <tr><td class="n">B3</td><td>Unit cost</td><td class="in"><input type="number" id="wi-cost" value="14" step="1" aria-label="Unit cost"></td><td class="f">input</td></tr>
+              <tr><td class="n">B4</td><td>Units sold</td><td class="in"><input type="number" id="wi-units" value="1200" step="100" aria-label="Units sold"></td><td class="f">input</td></tr>
+              <tr><td class="n">B5</td><td>Discount %</td><td class="in"><input type="number" id="wi-disc" value="5" step="1" aria-label="Discount percent"></td><td class="f">input</td></tr>
+              <tr><td class="n">B6</td><td>Fixed costs</td><td class="in"><input type="number" id="wi-fixed" value="6000" step="500" aria-label="Fixed costs"></td><td class="f">input</td></tr>
+              <tr><td class="n">B7</td><td>Net price</td><td class="v" id="wi-net"></td><td class="f">=B2*(1-B5/100)</td></tr>
+              <tr><td class="n">B8</td><td>Revenue</td><td class="v" id="wi-rev"></td><td class="f">=B7*B4</td></tr>
+              <tr><td class="n">B9</td><td>Variable cost</td><td class="v" id="wi-var"></td><td class="f">=B3*B4</td></tr>
+              <tr><td class="n">B10</td><td>Profit</td><td class="v" id="wi-profit"></td><td class="f">=B8-B9-B6</td></tr>
+              <tr><td class="n">B11</td><td>Margin</td><td class="v" id="wi-margin"></td><td class="f">=B10/B8</td></tr>
+              <tr><td class="n">B12</td><td>Break-even units</td><td class="v" id="wi-be"></td><td class="f">=B6/(B7-B3)</td></tr>
+            </tbody>
+          </table></div>
+          <div class="result xl" id="wi-res"></div>
+          <p class="muted">With SQL, Spark or a loop you would edit a parameter and run the job again, and the person reading the result would need to read the code to check it.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="xl-h">
+      <h2 id="xl-h">How Excel thinks</h2>
+      <p class="sec-intro">Excel sits between the loop and the set. You never write a loop, but you also work cell by cell, with every intermediate result on screen.</p>
+      <div class="how">
+        <div class="card"><h3>The grid is the program</h3><p class="muted">Data, formulas and results share one sheet. You can click any cell and see its value, which makes steps easy to check. SQL and Spark keep intermediate tables hidden unless you select them.</p></div>
+        <div class="card"><h3>One formula, filled down</h3><p class="muted">A formula in one cell, copied down a column, is a column expression applied to every row. That is close to set thinking. The difference is that it points at cells by position (B2, $C$2:$C$11) instead of by column name.</p></div>
+        <div class="card"><h3>Helper columns, not pipelines</h3><p class="muted">Each step becomes a new column or range next to the data. This is simple to audit, but refreshing with new data often means pasting and re-extending ranges by hand.</p></div>
+        <div class="card"><h3>Where it stops</h3><p class="muted">A sheet holds at most 1,048,576 rows and recalculates as you edit. When the data outgrows it, the same logic moves over: SUMIFS becomes GROUP BY, XLOOKUP becomes JOIN.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="ros-h">
+      <h2 id="ros-h">Translation table</h2>
+      <p class="sec-intro">Every row-by-row habit has a set-based counterpart. When you catch yourself writing a loop in Spark, look for the matching entry here.</p>
+      <div class="table-scroll">
+        <table class="rosetta">
+          <thead><tr><th>Idea</th><th class="c-set">SQL</th><th class="c-spark">PySpark</th><th class="c-loop">Python loop</th><th class="c-xl">Excel</th></tr></thead>
+          <tbody>
+            <tr><td>Keep some rows</td><td class="c-set">WHERE</td><td class="c-spark">.filter()</td><td class="c-loop">if inside the loop</td><td class="c-xl">FILTER() or AutoFilter</td></tr>
+            <tr><td>Choose columns</td><td class="c-set">SELECT a, b</td><td class="c-spark">.select("a", "b")</td><td class="c-loop">row["a"], row["b"]</td><td class="c-xl">column letters, CHOOSECOLS()</td></tr>
+            <tr><td>Aggregate</td><td class="c-set">GROUP BY + SUM</td><td class="c-spark">.groupBy().agg()</td><td class="c-loop">dict[k] += v</td><td class="c-xl">SUMIFS() or PivotTable</td></tr>
+            <tr><td>Filter groups</td><td class="c-set">HAVING</td><td class="c-spark">.filter() after agg</td><td class="c-loop">dict comprehension</td><td class="c-xl">FILTER() on the summary range</td></tr>
+            <tr><td>Combine tables</td><td class="c-set">JOIN ... ON</td><td class="c-spark">.join(other, cond)</td><td class="c-loop">lookup dict or nested loop</td><td class="c-xl">XLOOKUP() or Power Query merge</td></tr>
+            <tr><td>Running total</td><td class="c-set">SUM() OVER (PARTITION BY)</td><td class="c-spark">F.sum().over(Window)</td><td class="c-loop">sort, then running variable</td><td class="c-xl">SUMIFS with an expanding range $C$2:C2</td></tr>
+            <tr><td>Sort</td><td class="c-set">ORDER BY</td><td class="c-spark">.orderBy()</td><td class="c-loop">sorted()</td><td class="c-xl">Data &gt; Sort or SORT()</td></tr>
+            <tr><td>Unique values</td><td class="c-set">DISTINCT</td><td class="c-spark">.distinct()</td><td class="c-loop">set()</td><td class="c-xl">UNIQUE() or Remove Duplicates</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="assign-h" class="assign">
+      <h2 id="assign-h">Assignments</h2>
+      <p class="sec-intro">Put the ideas to work on realistic data. Each assignment runs SQL, Python and Excel formulas in the browser, checks your result against the expected answer and shows how each tool approaches the same task. They are ordered by difficulty; the loan lab builds on the debt groups from the debt lab.</p>
+      <div class="table-scroll">
+        <table class="rosetta">
+          <thead><tr><th>#</th><th>Assignment</th><th>Domain and data</th><th>Tasks</th><th class="c-set">Set-based ideas you practise</th><th>Level</th><th></th></tr></thead>
+          <tbody>
+            <tr><td class="n">1</td><td>Coffee Chain Lab</td><td>Retail sales. 90 orders from 3 stores, July to September 2026.</td><td>Revenue per store, cancel rate, monthly growth, top product per store</td><td class="c-set">WHERE + GROUP BY, SUM(CASE ...), LAG(), RANK() OVER (PARTITION BY)</td><td>Beginner</td><td><a class="open" href="labs/coffee-chain/index.html">Open lab</a></td></tr>
+            <tr><td class="n">2</td><td>Debt Classification Lab</td><td>Consumer finance, credit risk. 120 loans of 70 customers, two month-ends.</td><td>Classify by days past due, provision per group, NPL and coverage ratios, one group per customer, roll-rate matrix</td><td class="c-set">JOIN on a range (BETWEEN), conditional totals, MAX() OVER (PARTITION BY), pivot with SUM(CASE ...)</td><td>Intermediate</td><td><a class="open" href="labs/debt-classification/index.html">Open lab</a></td></tr>
+            <tr><td class="n">3</td><td>Loan Recommendation Lab</td><td>Consumer finance, lending. 80 applicants, 132 past loans, 4 products.</td><td>Score bands, credit history profile, eligibility per product, recommend one product, offer and affordability</td><td class="c-set">NULL handling, LEFT JOIN, join on rules, ROW_NUMBER() first match, MIN / MAX caps</td><td>Intermediate to advanced</td><td><a class="open" href="labs/loan-recommendation/index.html">Open lab</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="pit-h">
+      <h2 id="pit-h">Habits to unlearn in Spark</h2>
+      <p class="sec-intro">These are the three most common ways a loop mindset slows a Spark job down.</p>
+      <div class="pit">
+        <div class="pitcard">
+          <h3>Pulling data to the driver</h3>
+          <div class="lab bad">Avoid</div>
+<pre>for row in df.collect():
+    tax = row["amount"] * 0.1</pre>
+          <div class="lab good">Prefer</div>
+<pre>df.withColumn("tax",
+    F.col("amount") * 0.1)</pre>
+          <p class="muted">collect() moves every row to one machine. The column expression runs on all partitions in parallel.</p>
+        </div>
+        <div class="pitcard">
+          <h3>Python UDF for simple math</h3>
+          <div class="lab bad">Avoid</div>
+<pre>@F.udf("double")
+def add_tax(x):
+    return x * 1.1
+df.withColumn("total", add_tax("amount"))</pre>
+          <div class="lab good">Prefer</div>
+<pre>df.withColumn("total",
+    F.col("amount") * 1.1)</pre>
+          <p class="muted">A UDF sends each value between the JVM and Python. Built-in expressions stay inside Spark, where the optimizer can see them.</p>
+        </div>
+        <div class="pitcard">
+          <h3>withColumn inside a loop</h3>
+          <div class="lab bad">Avoid</div>
+<pre>for c in cols:
+    df = df.withColumn(c, F.upper(c))</pre>
+          <div class="lab good">Prefer</div>
+<pre>df.select([F.upper(c).alias(c)
+           for c in cols])</pre>
+          <p class="muted">Each withColumn adds a layer to the query plan. One select describes the whole change at once.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="quiz-h">
+      <h2 id="quiz-h">Check your mindset</h2>
+      <div class="quiz" id="quiz"></div>
+    </section>
+  </main>
+
+  <footer>Sample data is made up for this lab: 10 orders and 4 customers. The step views are computed in your browser from that data.</footer>
+</div>
+
+<script>
+(function () {
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+
+  /* ---------- data ---------- */
+  var D = {
+    orders: [
+      { id: 1, customer_id: 1, amount: 400, order_date: "2026-01-05" },
+      { id: 2, customer_id: 2, amount: 150, order_date: "2026-01-09" },
+      { id: 3, customer_id: 1, amount: 700, order_date: "2026-02-11" },
+      { id: 4, customer_id: 3, amount: 300, order_date: "2026-02-14" },
+      { id: 5, customer_id: 2, amount: 900, order_date: "2026-03-02" },
+      { id: 6, customer_id: 1, amount: 250, order_date: "2025-12-20" },
+      { id: 7, customer_id: 3, amount: 1200, order_date: "2026-03-15" },
+      { id: 8, customer_id: 2, amount: 100, order_date: "2026-03-18" },
+      { id: 9, customer_id: 4, amount: 80, order_date: "2026-03-20" },
+      { id: 10, customer_id: 3, amount: 50, order_date: "2025-11-30" }
+    ],
+    customers: [
+      { id: 1, name: "An", city: "HCMC" },
+      { id: 2, name: "Binh", city: "Hanoi" },
+      { id: 3, name: "Chi", city: "HCMC" },
+      { id: 4, name: "Dung", city: "Da Nang" }
+    ]
+  };
+  var CUT = "2026-01-01";
+  var OC = ["id", "customer_id", "amount", "order_date"];
+  var oRow = function (o) { return [o.id, o.customer_id, o.amount, o.order_date]; };
+
+  /* ---------- renderers ---------- */
+  function tbl(cols, rows, o) {
+    o = o || {};
+    var hl = o.hl || [], dim = o.dim || [], skip = o.skip || [], nc = o.newCol === undefined ? -1 : o.newCol;
+    var h = cols.map(function (c, i) { return '<th class="' + (i === nc ? "new" : "") + '">' + esc(c) + "</th>"; }).join("");
+    var b = rows.map(function (r, ri) {
+      var cls = (hl.indexOf(ri) > -1 ? "hl " : "") + (dim.indexOf(ri) > -1 ? "dim " : "") + (skip.indexOf(ri) > -1 ? "skip" : "");
+      return '<tr class="' + cls + '">' + r.map(function (v, i) { return '<td class="' + (i === nc ? "new" : "") + '">' + esc(v) + "</td>"; }).join("") + "</tr>";
+    }).join("");
+    return '<div class="tw"><table><thead><tr>' + h + "</tr></thead><tbody>" + b + "</tbody></table></div>";
+  }
+  function chips(obj, label) {
+    var e = Object.keys(obj);
+    var inner = e.length ? e.map(function (k) { return '<span class="chip">' + esc(k) + "<b>" + esc(obj[k]) + "</b></span>"; }).join("") : '<span class="empty">empty</span>';
+    return '<div class="state"><span class="sl">' + esc(label) + "</span>" + inner + "</div>";
+  }
+  function cursorTable(cols, rows, cur, skipCur, newCol) {
+    var dim = [], i;
+    for (i = 0; i < cur; i++) dim.push(i);
+    return tbl(cols, rows, { hl: cur >= 0 && !skipCur ? [cur] : [], skip: cur >= 0 && skipCur ? [cur] : [], dim: dim, newCol: newCol });
+  }
+
+  /* ---------- excel grid ---------- */
+  function xnew(nc, nr) { var M = [], r, c; for (r = 0; r < nr; r++) { M.push([]); for (c = 0; c < nc; c++) M[r].push(""); } return M; }
+  function put(M, r, c, block) { block.forEach(function (row, i) { row.forEach(function (v, j) { M[r + i][c + j] = v; }); }); }
+  function inR(rs, r, c) { return (rs || []).some(function (x) { return r >= x[0] && r <= x[2] && c >= x[1] && c <= x[3]; }); }
+  function xgrid(M, o) {
+    o = o || {};
+    var L = "ABCDEFGHIJKLMNOP";
+    var head = '<th class="corner"></th>' + M[0].map(function (_, c) { return "<th>" + L[c] + "</th>"; }).join("");
+    var body = M.map(function (row, r) {
+      return '<tr><th class="rn">' + (r + 1) + "</th>" + row.map(function (v, c) {
+        var cls = (r === 0 && v !== "" ? "xh " : "") + (typeof v === "number" ? "n " : "") + (inR(o.fresh, r, c) ? "fresh " : "") + (inR(o.sel, r, c) ? "sel" : "");
+        return '<td class="' + cls + '">' + esc(v) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    return '<div class="fbar"><span class="nm">' + esc(o.name || "") + '</span><span class="fxl">fx</span><span class="fm">' + esc(o.formula || "") + '</span></div><div class="tw"><table class="xt"><thead><tr>' + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+  }
+
+  /* ---------- lessons ---------- */
+  var lessons = [];
+
+  /* 1. filter + aggregate */
+  lessons.push({
+    id: "agg", name: "Filter and aggregate", sub: "WHERE, GROUP BY, HAVING",
+    q: "Which customers spent more than 1,000 in total since 2026-01-01?",
+    sql: [
+      "SELECT customer_id, SUM(amount) AS total",
+      "FROM orders",
+      "WHERE order_date >= '2026-01-01'",
+      "GROUP BY customer_id",
+      "HAVING SUM(amount) > 1000;"
+    ],
+    spark: [
+      "(orders",
+      '  .filter(F.col("order_date") >= "2026-01-01")',
+      '  .groupBy("customer_id")',
+      '  .agg(F.sum("amount").alias("total"))',
+      '  .filter(F.col("total") > 1000))'
+    ],
+    py: [
+      "totals = {}",
+      "for row in orders:",
+      '    if row["order_date"] >= "2026-01-01":',
+      '        cid = row["customer_id"]',
+      '        totals[cid] = totals.get(cid, 0) + row["amount"]',
+      "result = {k: v for k, v in totals.items() if v > 1000}"
+    ],
+    xl: [
+      "F2: =UNIQUE(B2:B11)",
+      "G2: =SUMIFS($C$2:$C$11,$B$2:$B$11,F2,",
+      '        $D$2:$D$11,">="&DATE(2026,1,1))',
+      "I2: =FILTER(F2:G5,G2:G5>1000)"
+    ],
+    takeXl: "In Excel, WHERE and GROUP BY collapse into the arguments of SUMIFS, and each intermediate list sits in visible cells. It is set-like because one formula fills down a whole column, but references are by position (F2, $C$2:$C$11) rather than by name.",
+    excel: function () {
+      var uniq = [], tot = {};
+      D.orders.forEach(function (o) {
+        if (uniq.indexOf(o.customer_id) < 0) uniq.push(o.customer_id);
+        if (o.order_date >= CUT) tot[o.customer_id] = (tot[o.customer_id] || 0) + o.amount;
+      });
+      var big = uniq.filter(function (c) { return (tot[c] || 0) > 1000; });
+      var base = function () { var M = xnew(10, 11); put(M, 0, 0, [OC].concat(D.orders.map(oRow))); return M; };
+      var list = function (M) { put(M, 0, 5, [["customer"]].concat(uniq.map(function (c) { return [c]; }))); };
+      var sums = function (M) { put(M, 0, 5, [["customer", "total"]].concat(uniq.map(function (c) { return [c, tot[c] || 0]; }))); };
+      var m2 = base(); list(m2);
+      var m3 = base(); sums(m3);
+      var m4 = base(); sums(m4); put(m4, 0, 8, [["customer", "total > 1000"]].concat(big.map(function (c) { return [c, tot[c]]; })));
+      return [
+        { title: "Paste the data into A1:D11", note: "Data and logic share one grid. There is no separate query step; every value stays visible.", lines: [], view: xgrid(base(), { sel: [[0, 0, 10, 3]], name: "A1:D11", formula: "" }) },
+        { title: "F2: =UNIQUE(B2:B11)", note: "One formula spills the distinct customer ids down the column. This is the GROUP BY key.", lines: [0], view: xgrid(m2, { fresh: [[1, 5, uniq.length, 5]], sel: [[1, 5, 1, 5]], name: "F2", formula: "=UNIQUE(B2:B11)" }) },
+        { title: "G2: =SUMIFS(...), filled down to G5", note: "The date test and the customer match are arguments of one function, so WHERE and GROUP BY merge. Filling down moves F2 to F3, F4, F5 while the $ signs keep the data range fixed.", lines: [1, 2], view: xgrid(m3, { fresh: [[1, 6, uniq.length, 6]], sel: [[1, 6, 1, 6]], name: "G2", formula: '=SUMIFS($C$2:$C$11,$B$2:$B$11,F2,$D$2:$D$11,">="&DATE(2026,1,1))' }) },
+        { title: "I2: =FILTER(F2:G5, G2:G5>1000)", note: "This is HAVING. It returns only the summary rows whose total passes the test.", lines: [3], view: xgrid(m4, { fresh: [[1, 8, big.length, 9]], sel: [[1, 8, 1, 8]], name: "I2", formula: "=FILTER(F2:G5,G2:G5>1000)" }) }
+      ];
+    },
+    takeaway: "SQL is written as SELECT first, but it runs as FROM, WHERE, GROUP BY, HAVING, SELECT. You describe the result; the order of work is the engine's job. The loop version spells out every visit and keeps a mutable dictionary.",
+    set: function () {
+      var kept = D.orders.filter(function (o) { return o.order_date >= CUT; });
+      var g = {};
+      kept.forEach(function (o) { g[o.customer_id] = (g[o.customer_id] || 0) + o.amount; });
+      var grp = Object.keys(g).map(function (k) { return [+k, g[k]]; });
+      var hav = grp.filter(function (r) { return r[1] > 1000; });
+      return [
+        { title: "FROM orders", note: "The whole table is the input: 10 rows, treated as one set.", sql: [1], spark: [0], view: tbl(OC, D.orders.map(oRow)) },
+        { title: "WHERE order_date >= '2026-01-01'", note: "Two rows (ids 6 and 10) are removed in a single operation. Nothing in your code visits a row.", sql: [2], spark: [1], view: tbl(OC, kept.map(oRow)) },
+        { title: "GROUP BY customer_id, SUM(amount)", note: "The remaining set is split by customer and each group is summed. The result is a new, smaller table.", sql: [3, 0], spark: [2, 3], view: tbl(["customer_id", "total"], grp, { newCol: 1 }) },
+        { title: "HAVING SUM(amount) > 1000", note: "A filter on the grouped table. Customer 4 (total 80) drops out.", sql: [4], spark: [4], view: tbl(["customer_id", "total"], hav) }
+      ];
+    },
+    loop: function () {
+      var steps = [], totals = {}, rows = D.orders.map(oRow);
+      steps.push({ title: "totals = {}", note: "Create mutable state that the loop will update.", lines: [0], view: cursorTable(OC, rows, -1) + chips({}, "totals") });
+      D.orders.forEach(function (o, i) {
+        var pass = o.order_date >= CUT;
+        if (pass) totals[o.customer_id] = (totals[o.customer_id] || 0) + o.amount;
+        steps.push({
+          title: "row id=" + o.id + ", customer " + o.customer_id,
+          note: pass ? "Date passes. totals[" + o.customer_id + "] becomes " + totals[o.customer_id] + "." : "Date is before the cutoff, so this row is skipped.",
+          lines: pass ? [1, 2, 3, 4] : [1, 2],
+          view: cursorTable(OC, rows, i, !pass) + chips(totals, "totals")
+        });
+      });
+      var res = {};
+      Object.keys(totals).forEach(function (k) { if (totals[k] > 1000) res[k] = totals[k]; });
+      steps.push({ title: "result = {k: v ... if v > 1000}", note: "A last pass over the dictionary applies the HAVING condition.", lines: [5], view: chips(res, "result") });
+      return steps;
+    }
+  });
+
+  /* 2. join */
+  lessons.push({
+    id: "join", name: "Join two tables", sub: "JOIN, GROUP BY",
+    q: "What is the total order amount per city?",
+    sql: [
+      "SELECT c.city, SUM(o.amount) AS total",
+      "FROM orders o",
+      "JOIN customers c ON c.id = o.customer_id",
+      "GROUP BY c.city;"
+    ],
+    spark: [
+      "(orders",
+      '  .join(customers, orders.customer_id == customers.id)',
+      '  .groupBy("city")',
+      '  .agg(F.sum("amount").alias("total")))'
+    ],
+    py: [
+      'city_of = {c["id"]: c["city"] for c in customers}',
+      "totals = {}",
+      "for row in orders:",
+      '    city = city_of[row["customer_id"]]',
+      '    totals[city] = totals.get(city, 0) + row["amount"]'
+    ],
+    xl: [
+      "E2: =XLOOKUP(B2,$G$2:$G$5,$H$2:$H$5)",
+      "J2: =UNIQUE(E2:E11)",
+      "K2: =SUMIFS($C$2:$C$11,$E$2:$E$11,J2)"
+    ],
+    takeXl: "XLOOKUP is the join: it adds the city next to each order, and you can see the joined column before grouping. Like the loop, you lay out the lookup range yourself (G2:H5); unlike SQL, the sheet does not choose a join strategy for you.",
+    excel: function () {
+      var cityOf = {}, cities = [], tot = {};
+      D.customers.forEach(function (c) { cityOf[c.id] = c.city; });
+      D.orders.forEach(function (o) { var c = cityOf[o.customer_id]; if (cities.indexOf(c) < 0) cities.push(c); tot[c] = (tot[c] || 0) + o.amount; });
+      var base = function () {
+        var M = xnew(11, 11);
+        put(M, 0, 0, [OC].concat(D.orders.map(oRow)));
+        put(M, 0, 6, [["id", "city"]].concat(D.customers.map(function (c) { return [c.id, c.city]; })));
+        return M;
+      };
+      var withCity = function (M) { put(M, 0, 4, [["city"]].concat(D.orders.map(function (o) { return [cityOf[o.customer_id]]; }))); };
+      var m2 = base(); withCity(m2);
+      var m3 = base(); withCity(m3); put(m3, 0, 9, [["city"]].concat(cities.map(function (c) { return [c]; })));
+      var m4 = base(); withCity(m4); put(m4, 0, 9, [["city", "total"]].concat(cities.map(function (c) { return [c, tot[c]]; })));
+      return [
+        { title: "Orders in A:D, customers in G:H", note: "Both tables sit on the same sheet. The lookup range G2:H5 is something you place and point to yourself.", lines: [], view: xgrid(base(), { sel: [[0, 0, 10, 3], [0, 6, 4, 7]], name: "A1:H11", formula: "" }) },
+        { title: "E2: =XLOOKUP(B2, $G$2:$G$5, $H$2:$H$5), filled down", note: "Each order finds its customer id in G and returns the city from H. Fill down E2:E11 and the join is a new column beside the data.", lines: [0], view: xgrid(m2, { fresh: [[1, 4, 10, 4]], sel: [[1, 4, 1, 4]], name: "E2", formula: "=XLOOKUP(B2,$G$2:$G$5,$H$2:$H$5)" }) },
+        { title: "J2: =UNIQUE(E2:E11)", note: "The distinct cities become the grouping key, as in GROUP BY city.", lines: [1], view: xgrid(m3, { fresh: [[1, 9, cities.length, 9]], sel: [[1, 9, 1, 9]], name: "J2", formula: "=UNIQUE(E2:E11)" }) },
+        { title: "K2: =SUMIFS($C$2:$C$11, $E$2:$E$11, J2), filled down", note: "Sum the amounts where the city column matches. A PivotTable on A1:E11 would give the same result without writing formulas.", lines: [2], view: xgrid(m4, { fresh: [[1, 10, cities.length, 10]], sel: [[1, 10, 1, 10]], name: "K2", formula: "=SUMIFS($C$2:$C$11,$E$2:$E$11,J2)" }) }
+      ];
+    },
+    takeaway: "In the loop you chose the join strategy yourself by building a lookup dictionary. In SQL and Spark you only state the matching condition. The engine decides between hash, broadcast or sort-merge joins, and on a cluster it moves the data for you.",
+    set: function () {
+      var cityOf = {};
+      D.customers.forEach(function (c) { cityOf[c.id] = c.city; });
+      var joined = D.orders.map(function (o) { return [o.id, o.customer_id, cityOf[o.customer_id], o.amount]; });
+      var g = {};
+      D.orders.forEach(function (o) { var c = cityOf[o.customer_id]; g[c] = (g[c] || 0) + o.amount; });
+      var grp = Object.keys(g).map(function (k) { return [k, g[k]]; }).sort(function (a, b) { return b[1] - a[1]; });
+      return [
+        { title: "FROM orders", note: "Start with the orders table. It has customer_id but no city.", sql: [1], spark: [0], view: tbl(OC, D.orders.map(oRow)) },
+        { title: "JOIN customers ON id = customer_id", note: "Both tables are matched in one step. Each order gains the city of its customer.", sql: [2], spark: [1], view: tbl(["id", "customer_id", "city", "amount"], joined, { newCol: 2 }) },
+        { title: "GROUP BY city, SUM(amount)", note: "The joined set is grouped by city and summed.", sql: [3, 0], spark: [2, 3], view: tbl(["city", "total"], grp, { newCol: 1 }) }
+      ];
+    },
+    loop: function () {
+      var steps = [], cityOf = {}, totals = {}, rows = D.orders.map(oRow);
+      D.customers.forEach(function (c) { cityOf[c.id] = c.city; });
+      steps.push({ title: "city_of = {id: city ...}", note: "You build a lookup dictionary by hand so each order can find its city.", lines: [0, 1], view: cursorTable(OC, rows, -1) + chips(cityOf, "city_of") });
+      D.orders.forEach(function (o, i) {
+        var c = cityOf[o.customer_id];
+        totals[c] = (totals[c] || 0) + o.amount;
+        steps.push({
+          title: "row id=" + o.id + ", customer " + o.customer_id,
+          note: "Look up city_of[" + o.customer_id + "] = " + c + ", then totals[" + c + "] becomes " + totals[c] + ".",
+          lines: [2, 3, 4],
+          view: cursorTable(OC, rows, i, false) + chips(totals, "totals")
+        });
+      });
+      return steps;
+    }
+  });
+
+  /* 3. window */
+  lessons.push({
+    id: "win", name: "Running total", sub: "Window functions",
+    q: "For each customer, what is the running total of amount in date order?",
+    sql: [
+      "SELECT customer_id, order_date, amount,",
+      "       SUM(amount) OVER (",
+      "         PARTITION BY customer_id",
+      "         ORDER BY order_date",
+      "       ) AS running_total",
+      "FROM orders;"
+    ],
+    spark: [
+      'w = (Window.partitionBy("customer_id")',
+      '            .orderBy("order_date"))',
+      'orders.withColumn("running_total",',
+      "    F.sum(\"amount\").over(w))"
+    ],
+    py: [
+      "running = {}",
+      "out = []",
+      'for row in sorted(orders, key=lambda r: (r["customer_id"], r["order_date"])):',
+      '    cid = row["customer_id"]',
+      '    running[cid] = running.get(cid, 0) + row["amount"]',
+      '    out.append({**row, "running_total": running[cid]})'
+    ],
+    xl: [
+      "Data > Sort: customer_id A to Z,",
+      "            then order_date oldest to newest",
+      "E2: =SUMIFS($C$2:C2,$B$2:B2,B2)",
+      "E3: =SUMIFS($C$2:C3,$B$2:B3,B3)  (filled down)"
+    ],
+    takeXl: "Excel gets a running total from a range that grows as you fill down: the start is locked ($C$2) and the end moves (C2, C3, ...). That expanding range plays the role of the window frame, and it only works because you sorted the rows first. A window function sorts inside the engine for you.",
+    excel: function () {
+      var sorted = D.orders.slice().sort(function (a, b) { return a.customer_id - b.customer_id || a.order_date.localeCompare(b.order_date); });
+      var run = {};
+      var col = sorted.map(function (o) { run[o.customer_id] = (run[o.customer_id] || 0) + o.amount; return [run[o.customer_id]]; });
+      var m1 = xnew(5, 11); put(m1, 0, 0, [OC].concat(D.orders.map(oRow)));
+      var m2 = xnew(5, 11); put(m2, 0, 0, [OC].concat(sorted.map(oRow)));
+      var m3 = xnew(5, 11); put(m3, 0, 0, [OC].concat(sorted.map(oRow))); put(m3, 0, 4, [["running_total"]].concat(col));
+      return [
+        { title: "Paste the data into A1:D11", note: "The rows are in no particular order. A running total by position needs them grouped and ordered first.", lines: [], view: xgrid(m1, { sel: [[0, 0, 10, 3]], name: "A1:D11", formula: "" }) },
+        { title: "Data > Sort: customer_id, then order_date", note: "Sorting rearranges the cells in place. In SQL the same ordering is declared inside the OVER clause.", lines: [0, 1], view: xgrid(m2, { sel: [[0, 0, 10, 3]], fresh: [[1, 0, 10, 3]], name: "A1:D11", formula: "" }) },
+        { title: "E2: =SUMIFS($C$2:C2, $B$2:B2, B2), filled down", note: "The range starts at a locked $C$2 and ends at a relative C2, so it grows by one row each time you fill down. Each cell sums this customer's amounts up to its own row.", lines: [2, 3], view: xgrid(m3, { fresh: [[1, 4, 10, 4]], sel: [[1, 4, 1, 4]], name: "E2", formula: "=SUMIFS($C$2:C2,$B$2:B2,B2)" }) }
+      ];
+    },
+    takeaway: "The loop needs a variable that remembers the previous row. A window function declares the same idea as a frame: partition the set, order it, and aggregate over the rows so far. The state lives inside the engine, which is also what lets Spark spread partitions across machines.",
+    set: function () {
+      var sorted = D.orders.slice().sort(function (a, b) { return a.customer_id - b.customer_id || a.order_date.localeCompare(b.order_date); });
+      var run = {}, withRun = sorted.map(function (o) { run[o.customer_id] = (run[o.customer_id] || 0) + o.amount; return oRow(o).concat([run[o.customer_id]]); });
+      return [
+        { title: "FROM orders", note: "The input set, in no particular order.", sql: [5], spark: [2], view: tbl(OC, D.orders.map(oRow)) },
+        { title: "PARTITION BY customer_id ORDER BY order_date", note: "Rows are grouped per customer and ordered by date inside each group. In Spark this causes a shuffle so each customer's rows end up together.", sql: [2, 3], spark: [0, 1], view: tbl(OC, sorted.map(oRow)) },
+        { title: "SUM(amount) OVER (...) AS running_total", note: "A new column is added to every row at once. Each value is the sum of that customer's amounts up to and including the row.", sql: [0, 1, 4], spark: [2, 3], view: tbl(OC.concat(["running_total"]), withRun, { newCol: 4 }) }
+      ];
+    },
+    loop: function () {
+      var sorted = D.orders.slice().sort(function (a, b) { return a.customer_id - b.customer_id || a.order_date.localeCompare(b.order_date); });
+      var cols = OC.concat(["running_total"]);
+      var steps = [], running = {};
+      var base = sorted.map(function (o) { return oRow(o).concat([""]); });
+      steps.push({ title: "running = {}; out = []", note: "Two pieces of state: the running sums and the output list.", lines: [0, 1], view: cursorTable(cols, base, -1, false, 4) + chips({}, "running") });
+      sorted.forEach(function (o, i) {
+        running[o.customer_id] = (running[o.customer_id] || 0) + o.amount;
+        base[i][4] = running[o.customer_id];
+        steps.push({
+          title: "row id=" + o.id + ", customer " + o.customer_id,
+          note: "running[" + o.customer_id + "] becomes " + running[o.customer_id] + " and the row is appended to out.",
+          lines: [2, 3, 4, 5],
+          view: cursorTable(cols, base, i, false, 4) + chips(running, "running")
+        });
+      });
+      return steps;
+    }
+  });
+
+  /* ---------- lab UI ---------- */
+  var tabsEl = document.getElementById("tabs");
+  var lessonEl = document.getElementById("lesson");
+  var KINDS = ["set", "loop", "xl"];
+  var cur = 0, idx = { set: 0, loop: 0, xl: 0 }, timers = { set: null, loop: null, xl: null };
+  var cache = {};
+
+  function stepsFor(i) {
+    if (!cache[i]) cache[i] = { set: lessons[i].set(), loop: lessons[i].loop(), xl: lessons[i].excel() };
+    return cache[i];
+  }
+  function codeHtml(lines, on, kind) {
+    return lines.map(function (l, i) { return '<span class="ln ' + (on.indexOf(i) > -1 ? "on " + kind : "") + '">' + esc(l || " ") + "</span>"; }).join("");
+  }
+  function stopTimer(k) { if (timers[k]) { clearInterval(timers[k]); timers[k] = null; } }
+
+  function renderTabs() {
+    tabsEl.innerHTML = lessons.map(function (l, i) {
+      return '<button class="tab" role="tab" id="tab-' + l.id + '" aria-selected="' + (i === cur) + '" data-i="' + i + '">' + esc((i + 1) + ". " + l.name) + "<small>" + esc(l.sub) + "</small></button>";
+    }).join("");
+  }
+
+  function vcol(label, n, unit, k, text, max) {
+    return '<div><div class="eyebrow">' + label + '</div><div class="big">' + n + ' <span style="font-size:1rem;font-weight:500" class="muted">' + unit + '</span></div><div class="bar ' + k + '" style="width:' + Math.round(n / max * 100) + '%"></div><p class="muted">' + text + "</p></div>";
+  }
+
+  function renderLesson() {
+    var L = lessons[cur], S = stepsFor(cur);
+    var mx = Math.max(S.set.length, S.loop.length, S.xl.length);
+    lessonEl.innerHTML =
+      '<div class="goal"><span class="eyebrow">The question</span><div class="q">' + esc(L.q) + "</div></div>" +
+      '<div class="codes">' +
+        '<div class="codebox"><div class="codehead"><i class="dot set"></i>SQL <span class="sub">declarative</span></div><pre class="code" id="c-sql"></pre></div>' +
+        '<div class="codebox"><div class="codehead"><i class="dot spark"></i>PySpark <span class="sub">declarative via Python</span></div><pre class="code" id="c-spark"></pre></div>' +
+        '<div class="codebox"><div class="codehead"><i class="dot loop"></i>Python loop <span class="sub">imperative</span></div><pre class="code" id="c-py"></pre></div>' +
+        '<div class="codebox"><div class="codehead"><i class="dot xl"></i>Excel <span class="sub">formulas in cells</span></div><pre class="code" id="c-xl"></pre></div>' +
+      "</div>" +
+      '<div class="exec">' +
+        stageHtml("set", "Set-based view", "Each step works on the whole table") +
+        stageHtml("loop", "Loop view", "Each step visits one row and updates state") +
+        stageHtml("xl", "Excel view", "Each step places a formula in a cell, then fills it down") +
+      "</div>" +
+      '<div class="verdict">' +
+        vcol("Set-based", S.set.length, "transformations", "set", "Steps you reason about. Their number does not grow with the data.", mx) +
+        vcol("Loop", S.loop.length, "steps", "loop", "One visit per row, so it grows with every new row (here: 10 rows).", mx) +
+        vcol("Excel", S.xl.length, "cell actions", "xl", "Formulas written once and filled down. Every intermediate result stays visible on the sheet.", mx) +
+        '<p class="takeaway">' + esc(L.takeaway) + "</p>" +
+        '<p class="takeaway">' + esc(L.takeXl) + "</p>" +
+      "</div>";
+    KINDS.forEach(function (k) { idx[k] = 0; stopTimer(k); update(k); });
+  }
+
+  function stageHtml(k, title, sub) {
+    return '<div class="stage ' + k + '">' +
+      '<div class="stage-head"><h3>' + title + '</h3><span class="counter" id="n-' + k + '"></span></div>' +
+      '<p class="muted" style="font-size:0.88rem">' + sub + "</p>" +
+      '<div class="controls">' +
+        '<button class="btn" data-act="prev" data-k="' + k + '">Back</button>' +
+        '<button class="btn primary ' + k + '" data-act="next" data-k="' + k + '">Next step</button>' +
+        '<button class="btn" data-act="play" data-k="' + k + '" id="p-' + k + '">Play</button>' +
+        '<button class="btn" data-act="reset" data-k="' + k + '">Reset</button>' +
+      "</div>" +
+      '<div class="steptitle" id="t-' + k + '"></div>' +
+      '<div class="stepnote" id="d-' + k + '"></div>' +
+      '<div id="v-' + k + '"></div>' +
+    "</div>";
+  }
+
+  function update(k) {
+    var L = lessons[cur], S = stepsFor(cur)[k], i = idx[k], st = S[i];
+    document.getElementById("n-" + k).textContent = "Step " + (i + 1) + " of " + S.length;
+    document.getElementById("t-" + k).textContent = st.title;
+    document.getElementById("d-" + k).textContent = st.note;
+    document.getElementById("v-" + k).innerHTML = st.view;
+    if (k === "set") {
+      document.getElementById("c-sql").innerHTML = codeHtml(L.sql, st.sql, "set");
+      document.getElementById("c-spark").innerHTML = codeHtml(L.spark, st.spark, "spark");
+    } else if (k === "loop") {
+      document.getElementById("c-py").innerHTML = codeHtml(L.py, st.lines, "loop");
+    } else {
+      document.getElementById("c-xl").innerHTML = codeHtml(L.xl, st.lines, "xl");
+    }
+    var stage = lessonEl.querySelector(".stage." + k);
+    stage.querySelector('[data-act="prev"]').disabled = i === 0;
+    stage.querySelector('[data-act="next"]').disabled = i === S.length - 1;
+    if (i === S.length - 1) { stopTimer(k); document.getElementById("p-" + k).textContent = "Play"; }
+  }
+
+  function go(k, delta, abs) {
+    var S = stepsFor(cur)[k];
+    idx[k] = abs !== undefined ? abs : Math.min(S.length - 1, Math.max(0, idx[k] + delta));
+    update(k);
+  }
+
+  lessonEl.addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act]");
+    if (!b) return;
+    var k = b.getAttribute("data-k"), act = b.getAttribute("data-act");
+    if (act === "next") { stopTimer(k); document.getElementById("p-" + k).textContent = "Play"; go(k, 1); }
+    if (act === "prev") { stopTimer(k); document.getElementById("p-" + k).textContent = "Play"; go(k, -1); }
+    if (act === "reset") { stopTimer(k); document.getElementById("p-" + k).textContent = "Play"; go(k, 0, 0); }
+    if (act === "play") {
+      if (timers[k]) { stopTimer(k); b.textContent = "Play"; return; }
+      var S = stepsFor(cur)[k];
+      if (idx[k] >= S.length - 1) go(k, 0, 0);
+      b.textContent = "Pause";
+      timers[k] = setInterval(function () { go(k, 1); }, k === "loop" ? 800 : 1500);
+    }
+  });
+  tabsEl.addEventListener("click", function (e) {
+    var b = e.target.closest(".tab");
+    if (!b) return;
+    cur = +b.getAttribute("data-i");
+    try { localStorage.setItem("svl-lesson", String(cur)); } catch (err) {}
+    renderTabs(); renderLesson();
+  });
+
+  try { var saved = parseInt(localStorage.getItem("svl-lesson"), 10); if (saved >= 0 && saved < lessons.length) cur = saved; } catch (err) {}
+  renderTabs(); renderLesson();
+
+  /* ---------- quiz ---------- */
+  var QS = [
+    { q: "You need a 10% tax column on a DataFrame with 500 million rows. Which line fits the set-based mindset?",
+      o: ["for row in df.collect(): ...", "A Python UDF that multiplies one value at a time", "df.toPandas().iterrows()", "df.withColumn(\"tax\", F.col(\"amount\") * 0.1)"],
+      a: 3, e: "A column expression describes the change for the whole set. Spark runs it on every partition in parallel and the optimizer can see it. The other options pull data to one machine or cross the JVM/Python boundary per value." },
+    { q: "You write df.filter(...).groupBy(...).agg(...) in a notebook cell and it returns instantly, with no data processed. Why?",
+      o: ["Spark skipped the work because of a cached result", "Transformations are lazy and only build a plan until an action runs", "Python is still waiting for a loop to finish", "filter() always needs an explicit commit"],
+      a: 1, e: "Nothing runs until an action such as show(), count() or write() is called. Until then Spark only records the plan, which Catalyst can optimize as a whole." },
+    { q: "In the logical order of a SQL query, which clause is evaluated first?",
+      o: ["SELECT", "WHERE", "HAVING", "FROM"],
+      a: 3, e: "The logical order is FROM, WHERE, GROUP BY, HAVING, SELECT, ORDER BY. SELECT is written first but evaluated late, which is why you cannot use a SELECT alias inside WHERE." },
+    { q: "In a loop, totals[cid] = totals.get(cid, 0) + amount is the hand-written version of which SQL idea?",
+      o: ["JOIN", "GROUP BY with SUM", "ORDER BY", "DISTINCT"],
+      a: 1, e: "The dictionary keyed by cid is the group, and the addition is the aggregate. GROUP BY customer_id with SUM(amount) states the same thing without any mutable state." },
+    { q: "A running total per customer in date order is best expressed in Spark as:",
+      o: ["A global variable updated inside a UDF", "collect(), then a Python loop", "A window with partitionBy and orderBy, then F.sum().over(w)", "A self-join for every row"],
+      a: 2, e: "A window function declares the partition and ordering, and Spark manages the per-partition state. A global variable inside a UDF breaks as soon as the work is spread over several executors." },
+    { q: "In Excel you fill =XLOOKUP(B2, ...) down 10,000 rows. Which idea in SQL or Spark is it closest to?",
+      o: ["A for loop that mutates a variable", "A JOIN that adds a column to every row at once", "A HAVING clause", "A window frame"],
+      a: 1, e: "The same formula is applied to every row and the result is a new column, which has the shape of a join or a column expression. The difference is that Excel refers to cells by position (B2, $G$2:$G$5) and shows every intermediate column on the sheet." }
+  ];
+  var qi = 0, score = 0, answered = false;
+  var quizEl = document.getElementById("quiz");
+  function renderQuiz() {
+    if (qi >= QS.length) {
+      quizEl.innerHTML = '<div class="qtext">Score: ' + score + " of " + QS.length + '</div><p class="muted">' +
+        (score >= 4 ? "You are thinking in sets. Try rewriting a loop from your own code as a groupBy or window." : "Revisit the lab above and compare the step counts. Then try the quiz again.") +
+        '</p><div><button class="btn primary set" id="qrestart">Restart quiz</button></div>';
+      return;
+    }
+    var Q = QS[qi];
+    quizEl.innerHTML =
+      '<div class="qmeta"><span>Question ' + (qi + 1) + " of " + QS.length + "</span><span>Score " + score + "</span></div>" +
+      '<div class="qtext">' + esc(Q.q) + "</div>" +
+      '<div class="opts">' + Q.o.map(function (t, i) { return '<button class="opt" data-i="' + i + '">' + esc(t) + "</button>"; }).join("") + "</div>" +
+      '<div id="qfb"></div>';
+    answered = false;
+  }
+  quizEl.addEventListener("click", function (e) {
+    if (e.target.id === "qrestart") { qi = 0; score = 0; renderQuiz(); return; }
+    if (e.target.id === "qnext") { qi++; renderQuiz(); return; }
+    var b = e.target.closest(".opt");
+    if (!b || answered) return;
+    answered = true;
+    var i = +b.getAttribute("data-i"), Q = QS[qi];
+    if (i === Q.a) score++;
+    quizEl.querySelectorAll(".opt").forEach(function (o, idx) {
+      o.disabled = true;
+      if (idx === Q.a) o.classList.add("right");
+      else if (idx === i) o.classList.add("wrong");
+    });
+    document.getElementById("qfb").innerHTML = '<div class="explain"><b>' + (i === Q.a ? "Correct. " : "Not quite. ") + "</b>" + esc(Q.e) + '</div><div style="margin-top:12px"><button class="btn primary set" id="qnext">' + (qi === QS.length - 1 ? "See score" : "Next question") + "</button></div>";
+  });
+
+  /* ---------- right tool: scale tester ---------- */
+  var fmtN = function (n, d) { return Number(n).toLocaleString("en-US", { maximumFractionDigits: d === undefined ? 0 : d }); };
+  var fmtT = function (t) { return t < 1 ? "under 1 s" : t < 90 ? Math.round(t) + " s" : t < 5400 ? Math.round(t / 60) + " min" : t < 172800 ? (t / 3600).toFixed(1) + " h" : Math.round(t / 86400) + " days"; };
+  var words = function (n) { return n >= 1e9 ? fmtN(n / 1e9, 1) + " billion" : n >= 1e6 ? fmtN(n / 1e6, 1) + " million" : fmtN(n / 1e3, 1) + " thousand"; };
+  var grade = function (t) { return t < 10 ? "ok" : t < 900 ? "slow" : "poor"; };
+  var PILL = { ok: "Works well", slow: "Slow", poor: "Impractical", no: "Cannot", over: "Overkill" };
+  function estimate(N) {
+    var x, l, q, sp;
+    if (N > 1048576) x = { s: "no", t: null, why: "A sheet holds at most 1,048,576 rows, so this data does not fit." };
+    else { var tx = N / 5e5; x = { s: grade(tx), t: tx, why: "SUMIFS over the whole range, recalculated on every edit." }; }
+    if (N > 5e7) l = { s: "no", t: null, why: "Does not fit in the memory of one machine (assumed about 50 million rows)." };
+    else { var tl = N / 1e6; l = { s: grade(tl), t: tl, why: "One pass in pure Python on a single machine." }; }
+    if (N > 5e9) q = { s: "no", t: null, why: "Beyond what one database server stores and scans comfortably." };
+    else { var tq = N / 2e7; q = { s: grade(tq), t: tq, why: "An optimized engine scanning on one server, next to the data." }; }
+    var ts = 20 + N / 3e8;
+    sp = { s: N < 5e7 ? "over" : grade(ts), t: ts, why: N < 5e7 ? "About 20 seconds just to start. Below tens of millions of rows this cost buys nothing." : "Reads the data in parallel across machines, so time grows slowly with size." };
+    return [
+      { k: "xl", name: "Excel", r: x },
+      { k: "loop", name: "Python loop", r: l },
+      { k: "set", name: "SQL, one server", r: q },
+      { k: "spark", name: "Spark cluster", r: sp }
+    ];
+  }
+  var rowsEl = document.getElementById("rows");
+  function renderScale() {
+    var N = Math.round(Math.pow(10, parseFloat(rowsEl.value)));
+    document.getElementById("rows-out").textContent = fmtN(N);
+    var E = estimate(N);
+    document.getElementById("sc-list").innerHTML = E.map(function (e) {
+      return '<div class="sc-row"><span class="nm"><i class="dot ' + e.k + '"></i>' + e.name + '</span><span><span class="pill ' + e.r.s + '">' + PILL[e.r.s] + '</span></span><span class="tm">' + (e.r.t === null ? "no result" : "about " + fmtT(e.r.t)) + '</span><span class="why">' + esc(e.r.why) + "</span></div>";
+    }).join("");
+    var note;
+    if (N <= 1048576) note = "At " + words(N) + " rows every tool finishes in seconds. Choose by who needs the result and how often the inputs change, not by speed.";
+    else {
+      var ok = E.filter(function (e) { return e.r.s === "ok" && e.r.t !== null; }).sort(function (a, b) { return a.r.t - b.r.t; });
+      var feasible = E.filter(function (e) { return e.r.s !== "no"; }).map(function (e) { return e.name.replace(", one server", ""); });
+      note = ok.length ? "At " + words(N) + " rows, fastest practical choice: " + ok[0].name.replace(", one server", "") + ". Tools that can still do it: " + feasible.join(", ") + "." : "At " + words(N) + " rows only " + feasible.join(", ") + " can finish this at all.";
+    }
+    document.getElementById("sc-note").textContent = note;
+  }
+  rowsEl.addEventListener("input", renderScale);
+  document.getElementById("presets").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-p]"); if (!b) return;
+    rowsEl.value = b.getAttribute("data-p"); renderScale();
+  });
+  document.getElementById("spark-go").addEventListener("click", function () {
+    rowsEl.value = "9.3"; renderScale();
+    document.getElementById("rows").scrollIntoView({ block: "center" });
+  });
+  renderScale();
+
+  /* ---------- right tool: savings loop ---------- */
+  var num = function (id) { var v = parseFloat(document.getElementById(id).value); return isFinite(v) ? v : 0; };
+  var plain = function (lines) { return lines.map(function (l) { return '<span class="ln">' + esc(l) + "</span>"; }).join(""); };
+  function renderSavings() {
+    var st = num("sv-start"), dep = num("sv-dep"), rate = num("sv-rate"), raise = num("sv-raise"), goal = num("sv-goal");
+    var b = st, d = dep, m = 0, ye = [];
+    while (b < goal && m < 600) { m++; b = b * (1 + rate / 100 / 12) + d; if (m % 12 === 0) { ye.push(fmtN(m / 12) + ": " + fmtN(b)); d = d * (1 + raise / 100); } }
+    var res = document.getElementById("sv-res");
+    if (b >= goal) res.innerHTML = "Goal reached after <b>" + fmtN(m) + " months</b> (" + fmtN(m / 12, 1) + " years) with a balance of " + fmtN(b) + ". Last monthly deposit: " + fmtN(d, 2) + ".";
+    else res.innerHTML = "Goal not reached within <b>50 years</b>. Balance after 600 months: " + fmtN(b) + ".";
+    document.getElementById("sv-py").innerHTML = plain([
+      "balance, deposit, month = " + st + ", " + dep + ", 0",
+      "while balance < " + goal + " and month < 600:",
+      "    month += 1",
+      "    balance = balance * (1 + " + rate + " / 100 / 12) + deposit",
+      "    if month % 12 == 0:",
+      "        deposit *= 1 + " + raise + " / 100"
+    ]);
+    document.getElementById("sv-sql").innerHTML = plain([
+      "WITH RECURSIVE sim(month, balance, deposit) AS (",
+      "  SELECT 0, " + st + ".0, " + dep + ".0",
+      "  UNION ALL",
+      "  SELECT month + 1,",
+      "         balance * (1 + " + rate + " / 100.0 / 12) + deposit,",
+      "         CASE WHEN (month + 1) % 12 = 0",
+      "              THEN deposit * (1 + " + raise + " / 100.0)",
+      "              ELSE deposit END",
+      "  FROM sim",
+      "  WHERE balance < " + goal + " AND month < 600",
+      ")",
+      "SELECT MIN(month) FROM sim WHERE balance >= " + goal + ";"
+    ]);
+    document.getElementById("sv-xl").innerHTML = plain([
+      "A3: =A2+1",
+      "B3: =B2*(1+rate/12)+C2",
+      "C3: =IF(MOD(A3,12)=0, C2*(1+raise), C2)",
+      "Fill A3:C601 down, then:",
+      "=XLOOKUP(TRUE, B2:B601>=goal, A2:A601)"
+    ]);
+  }
+  ["sv-start", "sv-dep", "sv-rate", "sv-raise", "sv-goal"].forEach(function (id) { document.getElementById(id).addEventListener("input", renderSavings); });
+  renderSavings();
+
+  /* ---------- right tool: pricing what-if ---------- */
+  function renderWhatIf() {
+    var price = num("wi-price"), cost = num("wi-cost"), units = num("wi-units"), disc = num("wi-disc"), fixed = num("wi-fixed");
+    var net = price * (1 - disc / 100), rev = net * units, vc = cost * units, profit = rev - vc - fixed;
+    var margin = rev === 0 ? null : profit / rev, be = net - cost <= 0 ? null : fixed / (net - cost);
+    var set = function (id, v) { document.getElementById(id).textContent = v; };
+    set("wi-net", fmtN(net, 2)); set("wi-rev", fmtN(rev, 0)); set("wi-var", fmtN(vc, 0)); set("wi-profit", fmtN(profit, 0));
+    set("wi-margin", margin === null ? "n/a" : fmtN(margin * 100, 1) + "%");
+    set("wi-be", be === null ? "never" : fmtN(Math.ceil(be)));
+    document.getElementById("wi-res").innerHTML = "Profit <b>" + fmtN(profit, 0) + "</b>" + (margin === null ? "" : " at a " + fmtN(margin * 100, 1) + "% margin") + (be === null ? ". At this price the unit cost is not covered." : ". Break-even at " + fmtN(Math.ceil(be)) + " units.");
+  }
+  ["wi-price", "wi-cost", "wi-units", "wi-disc", "wi-fixed"].forEach(function (id) { document.getElementById(id).addEventListener("input", renderWhatIf); });
+  renderWhatIf();
+
+  renderQuiz();
+})();
+</script>
+</html>

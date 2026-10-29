@@ -1,0 +1,33 @@
+# Build and test for the DA Study Labs folder only. It does not deploy anything:
+# the site keeps being published by GitHub Pages from the branch as before.
+name: DA Study Labs - build and test
+
+on:
+  push:
+    paths: ["da-study-labs/**", ".github/workflows/da-study-labs.yml"]
+  pull_request:
+    paths: ["da-study-labs/**", ".github/workflows/da-study-labs.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: da-study-labs/_dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install LibreOffice (for the Excel formula check)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-calc
+      - name: Install Python packages and Chromium
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Build all labs
+        run: python src/build_all.py
+      - name: Committed pages match the sources
+        run: git diff --exit-code -- .. ':(exclude)*.xlsx'
+      - name: Browser test
+        run: python tests/test_site.py
