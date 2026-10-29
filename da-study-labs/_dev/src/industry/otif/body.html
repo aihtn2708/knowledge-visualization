@@ -1,0 +1,95 @@
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="{{foundation}}"{{target}}>← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · Supply chain</div>
+    <h1>OTIF Delivery Performance Lab</h1>
+    <p class="lead">A global health supply chain shipped about 10,000 orders of medicines and test kits to more than 40 countries. Measure how often they arrived on time, find where the misses come from, predict which shipments are at risk, and set delivery promises the network can keep.</p>
+    <div class="repo">
+      <span class="nm">statsmodels/statsmodels</span>
+      <span class="meta"><span>★ about 11.7k</span><span>BSD-3-Clause licence</span><span>Python</span></span>
+      <p>statsmodels is the standard Python library for statistical models. This lab uses its logistic regression to explain and predict late deliveries. The data is USAID's Supply Chain Shipment Pricing Data (the PEPFAR SCMS delivery history, 2006 to 2015), from a public GitHub mirror. Only aggregated figures and model results are shown here.</p>
+      <a class="go" href="https://ossinsight.io/analyze/statsmodels/statsmodels" target="_blank" rel="noopener">About the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">What OTIF means</b>On time in full: the share of orders delivered by the promised date <i>and</i> with the full quantity. A late order and a short order both count as a miss.</div>
+      <div><b class="k">What this data can measure</b>The <b>on-time</b> part: each record has a scheduled and an actual delivery date. Delivered quantities are not recorded, so the in-full part is handled as an assumption in the last step.</div>
+      <div><b class="k">Decision</b>Which routes need attention, and how many days of buffer each route needs in its promised date to reach an OTIF target.</div>
+      <div><b class="k">Data</b><span id="data-line"></span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · how often were we on time?</span>
+    <h2 id="d-h">On-time rate by year and by transport mode</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="panel"><h3>On-time rate by year</h3><div id="ch-year"></div></div>
+      <div class="panel"><h3>On-time rate by mode</h3><div id="ch-mode"></div></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · where do the misses come from?</span>
+    <h2 id="g-h">Route and mode explain most of the gap</h2>
+    <p class="sec-intro">Orders either shipped directly from the manufacturer or were picked from stock at a regional distribution centre (DC) closer to the country. Comparing the two, mode by mode, shows where the late orders concentrate.</p>
+    <div class="grid2">
+      <div class="panel"><h3>On-time rate by route and mode</h3><div class="tw" id="rm-table"></div></div>
+      <div class="panel"><h3>On-time rate by destination country</h3><div id="ch-country"></div></div>
+    </div>
+    <p class="sec-intro" id="diag-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · which shipments are at risk?</span>
+    <h2 id="p-h">A late-delivery model</h2>
+    <p class="sec-intro">A logistic regression, fitted with statsmodels on 70% of the orders, estimates the chance an order arrives late from its route, mode, product type, period and destination. Each bar is an odds ratio: above 1 means more likely to be late than the reference case, with its 95% confidence interval.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-or"></div></div>
+      <div class="controls">
+        <div class="panel"><h3>Risk of a new order</h3><div class="controls" id="risk"></div><div class="kpis" id="risk-kpi"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · what should we promise?</span>
+    <h2 id="r-h">Set promise dates that hit the target</h2>
+    <p class="sec-intro">Adding buffer days to the promised date turns some late orders into on-time ones. Using each route's history of delays, find the smallest buffer that reaches the target. OTIF then also depends on the in-full rate: if shortages are unrelated to delays, OTIF ≈ on-time rate × in-full rate.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-buffer"></div><div class="tw" id="buf-table"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="tgt" id="tgt-l"></label><input id="tgt" type="range" min="85" max="99" step="1" value="95"></div>
+        <div class="slider"><label for="inf" id="inf-l"></label><input id="inf" type="range" min="90" max="100" step="1" value="98"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Fit the model with statsmodels</h2>
+    <p class="sec-intro">Install with <code>pip install pandas statsmodels scikit-learn</code>. The script downloads the CSV from the GitHub mirror, computes on-time rates and fits the same logistic regression.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://data.amerigeoss.org/dataset/supply-chain-shipment-pricing-data" target="_blank" rel="noopener">USAID: Supply Chain Shipment Pricing Data</a> <span>ARV and HIV test kit shipments under the PEPFAR SCMS project, posted by USAID with attribution to the partner. Used here through the mirror <a href="https://github.com/jrcinco/supply-chain-shipment-price-data/blob/master/SCMS_Delivery_History_Dataset.csv" target="_blank" rel="noopener">jrcinco/supply-chain-shipment-price-data</a>.</span></li>
+      <li><a href="https://ossinsight.io/analyze/statsmodels/statsmodels" target="_blank" rel="noopener">statsmodels/statsmodels</a> <span>(BSD-3-Clause). Logistic regression with confidence intervals.</span></li>
+      <li><a href="{{foundation}}"{{target}}>Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>USAID notes that conclusions about costs or lead times for specific products or countries drawn from this data may not be accurate. Orders delivered on the scheduled date count as on time. The model was fitted on a random 70% of orders and scored on the other 30%.</footer>
+</div>

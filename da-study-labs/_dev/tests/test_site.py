@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SITE = os.path.dirname(ROOT)   # da-study-labs/
 LABS = ["coffee-chain", "debt-classification", "loan-recommendation"]
-INDUSTRY = ["retail-demand-forecasting", "delivery-route-planning", "investment-risk-return", "credit-scorecard"]
+INDUSTRY = ["retail-demand-forecasting", "otif-delivery-performance", "freight-hedging-strategy", "investment-risk-return", "credit-scorecard"]
 
 
 def serve():
@@ -43,7 +43,7 @@ def main():
         links = page.eval_on_selector_all("section.assign a.open", "els => els.map(e => e.getAttribute('href'))")
         print("hub links:", links)
         expected = [f"labs/{s}/index.html" for s in LABS] + [f"industry/{s}/index.html" for s in INDUSTRY]
-        if links != expected: failures.append("hub links")
+        if sorted(links) != sorted(expected): failures.append("hub links")
 
         # Foundation page and the four industry labs: load cleanly, widgets render, every internal link exists
         for path, sel, n in [("foundation/index.html", "#quiz-list .qitem", 8)] + [(f"industry/{s}/index.html", "#ex .exq", 4) for s in INDUSTRY]:

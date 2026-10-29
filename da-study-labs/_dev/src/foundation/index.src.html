@@ -362,7 +362,8 @@ footer { color: var(--muted); font-size: 0.86rem; max-width: 80ch; }
     <div class="practice">
       <h3>Industry labs: one business case each, built on a well-known open-source repository</h3>
       <a href="{{ind-fmcg}}"{{target}}><b>FMCG · Retail Demand Forecasting</b><span>Seasonality, a backtest against Prophet and a buffered supply plan. Data: facebook/prophet.</span></a>
-      <a href="{{ind-sc}}"{{target}}><b>Supply chain · Delivery Route Planning</b><span>Routing methods and the cheapest truck size. Data: google/or-tools.</span></a>
+      <a href="{{ind-otif}}"{{target}}><b>Supply chain · OTIF Delivery Performance</b><span>On-time rates, root causes, a late-delivery model and promise-date buffers. Model: statsmodels; data: USAID SCMS.</span></a>
+      <a href="{{ind-hedge}}"{{target}}><b>Supply chain · Freight Hedging Strategy</b><span>Freight volatility, a GARCH forecast and a backtest of fixed-rate and cap hedges. Model: bashtage/arch.</span></a>
       <a href="{{ind-fin}}"{{target}}><b>Finance · Investment Risk and Return</b><span>150 years of returns, drawdowns and an equity-share rule. Metrics: ranaroussi/quantstats.</span></a>
       <a href="{{ind-lend}}"{{target}}><b>Lending · Credit Scorecard</b><span>WoE, IV, a points scorecard and a cost-based cut-off. Data: ShichenXie/scorecardpy.</span></a>
       <h3>SQL, Python and Excel labs</h3>
@@ -398,7 +399,7 @@ footer { color: var(--muted); font-size: 0.86rem; max-width: 80ch; }
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var fmt = function (v, d) { return Number(v).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); };
   var IND = { fmcg: "FMCG", supply: "Supply chain", finance: "Finance", lending: "Lending" };
-  var LABS = { fmcg: ["Retail Demand Forecasting", "{{ind-fmcg}}"], supply: ["Delivery Route Planning", "{{ind-sc}}"],
+  var LABS = { fmcg: ["Retail Demand Forecasting", "{{ind-fmcg}}"], supply: ["OTIF Delivery Performance", "{{ind-otif}}"],
                finance: ["Investment Risk and Return", "{{ind-fin}}"], lending: ["Credit Scorecard", "{{ind-lend}}"] };
   var ind = "fmcg";
   try { var saved = localStorage.getItem("daf-ind"); if (saved && IND[saved]) ind = saved; } catch (e) {}

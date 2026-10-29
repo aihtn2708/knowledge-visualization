@@ -11,7 +11,8 @@ This folder lives inside the `knowledge-visualization` site and does not change 
 - Loan Recommendation Lab (intermediate to advanced): `.../da-study-labs/labs/loan-recommendation/`
 - Industry labs, one business case each on a well-known open-source repository:
   - FMCG, Retail Demand Forecasting (facebook/prophet data): `.../da-study-labs/industry/retail-demand-forecasting/`
-  - Supply chain, Delivery Route Planning (google/or-tools example): `.../da-study-labs/industry/delivery-route-planning/`
+  - Supply chain, OTIF Delivery Performance (USAID SCMS delivery history, statsmodels model): `.../da-study-labs/industry/otif-delivery-performance/`
+  - Supply chain, Freight Hedging Strategy (BLS deep sea freight index, bashtage/arch GARCH): `.../da-study-labs/industry/freight-hedging-strategy/`
   - Finance, Investment Risk and Return (Shiller S&P 500 data, ranaroussi/quantstats metrics): `.../da-study-labs/industry/investment-risk-return/`
   - Lending, Credit Scorecard (ShichenXie/scorecardpy German credit data): `.../da-study-labs/industry/credit-scorecard/`
 
@@ -35,7 +36,7 @@ da-study-labs/
     src/labs/<lab>/          build.py (data + verification), assemble.py (page), solutions and page parts
     src/foundation/          Foundations page source and build script
     src/industry/            industry labs: shared style and chart code, one folder per lab (page text, analysis,
-                             data.json, ref*.py reference analyses run with prophet, ortools, quantstats, scorecardpy)
+                             data.json, ref/prep scripts run with prophet, statsmodels, arch, quantstats, scorecardpy)
     tests/test_site.py       opens every page in Chromium and runs every reference solution
     requirements.txt
 ```
