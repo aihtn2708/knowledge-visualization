@@ -12,7 +12,9 @@ html = open(os.path.join(HERE, "index.src.html"), encoding="utf8").read()
 for k, v in LINKS.items():
     html = html.replace("{{" + k + "}}", v)
 html = html.replace("{{target}}", "")
-html = html.replace("{{kh}}", '<a class="jump" href="../index.html" target="_top" style="font-size:0.9rem">← Knowledge Hub</a>\n    ')
+# link back to the Knowledge Hub; hidden when the page is already shown inside the hub's frame
+html = html.replace("{{kh}}", '<a class="jump" id="kh-link" href="../index.html" style="font-size:0.9rem">← Knowledge Hub</a>'
+                    '<script>if (window.self !== window.top) document.getElementById("kh-link").remove();</script>\n    ')
 assert "{{" not in html
 os.makedirs(SITE, exist_ok=True)
 open(os.path.join(SITE, "index.html"), "w", encoding="utf8").write(wrap_doc(html))

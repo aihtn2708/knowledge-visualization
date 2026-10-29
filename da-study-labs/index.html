@@ -236,7 +236,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
 
 <div class="wrap">
   <header>
-    <a class="jump" href="../index.html" target="_top" style="font-size:0.9rem">← Knowledge Hub</a>
+    <a class="jump" id="kh-link" href="../index.html" style="font-size:0.9rem">← Knowledge Hub</a><script>if (window.self !== window.top) document.getElementById("kh-link").remove();</script>
     <div class="eyebrow">SQL · PySpark · Python · Excel</div>
     <h1>Think in sets, not in rows.</h1>
     <p class="lead">The same question answered four ways. Step through each one and watch how a declarative query works on whole tables, a Python loop visits one row at a time and keeps its own state, and an Excel sheet places a formula in a cell and fills it down.</p>
