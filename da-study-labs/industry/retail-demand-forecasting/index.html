@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retail Demand Forecasting Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: roadmap map on top (as in the course diagram), then Introduction, Key concepts, Types, two worked cases, quiz, sources. */
+:root {
+  --bg: #f2f5f9;
+  --surface: #ffffff;
+  --ink: #15212f;
+  --muted: #586678;
+  --line: #d7dfe8;
+  --node: #ffe7a3;          /* roadmap boxes */
+  --node-ink: #2a2207;
+  --core: #ffd84a;          /* roadmap core nodes */
+  --spine: #2f6fd6;         /* roadmap spine and dotted links */
+  --spine-soft: #dce8fb;
+  --t1: #2f6fd6; --t2: #0b7a72; --t3: #8a5a00; --t4: #b4361f;   /* descriptive, diagnostic, predictive, prescriptive */
+  --t1-soft: #e2ecfb; --t2-soft: #d8f0ed; --t3-soft: #f6ebd4; --t4-soft: #f9e1dc;
+  --code-bg: #eaeff5;
+  --good: #1a7f45; --bad: #b3261e;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+    --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+    --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+    --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+    --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+  --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+  --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+  --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+  --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.58;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.2vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+h4 { font-size: 0.98rem; font-weight: 600; }
+p { margin: 0; }
+ul { margin: 0; padding-left: 1.15em; display: grid; gap: 4px; }
+a { color: var(--spine); }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.lead { font-size: 1.1rem; color: var(--muted); max-width: 66ch; }
+.sec { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+.sec-intro { max-width: 68ch; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.tnum { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--spine); outline-offset: 2px; }
+
+/* ---------- roadmap map ---------- */
+.mapwrap { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px clamp(14px, 3vw, 28px); }
+.map { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr); gap: 28px clamp(24px, 5vw, 72px); align-items: start; }
+.map svg.links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.node { position: relative; z-index: 1; display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 8px; background: var(--node); color: var(--node-ink); font-weight: 600; font-size: 0.95rem; text-align: center; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); transition: transform 0.12s, box-shadow 0.12s; }
+.node:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.node.core { background: var(--core); }
+.m-left { position: relative; z-index: 1; border: 2px solid var(--ink); border-radius: 10px; background: var(--surface); padding: 0 12px 12px; box-shadow: 2px 2px 0 var(--ink); }
+.m-left > .node { margin: -2px -14px 12px; width: calc(100% + 28px); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tiles .node { font-size: 0.9rem; box-shadow: none; }
+.tiles .node.wide { grid-column: 1 / -1; }
+.m-mid { position: relative; display: flex; flex-direction: column; gap: 28px; align-items: stretch; padding-bottom: 8px; }
+.m-mid::before { content: ""; position: absolute; left: 50%; top: -28px; bottom: -28px; width: 3px; transform: translateX(-50%); background: var(--spine); border-radius: 2px; }
+.spine-label { position: relative; z-index: 1; align-self: center; margin-top: 36px; padding: 6px 10px; background: var(--surface); font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; text-align: center; }
+.m-right { display: flex; flex-direction: column; gap: 10px; }
+.m-right .gap { height: 18px; }
+.map-hint { margin-top: 14px; font-size: 0.88rem; color: var(--muted); text-align: center; }
+@media (max-width: 820px) {
+  .map { grid-template-columns: 1fr; gap: 14px; }
+  .map svg.links { display: none; }
+  .m-mid { order: -1; gap: 10px; }
+  .m-mid::before { display: none; }
+  .spine-label { margin-top: 0; order: -1; }
+  .m-right .gap { display: none; }
+}
+
+/* ---------- industry picker ---------- */
+.picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.picker .lbl { font-size: 0.9rem; color: var(--muted); margin-right: 4px; }
+.chip { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 0.92rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sticky-picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+/* ---------- generic blocks ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.quote { border-left: 4px solid var(--spine); padding: 4px 0 4px 16px; font-size: 1.08rem; max-width: 70ch; }
+.quote cite { display: block; margin-top: 6px; font-size: 0.85rem; font-style: normal; color: var(--muted); }
+.ex { background: var(--spine-soft); border-radius: 10px; padding: 12px 14px; font-size: 0.95rem; }
+.ex .tag { display: block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--spine); margin-bottom: 4px; }
+
+/* ladder data -> decision */
+.ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rung { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; font-size: 0.93rem; }
+.rung b { font-family: var(--font-display); font-size: 1.02rem; }
+@media (max-width: 720px) { .ladder { grid-template-columns: 1fr 1fr; } }
+
+/* phases */
+.phases { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; counter-reset: ph; }
+.phase { position: relative; border-top: 4px solid var(--spine); background: var(--surface); border-radius: 8px; padding: 10px 10px 12px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 4px; }
+.phase b { font-family: var(--font-display); font-size: 1rem; }
+.phase .n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.phase .maps { margin-top: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--spine); }
+@media (max-width: 900px) { .phases { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* concepts */
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
+.concept { scroll-margin-top: 80px; }
+.concept .head { display: flex; align-items: baseline; gap: 10px; }
+.concept .num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.concept .def { font-size: 0.98rem; }
+.two-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.9rem; }
+.two-lists h4 { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+@media (max-width: 420px) { .two-lists { grid-template-columns: 1fr; } }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 4px var(--spine); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .node { transition: none; } }
+
+/* tables */
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+td.issue { background: var(--t4-soft); color: var(--t4); font-weight: 600; }
+td.fixed { background: var(--t2-soft); color: var(--t2); font-weight: 600; }
+tr.dropped td { text-decoration: line-through; color: var(--muted); }
+.dq-tag { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: var(--t4-soft); color: var(--t4); margin-left: 6px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.btn[aria-pressed="true"] { border-color: var(--spine); background: var(--spine-soft); color: var(--spine); }
+.dq-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; font-size: 0.86rem; }
+.dq-dims div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.dq-dims b { display: block; font-size: 0.9rem; }
+
+/* types */
+.types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.type { scroll-margin-top: 80px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.type .q { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
+.type .stripe { height: 6px; border-radius: 3px; }
+.type dl { margin: 0; display: grid; gap: 8px; font-size: 0.9rem; }
+.type dt { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.type dd { margin: 0; }
+.type:nth-child(1) { min-height: 0; }
+@media (min-width: 981px) { .type:nth-child(2) { margin-bottom: 18px; } .type:nth-child(3) { margin-bottom: 36px; } .type:nth-child(4) { margin-bottom: 54px; } }
+@media (max-width: 980px) { .types { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .types { grid-template-columns: 1fr; } }
+.axis-note { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+
+/* worked cases */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.step { min-height: 52px; border-radius: 10px; padding: 8px 10px; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+.step small { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.step span { font-weight: 600; font-size: 0.92rem; }
+.step[aria-selected="true"] { border-width: 2px; }
+.step.s1[aria-selected="true"] { border-color: var(--t1); background: var(--t1-soft); }
+.step.s2[aria-selected="true"] { border-color: var(--t2); background: var(--t2-soft); }
+.step.s3[aria-selected="true"] { border-color: var(--t3); background: var(--t3-soft); }
+.step.s4[aria-selected="true"] { border-color: var(--t4); background: var(--t4-soft); }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr 1fr; } }
+.case-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .case-body { grid-template-columns: 1fr; } }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.kpi small { display: block; font-size: 0.78rem; color: var(--muted); }
+.kpi b { font-family: var(--font-display); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.answer { display: flex; flex-direction: column; gap: 10px; font-size: 0.95rem; }
+.answer .qline { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+.slider { display: grid; gap: 6px; }
+.slider input { width: 100%; accent-color: var(--t4); }
+.slider label { font-size: 0.9rem; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.calc { font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-x: auto; }
+
+/* quiz */
+.quiz { display: grid; gap: 10px; }
+.qitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.qitem .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.qitem .opts button { min-height: 36px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 0.84rem; font-weight: 600; }
+.qitem .opts button.right { background: var(--t2-soft); border-color: var(--good); color: var(--good); }
+.qitem .opts button.wrong { background: var(--t4-soft); border-color: var(--bad); color: var(--bad); }
+.qitem .fb { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 720px) { .qitem { grid-template-columns: 1fr; } }
+.score { font-weight: 600; }
+
+/* practice + sources */
+.practice { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.practice a { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+.practice a:hover { border-color: var(--spine); }
+.practice a b { font-family: var(--font-display); font-size: 1.05rem; color: var(--spine); }
+.practice a span { font-size: 0.88rem; color: var(--muted); }
+.sources ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; font-size: 0.92rem; }
+.sources li span { color: var(--muted); }
+footer { color: var(--muted); font-size: 0.86rem; max-width: 80ch; }
+/* ---------- industry lab additions ---------- */
+.repo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.repo .nm { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 500; }
+.repo .meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+.repo .meta span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.repo p { grid-column: 1 / -1; font-size: 0.92rem; }
+.repo a.go { font-weight: 600; white-space: nowrap; }
+@media (max-width: 560px) { .repo { grid-template-columns: 1fr; } }
+.brief { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.brief > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 0.94rem; }
+.brief b.k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.stage { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.stage i { width: 22px; height: 6px; border-radius: 3px; display: inline-block; }
+.stage.s1 i { background: var(--t1); } .stage.s2 i { background: var(--t2); } .stage.s3 i { background: var(--t3); } .stage.s4 i { background: var(--t4); }
+.row2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .row2 { grid-template-columns: 1fr; } }
+.controls { display: grid; gap: 12px; }
+.controls .slider label { font-weight: 600; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { min-height: 38px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.num-in { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.num-in input { font: inherit; font-family: var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: 100%; }
+.ex-list { display: grid; gap: 12px; }
+.exq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.exq .qt { font-weight: 600; }
+.exq .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.exq input, .exq select { font: inherit; font-family: var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; min-width: 0; width: min(260px, 100%); }
+.exq .fbk { font-size: 0.9rem; min-height: 1.4em; }
+.exq .fbk.good { color: var(--good); font-weight: 600; } .exq .fbk.bad { color: var(--bad); }
+.exq details { font-size: 0.9rem; color: var(--muted); }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; }
+.memo { border-left: 4px solid var(--t4); background: var(--surface); border-radius: 0 12px 12px 0; padding: 14px 18px; display: grid; gap: 8px; font-size: 0.96rem; }
+.memo b.k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t4); font-weight: 500; }
+.backlink { color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+.backlink:hover { color: var(--ink); text-decoration: underline; }
+.controls > *, .panel > * { min-width: 0; }
+.num-in select { width: 100%; min-width: 0; max-width: 100%; }
+</style>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="../../foundation/index.html">← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · FMCG</div>
+    <h1>Retail Demand Forecasting Lab</h1>
+    <p class="lead">A category planner at an FMCG company uses national retail sales as the demand signal for the coming months. Find the seasonal pattern, test three forecasting methods on data they have not seen, and turn the best forecast into a supply plan with a safety buffer.</p>
+    <div class="repo">
+      <span class="nm">facebook/prophet</span>
+      <span class="meta"><span>★ about 20.4k</span><span>MIT licence</span><span>Python and R</span></span>
+      <p>Prophet is Meta's open-source forecasting library. This lab uses <code>examples/example_retail_sales.csv</code> from the repository: US Census Bureau monthly retail and food services sales, in millions of US dollars, January 1992 to May 2016. Prophet's own forecast is included for comparison.</p>
+      <a class="go" href="https://github.com/facebook/prophet" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Decision</b>How much stock to plan for each of the next six months.</div>
+      <div><b class="k">Why it matters</b>Too little stock loses sales during peaks; too much ties up cash and warehouse space after them.</div>
+      <div><b class="k">Measure of success</b>Mean absolute percentage error (MAPE): the average size of the forecast miss, in percent of actual sales.</div>
+      <div><b class="k">Data</b><span id="data-line"></span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · what happened?</span>
+    <h2 id="d-h">Twenty-four years of monthly sales</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><div id="ch-all"></div></div>
+    <p class="sec-intro">Two patterns are visible at once: a long upward trend and a saw-tooth that repeats every year. One dip breaks the trend. The next section separates the two patterns.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · why does it move?</span>
+    <h2 id="g-h">Separate the season from the trend</h2>
+    <div class="grid2">
+      <div class="panel"><h3>Seasonal index by month</h3><p class="muted" style="font-size:0.9rem">Sales in each month divided by the 12-month centred moving average, averaged over the training years. 1.00 is an average month.</p><div id="ch-si"></div></div>
+      <div class="panel"><h3>Year-on-year growth</h3><p class="muted" style="font-size:0.9rem">Comparing each month with the same month a year earlier removes the season, so changes in the trend show up clearly.</p><div id="ch-yoy"></div></div>
+    </div>
+    <p class="sec-intro" id="diag-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · what will happen?</span>
+    <h2 id="p-h">Backtest three methods on the last 24 months</h2>
+    <p class="sec-intro">Hide the last 24 months (June 2014 to May 2016), fit each method on everything before, and measure the miss. This is the only honest way to compare forecasts.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-bt"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="win" id="win-l"></label><input id="win" type="range" min="2" max="10" step="1" value="5"></div>
+        <p class="muted" style="font-size:0.9rem">The trend × season model fits a straight line through the deseasonalised sales of the last few years, then multiplies the seasonal index back in. A short window follows recent growth; a long window remembers older, slower years.</p>
+        <div class="tw" id="mape-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · what should we do?</span>
+    <h2 id="r-h">Turn the forecast into a plan</h2>
+    <p class="sec-intro">Refit the chosen model on all 293 months and forecast June to November 2016. A forecast is a midpoint, so the plan adds a buffer sized from the backtest errors: buffer = forecast × z × σ, where σ is the standard deviation of the percentage errors.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-plan"></div><div class="tw" id="plan-table"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="svc" id="svc-l"></label><input id="svc" type="range" min="0" max="4" step="1" value="2"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Run the same analysis in Python</h2>
+    <p class="sec-intro">Install with <code>pip install pandas prophet</code>. The script downloads the CSV straight from the repository, backtests Prophet and the trend × season model, and prints both errors.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://github.com/facebook/prophet" target="_blank" rel="noopener">facebook/prophet</a> <span>(MIT). Dataset <code>examples/example_retail_sales.csv</code> and the Prophet forecasting library.</span></li>
+      <li><a href="https://itl.nist.gov/div898/handbook/dtoc.htm" target="_blank" rel="noopener">NIST/SEMATECH e-Handbook of Statistical Methods</a> <span>Time series, moving averages and seasonal adjustment.</span></li>
+      <li><a href="../../foundation/index.html">Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>Prophet's figures were computed offline with Prophet 1.5, default settings apart from the seasonality mode, and no tuning. The trend × season model and every other number on this page are computed in your browser from the same CSV.</footer>
+</div>
+
+<script>
+(function () {
+"use strict";
+/* ---------- shared helpers for the industry labs ---------- */
+var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+var fmt = function (v, d) { return Number(v).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); };
+var $ = function (id) { return document.getElementById(id); };
+function niceStep(range, ticks) { var raw = range / ticks, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+/* chart({labels, xticks:[i..], series:[{values, color, dash, type:'line'|'bar', width, colors, labels}], band:{lo,hi,color}, shade:[[i0,i1,token]], ylog, ymin, ymax, yfmt, h, legend:[[name, token]], vline:[i,label]}) */
+function chart(o) {
+  var W = 680, H = o.h || 270, L = 58, R = 14, T = 16, B = 34, n = o.labels.length;
+  var all = [];
+  o.series.forEach(function (s) { s.values.forEach(function (v) { if (v !== null && isFinite(v)) all.push(v); }); });
+  if (o.band) o.band.hi.concat(o.band.lo).forEach(function (v) { if (v !== null && isFinite(v)) all.push(v); });
+  var lo = o.ymin !== undefined ? o.ymin : Math.min.apply(null, all), hi = o.ymax !== undefined ? o.ymax : Math.max.apply(null, all);
+  var tr = o.ylog ? Math.log10 : function (v) { return v; };
+  var ticks = [];
+  if (o.ylog) { var e0 = Math.floor(Math.log10(lo)), e1 = Math.ceil(Math.log10(hi)); lo = Math.pow(10, e0); hi = Math.pow(10, e1); for (var e = e0; e <= e1; e++) ticks.push(Math.pow(10, e)); }
+  else {
+    if (o.ymin === undefined) lo = Math.min(lo, 0) < 0 ? lo : (o.zero === false ? lo : 0);
+    var st = niceStep(hi - lo, 4); lo = Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st; for (var t = lo; t <= hi + st / 2; t += st) ticks.push(t);
+  }
+  var bar = o.series.some(function (s) { return s.type === "bar"; });
+  var X = bar ? function (i) { return L + (W - L - R) * (i + 0.5) / n; } : function (i) { return L + (W - L - R) * (n === 1 ? 0.5 : i / (n - 1)); };
+  var Y = function (v) { return T + (H - T - B) * (1 - (tr(v) - tr(lo)) / (tr(hi) - tr(lo))); };
+  var g = "";
+  ticks.forEach(function (v) { var y = Y(v); g += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (o.yfmt ? o.yfmt(v) : fmt(v)) + "</text>"; });
+  (o.xticks || o.labels.map(function (x, i) { return i; })).forEach(function (i) { var anc = !bar && i === n - 1 ? "end" : !bar && i === 0 ? "start" : "middle"; g += '<text x="' + X(i) + '" y="' + (H - 12) + '" text-anchor="' + anc + '">' + esc(o.labels[i]) + "</text>"; });
+  (o.shade || []).forEach(function (s) { var x0 = bar ? X(s[0]) - (W - L - R) / n / 2 : X(s[0]), x1 = bar ? X(s[1]) + (W - L - R) / n / 2 : X(s[1]); g += '<rect x="' + x0 + '" y="' + T + '" width="' + Math.max(1, x1 - x0) + '" height="' + (H - T - B) + '" fill="var(' + s[2] + ')" opacity="0.6"/>'; });
+  if (o.band) { var up = [], dn = []; o.band.hi.forEach(function (v, i) { if (v !== null) { up.push(X(i) + "," + Y(v)); dn.unshift(X(i) + "," + Y(o.band.lo[i])); } }); g += '<polygon points="' + up.concat(dn).join(" ") + '" fill="var(' + o.band.color + ')" opacity="0.2"/>'; }
+  o.series.forEach(function (s) {
+    if (s.type === "bar") {
+      var bw = (W - L - R) / n * (s.width || 0.64);
+      s.values.forEach(function (v, i) { if (v === null) return; var y0 = Y(Math.max(lo, 0)), y1 = Y(v); g += '<rect x="' + (X(i) - bw / 2) + '" y="' + Math.min(y0, y1) + '" width="' + bw + '" height="' + Math.abs(y0 - y1) + '" rx="2" fill="var(' + (s.colors ? s.colors[i] : s.color) + ')"/>'; if (s.labels && s.labels[i] !== "") g += '<text x="' + X(i) + '" y="' + (Math.min(y0, y1) - 4) + '" text-anchor="middle">' + esc(s.labels[i]) + "</text>"; });
+      return;
+    }
+    var d = "", pen = false;
+    s.values.forEach(function (v, i) { if (v === null || !isFinite(v)) { pen = false; return; } d += (pen ? " L" : " M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); pen = true; });
+    g += '<path d="' + d + '" fill="none" stroke="var(' + s.color + ')" stroke-width="' + (s.w || 2) + '"' + (s.dash ? ' stroke-dasharray="6 5"' : "") + ' stroke-linejoin="round"/>';
+    if (n <= 40) s.values.forEach(function (v, i) { if (v !== null) g += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="2.6" fill="var(' + s.color + ')"/>'; });
+  });
+  if (o.vline) { var vx = X(o.vline[0]); g += '<line x1="' + vx + '" x2="' + vx + '" y1="' + T + '" y2="' + (H - B) + '" stroke="var(--muted)" stroke-dasharray="3 4"/><text x="' + (vx + 4) + '" y="' + (T + 12) + '" style="fill:var(--ink)">' + esc(o.vline[1]) + "</text>"; }
+  var leg = o.legend ? '<div class="legend">' + o.legend.map(function (l) { return '<span><i style="background:var(' + l[1] + ')"></i>' + esc(l[0]) + "</span>"; }).join("") + "</div>" : "";
+  return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(o.title || "chart") + '">' + g + "</svg>" + leg;
+}
+/* exercises: [{q, type:'num'|'select', answer, tol, options, hint, explain}] */
+function renderExercises(rootId, items) {
+  var root = $(rootId);
+  root.innerHTML = items.map(function (it, i) {
+    var input = it.type === "select" ? '<select id="ex' + i + '" aria-label="Answer"><option value="">Choose</option>' + it.options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + "</option>"; }).join("") + "</select>"
+      : '<input id="ex' + i + '" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(it.placeholder || "your answer") + '" aria-label="Answer">';
+    return '<div class="exq"><span class="qt">' + (i + 1) + ". " + it.q + '</span><div class="row">' + input + '<button class="btn" data-ex="' + i + '">Check</button></div><div class="fbk" id="fb' + i + '" aria-live="polite"></div>' +
+      (it.hint ? "<details><summary>Hint</summary>" + it.hint + "</details>" : "") + "</div>";
+  }).join("");
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ex]"); if (!b) return;
+    var i = +b.getAttribute("data-ex"), it = items[i], raw = $("ex" + i).value.trim(), fb = $("fb" + i), ok;
+    if (!raw) { fb.className = "fbk bad"; fb.textContent = "Enter an answer first."; return; }
+    if (it.type === "select") ok = raw === it.answer;
+    else { var c = raw.replace(/\s/g, "").replace("%", ""); if (/^-?\d{1,3}(\.\d{3})+$/.test(c)) c = c.replace(/\./g, ""); var v = parseFloat(c.replace(/,/g, "")); ok = isFinite(v) && Math.abs(v - it.answer()) <= it.tol; }
+    fb.className = "fbk " + (ok ? "good" : "bad");
+    fb.innerHTML = ok ? "Correct. " + (it.explain ? it.explain() : "") : "Not yet. " + (it.retry || "Check the section above and try again.");
+  });
+}
+function copyButton(btnId, text) {
+  var b = $(btnId); if (!b) return;
+  b.addEventListener("click", function () {
+    var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy code"; }, 1500); };
+    var fail = function () { var pre = b.parentNode.parentNode.querySelector("pre"); var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press Ctrl+C"; };
+    try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
+  });
+}
+
+var DATA = {"ds":["1992-01","1992-02","1992-03","1992-04","1992-05","1992-06","1992-07","1992-08","1992-09","1992-10","1992-11","1992-12","1993-01","1993-02","1993-03","1993-04","1993-05","1993-06","1993-07","1993-08","1993-09","1993-10","1993-11","1993-12","1994-01","1994-02","1994-03","1994-04","1994-05","1994-06","1994-07","1994-08","1994-09","1994-10","1994-11","1994-12","1995-01","1995-02","1995-03","1995-04","1995-05","1995-06","1995-07","1995-08","1995-09","1995-10","1995-11","1995-12","1996-01","1996-02","1996-03","1996-04","1996-05","1996-06","1996-07","1996-08","1996-09","1996-10","1996-11","1996-12","1997-01","1997-02","1997-03","1997-04","1997-05","1997-06","1997-07","1997-08","1997-09","1997-10","1997-11","1997-12","1998-01","1998-02","1998-03","1998-04","1998-05","1998-06","1998-07","1998-08","1998-09","1998-10","1998-11","1998-12","1999-01","1999-02","1999-03","1999-04","1999-05","1999-06","1999-07","1999-08","1999-09","1999-10","1999-11","1999-12","2000-01","2000-02","2000-03","2000-04","2000-05","2000-06","2000-07","2000-08","2000-09","2000-10","2000-11","2000-12","2001-01","2001-02","2001-03","2001-04","2001-05","2001-06","2001-07","2001-08","2001-09","2001-10","2001-11","2001-12","2002-01","2002-02","2002-03","2002-04","2002-05","2002-06","2002-07","2002-08","2002-09","2002-10","2002-11","2002-12","2003-01","2003-02","2003-03","2003-04","2003-05","2003-06","2003-07","2003-08","2003-09","2003-10","2003-11","2003-12","2004-01","2004-02","2004-03","2004-04","2004-05","2004-06","2004-07","2004-08","2004-09","2004-10","2004-11","2004-12","2005-01","2005-02","2005-03","2005-04","2005-05","2005-06","2005-07","2005-08","2005-09","2005-10","2005-11","2005-12","2006-01","2006-02","2006-03","2006-04","2006-05","2006-06","2006-07","2006-08","2006-09","2006-10","2006-11","2006-12","2007-01","2007-02","2007-03","2007-04","2007-05","2007-06","2007-07","2007-08","2007-09","2007-10","2007-11","2007-12","2008-01","2008-02","2008-03","2008-04","2008-05","2008-06","2008-07","2008-08","2008-09","2008-10","2008-11","2008-12","2009-01","2009-02","2009-03","2009-04","2009-05","2009-06","2009-07","2009-08","2009-09","2009-10","2009-11","2009-12","2010-01","2010-02","2010-03","2010-04","2010-05","2010-06","2010-07","2010-08","2010-09","2010-10","2010-11","2010-12","2011-01","2011-02","2011-03","2011-04","2011-05","2011-06","2011-07","2011-08","2011-09","2011-10","2011-11","2011-12","2012-01","2012-02","2012-03","2012-04","2012-05","2012-06","2012-07","2012-08","2012-09","2012-10","2012-11","2012-12","2013-01","2013-02","2013-03","2013-04","2013-05","2013-06","2013-07","2013-08","2013-09","2013-10","2013-11","2013-12","2014-01","2014-02","2014-03","2014-04","2014-05","2014-06","2014-07","2014-08","2014-09","2014-10","2014-11","2014-12","2015-01","2015-02","2015-03","2015-04","2015-05","2015-06","2015-07","2015-08","2015-09","2015-10","2015-11","2015-12","2016-01","2016-02","2016-03","2016-04","2016-05"],"y":[146376,147079,159336,163669,170068,168663,169890,170364,164617,173655,171547,208838,153221,150087,170439,176456,182231,181535,183682,183318,177406,182737,187443,224540,161349,162841,192319,189569,194927,197946,193355,202388,193954,197956,202520,241111,175344,172138,201279,196039,210478,211844,203411,214248,202122,204044,212190,247491,185019,192380,212110,211718,226936,217511,218111,226062,209250,222663,223953,258081,200389,197556,225133,220329,234190,227365,231521,235252,222807,232251,228284,271054,207853,203863,230313,234503,245027,244067,241431,240462,231243,244234,240991,288969,218126,220650,253550,250783,262113,260918,262051,265089,253905,258040,264106,317659,236422,250580,279515,264417,283706,281288,271146,283944,269155,270899,276507,319958,250746,247772,280449,274925,296013,287881,279098,294763,261924,291596,287537,326202,255598,253086,285261,284747,300402,288854,295433,307256,273189,287540,290705,337006,268328,259051,293693,294251,312389,300998,309923,317056,293890,304036,301265,357577,281460,282444,319077,315191,328408,321044,328000,326317,313524,319726,324259,387155,293261,295062,339141,335632,345348,350945,351827,355701,333289,336134,343798,405608,318546,314051,361993,351667,373560,366615,362203,375795,346214,348796,356928,417991,328877,323162,374142,358535,391512,376639,372354,388016,353936,368681,377802,426077,342697,343937,372923,368923,397969,378490,383686,382852,350560,349884,335571,384286,310269,299488,328568,329866,347768,344439,348106,353473,324708,338630,339386,400264,314640,311022,360819,356460,365713,358675,362027,362682,346069,355212,365809,426654,335608,337352,387092,380754,391970,388636,384600,394548,374895,379364,391081,451669,355058,372523,414275,393035,418648,400996,396020,417911,385597,399341,410992,461994,375537,373938,421638,408381,436985,414701,422357,434950,396199,415740,423611,477205,383399,380315,432806,431415,458822,433152,443005,450913,420871,437702,437910,501232,397252,386935,444110,438217,462615,448229,457710,456340,430917,444959,444507,518253,400928,413554,460093,450935,471421],"prophet":{"additive":[441503.0,441745.0,449857.0,429419.0,438495.0,443175.0,493536.0,417372.0,419391.0,450053.0,448346.0,466179.0,461850.0,461444.0,469757.0,448625.0,456435.0,462207.0,513625.0,436202.0,441467.0,475940.0,469992.0,486755.0],"multiplicative":[444520.0,444557.0,455797.0,424005.0,436734.0,443346.0,515833.0,403271.0,405690.0,452255.0,448482.0,474127.0,466125.0,465114.0,476608.0,442807.0,454486.0,462823.0,539741.0,419845.0,427419.0,481652.0,469905.0,497207.0]},"prophetMape":{"additive":2.920773668320489,"multiplicative":2.8273781087695253}};
+var Y = DATA.y, DS = DATA.ds, N = Y.length, TEST = 24, CUT = N - TEST;
+var MONTH = DS.map(function (d) { return +d.slice(5, 7); });
+var MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var bn = function (v) { return fmt(v / 1000, 0) + "bn"; };   /* millions of USD -> billions */
+var mlab = function (d) { return MN[+d.slice(5, 7) - 1] + " " + d.slice(0, 4); };
+
+/* trend x season model, same algorithm as the Python reference */
+function fitModel(y, months, W) {
+  var m = y.length, m12 = [], r2 = [], cma = [], i;
+  for (i = 0; i < m; i++) { if (i >= 11) { var s = 0; for (var k = i - 11; k <= i; k++) s += y[k]; m12[i] = s / 12; } else m12[i] = null; }
+  for (i = 0; i < m; i++) r2[i] = i >= 12 ? (m12[i - 1] + m12[i]) / 2 : null;
+  for (i = 0; i < m; i++) cma[i] = i + 6 < m ? r2[i + 6] : null;
+  var sum = [], cnt = [];
+  for (k = 0; k < 12; k++) { sum[k] = 0; cnt[k] = 0; }
+  for (i = 0; i < m; i++) if (cma[i] !== null) { sum[months[i] - 1] += y[i] / cma[i]; cnt[months[i] - 1]++; }
+  var si = sum.map(function (s, k) { return s / cnt[k]; }), mean = si.reduce(function (a, b) { return a + b; }, 0) / 12;
+  si = si.map(function (v) { return v / mean; });
+  var w = W * 12, xs = [], ys = [];
+  for (i = m - w; i < m; i++) { xs.push(i); ys.push(y[i] / si[months[i] - 1]); }
+  var mx = xs.reduce(function (a, b) { return a + b; }, 0) / w, my = ys.reduce(function (a, b) { return a + b; }, 0) / w, sxy = 0, sxx = 0;
+  for (i = 0; i < w; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) * (xs[i] - mx); }
+  var b = sxy / sxx, a = my - b * mx;
+  return { si: si, a: a, b: b, f: function (t, mo) { return (a + b * t) * si[mo - 1]; } };
+}
+var mape = function (act, fc) { var s = 0; act.forEach(function (v, i) { s += Math.abs((v - fc[i]) / v); }); return 100 * s / act.length; };
+var test = Y.slice(CUT), snaive = Y.slice(CUT - 12, N - 12), snMape = mape(test, snaive);
+function backtest(W) { var md = fitModel(Y.slice(0, CUT), MONTH.slice(0, CUT), W), fc = []; for (var i = 0; i < TEST; i++) fc.push(md.f(CUT + i, MONTH[CUT + i])); return { md: md, fc: fc, mape: mape(test, fc) }; }
+var bestW = 2, bestM = Infinity; for (var w = 2; w <= 10; w++) { var bm = backtest(w).mape; if (bm < bestM) { bestM = bm; bestW = w; } }
+var trainSI = fitModel(Y.slice(0, CUT), MONTH.slice(0, CUT), 5).si;
+
+/* ---------- descriptive ---------- */
+$("data-line").textContent = N + " months, " + mlab(DS[0]) + " to " + mlab(DS[N - 1]) + ", in millions of US dollars.";
+var yoy = Y.map(function (v, i) { return i >= 12 ? 100 * (v / Y[i - 12] - 1) : null; });
+var minY = Infinity, minI = 0; yoy.forEach(function (v, i) { if (v !== null && v < minY) { minY = v; minI = i; } });
+var lastY = yoy[N - 1], cagr = 100 * (Math.pow(Y[N - 1] / Y[N - 1 - 120], 1 / 10) - 1);
+$("kpis").innerHTML = [["Latest month (" + mlab(DS[N - 1]) + ")", bn(Y[N - 1])], ["Growth vs a year earlier", (lastY >= 0 ? "+" : "") + fmt(lastY, 1) + "%"], ["Average growth, last 10 years", fmt(cagr, 1) + "% a year"], ["Biggest month in the data", MN[MONTH[Y.indexOf(Math.max.apply(null, Y))] - 1]]]
+  .map(function (k) { return '<div class="kpi"><small>' + k[0] + "</small><b>" + k[1] + "</b></div>"; }).join("");
+var yearTicks = []; DS.forEach(function (d, i) { if (d.slice(5) === "01" && (+d.slice(0, 4)) % 4 === 0) yearTicks.push(i); });
+$("ch-all").innerHTML = chart({ title: "Monthly retail sales", labels: DS.map(function (d) { return d.slice(0, 4); }), xticks: yearTicks, series: [{ values: Y, color: "--t1", w: 1.6 }], yfmt: bn, ymin: 100000, legend: [["Retail and food services sales, US$ per month", "--t1"]] });
+
+/* ---------- diagnostic ---------- */
+$("ch-si").innerHTML = chart({ title: "Seasonal index", h: 240, labels: MN, series: [{ type: "bar", values: trainSI, colors: trainSI.map(function (v) { return v >= 1 ? "--t2" : "--t2-soft"; }), labels: trainSI.map(function (v) { return v.toFixed(2); }) }], ymin: 0.8, ymax: 1.2, yfmt: function (v) { return v.toFixed(2); } });
+$("ch-yoy").innerHTML = chart({ title: "Year-on-year growth", h: 240, labels: DS.map(function (d) { return d.slice(0, 4); }), xticks: yearTicks.filter(function (i, k) { return k % 2 === 0; }), series: [{ values: yoy, color: "--t2", w: 1.6 }], yfmt: function (v) { return fmt(v) + "%"; }, ymin: -15, ymax: 15 });
+var peak = trainSI.indexOf(Math.max.apply(null, trainSI)), low = trainSI.indexOf(Math.min.apply(null, trainSI));
+$("diag-text").innerHTML = "<b>" + MN[peak] + "</b> is the peak, about " + fmt(100 * (trainSI[peak] - 1)) + "% above an average month (holiday shopping). <b>" + MN[low] + "</b> is the low, about " + fmt(100 * (1 - trainSI[low])) + "% below. The worst year-on-year change was <b>" + fmt(minY, 1) + "% in " + mlab(DS[minI]) +
+  "</b>, during the 2008 to 2009 recession: a change in the trend, not the season. A forecaster has to model both, and treat the recession years with care when fitting the trend.";
+
+/* ---------- predictive ---------- */
+var W = 5;
+function renderBacktest() {
+  var bt = backtest(W);
+  $("win-l").textContent = "Trend window: last " + W + " years of training data";
+  var lab = DS.slice(CUT - 24).map(mlab), off = 24;
+  var pad = function (arr) { return new Array(off).fill(null).concat(arr); };
+  $("ch-bt").innerHTML = chart({ title: "Backtest", labels: lab, xticks: [0, 12, 24, 36, 47], series: [
+      { values: Y.slice(CUT - 24), color: "--ink", w: 2 },
+      { values: pad(snaive), color: "--muted", dash: true, w: 1.6 },
+      { values: pad(DATA.prophet.multiplicative), color: "--t1", w: 1.8 },
+      { values: pad(bt.fc), color: "--t3", w: 2.4 }],
+    shade: [[24, 47, "--t3-soft"]], yfmt: bn, zero: false, ymin: 360000, vline: [24, "test period"],
+    legend: [["Actual", "--ink"], ["Seasonal naive", "--muted"], ["Prophet", "--t1"], ["Trend × season", "--t3"]] });
+  var rows = [["Seasonal naive (same month last year)", snMape], ["Prophet, additive", DATA.prophetMape.additive], ["Prophet, multiplicative", DATA.prophetMape.multiplicative], ["Trend × season, " + W + "-year window", bt.mape]];
+  var best = Math.min.apply(null, rows.map(function (r) { return r[1]; }));
+  $("mape-table").innerHTML = '<table><thead><tr><th>Method</th><th class="n">MAPE</th></tr></thead><tbody>' + rows.map(function (r) { return "<tr><td>" + (r[1] === best ? "<b>" + r[0] + "</b>" : r[0]) + '</td><td class="n">' + (r[1] === best ? "<b>" + fmt(r[1], 2) + "%</b>" : fmt(r[1], 2) + "%") + "</td></tr>"; }).join("") + "</tbody></table>";
+  renderPlan();
+}
+$("win").addEventListener("input", function (e) { W = +e.target.value; renderBacktest(); });
+
+/* ---------- prescriptive ---------- */
+var SVC = [[0.5, 0], [0.8, 0.842], [0.9, 1.282], [0.95, 1.645], [0.98, 2.054]], svc = 2;
+function renderPlan() {
+  var bt = backtest(W), errs = test.map(function (v, i) { return (v - bt.fc[i]) / bt.fc[i]; });
+  var me = errs.reduce(function (a, b) { return a + b; }, 0) / errs.length, sd = Math.sqrt(errs.reduce(function (a, b) { return a + (b - me) * (b - me); }, 0) / (errs.length - 1));
+  var full = fitModel(Y, MONTH, W), z = SVC[svc][1], rows = [];
+  for (var h = 0; h < 6; h++) { var mo = (MONTH[N - 1] + h) % 12 + 1, yr = +DS[N - 1].slice(0, 4) + (MONTH[N - 1] + h >= 12 ? 1 : 0), f = full.f(N + h, mo); rows.push([MN[mo - 1] + " " + yr, f, f * z * sd, f * (1 + z * sd)]); }
+  $("svc-l").textContent = "Target service level: " + Math.round(SVC[svc][0] * 100) + "% (z = " + z.toFixed(2) + ")";
+  var lab = DS.slice(N - 18).map(mlab).concat(rows.map(function (r) { return r[0]; }));
+  var hist = Y.slice(N - 18).concat(new Array(6).fill(null));
+  var fc = new Array(17).fill(null).concat([Y[N - 1]]).concat(rows.map(function (r) { return r[1]; }));
+  var plan = new Array(17).fill(null).concat([Y[N - 1]]).concat(rows.map(function (r) { return r[3]; }));
+  $("ch-plan").innerHTML = chart({ title: "Plan", h: 240, labels: lab, xticks: [0, 6, 12, 18, 23], series: [{ values: hist, color: "--ink" }, { values: fc, color: "--t3", dash: true }, { values: plan, color: "--t4", w: 2.4 }], yfmt: bn, zero: false, ymin: 400000, legend: [["Actual", "--ink"], ["Forecast", "--t3"], ["Plan with buffer", "--t4"]] });
+  $("plan-table").innerHTML = '<table><thead><tr><th>Month</th><th class="n">Forecast</th><th class="n">Buffer</th><th class="n">Plan</th></tr></thead><tbody>' + rows.map(function (r) { return "<tr><td>" + r[0] + '</td><td class="n">' + bn(r[1]) + '</td><td class="n">' + bn(r[2]) + '</td><td class="n"><b>' + bn(r[3]) + "</b></td></tr>"; }).join("") + "</tbody></table>";
+  var tot = rows.reduce(function (a, r) { return a + r[2]; }, 0);
+  $("memo").innerHTML = '<b class="k">Recommendation</b><span>Use the trend × season model with a <b>' + W + "-year</b> window (backtest MAPE " + fmt(bt.mape, 2) + "%, against " + fmt(snMape, 2) + "% for last year's numbers). Its percentage errors had a standard deviation of <b>" + fmt(100 * sd, 2) + "%</b>.</span><span>At a " + Math.round(SVC[svc][0] * 100) + "% service level the plan carries <b>" + bn(tot) + "</b> of buffer over six months. Each step up in service buys fewer stock-outs with more stock to hold; the planner and finance should agree the level per category.</span>";
+}
+$("svc").addEventListener("input", function (e) { svc = +e.target.value; renderPlan(); });
+renderBacktest();
+
+/* ---------- exercises ---------- */
+renderExercises("ex", [
+  { q: "What is the seasonal index for December, to two decimals?", type: "num", tol: 0.011, answer: function () { return trainSI[11]; }, placeholder: "e.g. 1.05", hint: "Read it from the seasonal index chart in the diagnostic section.", explain: function () { return "December sales run about " + fmt(100 * (trainSI[11] - 1)) + "% above an average month."; } },
+  { q: "What MAPE does the seasonal naive method score in the backtest (%)?", type: "num", tol: 0.05, answer: function () { return snMape; }, placeholder: "e.g. 4.2", hint: "It is in the table next to the backtest chart.", explain: function () { return "Any model worth using must beat this simple baseline."; } },
+  { q: "Which trend window gives the lowest backtest MAPE?", type: "select", options: [2, 3, 4, 5, 6, 7, 8, 9, 10].map(function (w) { return w + " years"; }), answer: bestW + " years", hint: "Move the trend window slider and watch the table.", explain: function () { return "Recent years grew faster than the 1990s, so a short window follows the current trend best. Too short, and one unusual year moves the whole line."; } },
+  { q: "What was the lowest year-on-year growth in the data (%)?", type: "num", tol: 0.1, answer: function () { return minY; }, placeholder: "e.g. -5.0", hint: "Look at the year-on-year chart around 2009.", explain: function () { return "It happened in " + mlab(DS[minI]) + "."; } }
+]);
+
+/* ---------- code ---------- */
+var CODE = [
+  "import numpy as np",
+  "import pandas as pd",
+  "from prophet import Prophet",
+  "",
+  'url = "https://raw.githubusercontent.com/facebook/prophet/main/examples/example_retail_sales.csv"',
+  'df = pd.read_csv(url, parse_dates=["ds"])',
+  "train, test = df.iloc[:-24], df.iloc[-24:]",
+  "",
+  "def mape(actual, forecast):",
+  "    return float(np.mean(np.abs((actual - forecast) / actual)) * 100)",
+  "",
+  "# 1. Prophet",
+  'm = Prophet(seasonality_mode="multiplicative", weekly_seasonality=False, daily_seasonality=False)',
+  "m.fit(train)",
+  'future = m.make_future_dataframe(periods=24, freq="MS")',
+  "prophet_fc = m.predict(future).yhat.values[-24:]",
+  'print(f"Prophet MAPE: {mape(test.y.values, prophet_fc):.2f}%")',
+  "",
+  "# 2. Trend x season: seasonal index from a centred 12-month moving average,",
+  "#    then a straight line through the deseasonalised last W years",
+  "W = " + bestW,
+  "y = train.y.astype(float)",
+  "cma = y.rolling(12).mean().rolling(2).mean().shift(-6)",
+  "month = train.ds.dt.month",
+  "si = (y / cma).groupby(month).mean()",
+  "si = si / si.mean()",
+  "des = y / month.map(si)",
+  "t = np.arange(len(y))",
+  "b, a = np.polyfit(t[-12 * W:], des.values[-12 * W:], 1)",
+  "t_test = np.arange(len(y), len(y) + 24)",
+  "ts_fc = (a + b * t_test) * test.ds.dt.month.map(si).values",
+  'print(f"Trend x season MAPE ({W}-year window): {mape(test.y.values, ts_fc):.2f}%")'
+].join("\n");
+$("code").textContent = CODE; copyButton("copy", CODE);
+
+})();
+</script>
+</html>

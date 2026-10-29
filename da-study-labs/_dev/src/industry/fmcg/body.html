@@ -1,0 +1,93 @@
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="{{foundation}}"{{target}}>← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · FMCG</div>
+    <h1>Retail Demand Forecasting Lab</h1>
+    <p class="lead">A category planner at an FMCG company uses national retail sales as the demand signal for the coming months. Find the seasonal pattern, test three forecasting methods on data they have not seen, and turn the best forecast into a supply plan with a safety buffer.</p>
+    <div class="repo">
+      <span class="nm">facebook/prophet</span>
+      <span class="meta"><span>★ about 20.4k</span><span>MIT licence</span><span>Python and R</span></span>
+      <p>Prophet is Meta's open-source forecasting library. This lab uses <code>examples/example_retail_sales.csv</code> from the repository: US Census Bureau monthly retail and food services sales, in millions of US dollars, January 1992 to May 2016. Prophet's own forecast is included for comparison.</p>
+      <a class="go" href="https://github.com/facebook/prophet" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Decision</b>How much stock to plan for each of the next six months.</div>
+      <div><b class="k">Why it matters</b>Too little stock loses sales during peaks; too much ties up cash and warehouse space after them.</div>
+      <div><b class="k">Measure of success</b>Mean absolute percentage error (MAPE): the average size of the forecast miss, in percent of actual sales.</div>
+      <div><b class="k">Data</b><span id="data-line"></span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · what happened?</span>
+    <h2 id="d-h">Twenty-four years of monthly sales</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><div id="ch-all"></div></div>
+    <p class="sec-intro">Two patterns are visible at once: a long upward trend and a saw-tooth that repeats every year. One dip breaks the trend. The next section separates the two patterns.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · why does it move?</span>
+    <h2 id="g-h">Separate the season from the trend</h2>
+    <div class="grid2">
+      <div class="panel"><h3>Seasonal index by month</h3><p class="muted" style="font-size:0.9rem">Sales in each month divided by the 12-month centred moving average, averaged over the training years. 1.00 is an average month.</p><div id="ch-si"></div></div>
+      <div class="panel"><h3>Year-on-year growth</h3><p class="muted" style="font-size:0.9rem">Comparing each month with the same month a year earlier removes the season, so changes in the trend show up clearly.</p><div id="ch-yoy"></div></div>
+    </div>
+    <p class="sec-intro" id="diag-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · what will happen?</span>
+    <h2 id="p-h">Backtest three methods on the last 24 months</h2>
+    <p class="sec-intro">Hide the last 24 months (June 2014 to May 2016), fit each method on everything before, and measure the miss. This is the only honest way to compare forecasts.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-bt"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="win" id="win-l"></label><input id="win" type="range" min="2" max="10" step="1" value="5"></div>
+        <p class="muted" style="font-size:0.9rem">The trend × season model fits a straight line through the deseasonalised sales of the last few years, then multiplies the seasonal index back in. A short window follows recent growth; a long window remembers older, slower years.</p>
+        <div class="tw" id="mape-table"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · what should we do?</span>
+    <h2 id="r-h">Turn the forecast into a plan</h2>
+    <p class="sec-intro">Refit the chosen model on all 293 months and forecast June to November 2016. A forecast is a midpoint, so the plan adds a buffer sized from the backtest errors: buffer = forecast × z × σ, where σ is the standard deviation of the percentage errors.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-plan"></div><div class="tw" id="plan-table"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="svc" id="svc-l"></label><input id="svc" type="range" min="0" max="4" step="1" value="2"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Run the same analysis in Python</h2>
+    <p class="sec-intro">Install with <code>pip install pandas prophet</code>. The script downloads the CSV straight from the repository, backtests Prophet and the trend × season model, and prints both errors.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://github.com/facebook/prophet" target="_blank" rel="noopener">facebook/prophet</a> <span>(MIT). Dataset <code>examples/example_retail_sales.csv</code> and the Prophet forecasting library.</span></li>
+      <li><a href="https://itl.nist.gov/div898/handbook/dtoc.htm" target="_blank" rel="noopener">NIST/SEMATECH e-Handbook of Statistical Methods</a> <span>Time series, moving averages and seasonal adjustment.</span></li>
+      <li><a href="{{foundation}}"{{target}}>Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>Prophet's figures were computed offline with Prophet 1.5, default settings apart from the seasonality mode, and no tuning. The trend × season model and every other number on this page are computed in your browser from the same CSV.</footer>
+</div>

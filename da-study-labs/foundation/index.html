@@ -1,0 +1,755 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Analytics Foundations</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: roadmap map on top (as in the course diagram), then Introduction, Key concepts, Types, two worked cases, quiz, sources. */
+:root {
+  --bg: #f2f5f9;
+  --surface: #ffffff;
+  --ink: #15212f;
+  --muted: #586678;
+  --line: #d7dfe8;
+  --node: #ffe7a3;          /* roadmap boxes */
+  --node-ink: #2a2207;
+  --core: #ffd84a;          /* roadmap core nodes */
+  --spine: #2f6fd6;         /* roadmap spine and dotted links */
+  --spine-soft: #dce8fb;
+  --t1: #2f6fd6; --t2: #0b7a72; --t3: #8a5a00; --t4: #b4361f;   /* descriptive, diagnostic, predictive, prescriptive */
+  --t1-soft: #e2ecfb; --t2-soft: #d8f0ed; --t3-soft: #f6ebd4; --t4-soft: #f9e1dc;
+  --code-bg: #eaeff5;
+  --good: #1a7f45; --bad: #b3261e;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+    --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+    --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+    --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+    --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+  --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+  --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+  --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+  --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.58;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.2vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+h4 { font-size: 0.98rem; font-weight: 600; }
+p { margin: 0; }
+ul { margin: 0; padding-left: 1.15em; display: grid; gap: 4px; }
+a { color: var(--spine); }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.lead { font-size: 1.1rem; color: var(--muted); max-width: 66ch; }
+.sec { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+.sec-intro { max-width: 68ch; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.tnum { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--spine); outline-offset: 2px; }
+
+/* ---------- roadmap map ---------- */
+.mapwrap { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px clamp(14px, 3vw, 28px); }
+.map { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr); gap: 28px clamp(24px, 5vw, 72px); align-items: start; }
+.map svg.links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.node { position: relative; z-index: 1; display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 8px; background: var(--node); color: var(--node-ink); font-weight: 600; font-size: 0.95rem; text-align: center; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); transition: transform 0.12s, box-shadow 0.12s; }
+.node:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.node.core { background: var(--core); }
+.m-left { position: relative; z-index: 1; border: 2px solid var(--ink); border-radius: 10px; background: var(--surface); padding: 0 12px 12px; box-shadow: 2px 2px 0 var(--ink); }
+.m-left > .node { margin: -2px -14px 12px; width: calc(100% + 28px); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tiles .node { font-size: 0.9rem; box-shadow: none; }
+.tiles .node.wide { grid-column: 1 / -1; }
+.m-mid { position: relative; display: flex; flex-direction: column; gap: 28px; align-items: stretch; padding-bottom: 8px; }
+.m-mid::before { content: ""; position: absolute; left: 50%; top: -28px; bottom: -28px; width: 3px; transform: translateX(-50%); background: var(--spine); border-radius: 2px; }
+.spine-label { position: relative; z-index: 1; align-self: center; margin-top: 36px; padding: 6px 10px; background: var(--surface); font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; text-align: center; }
+.m-right { display: flex; flex-direction: column; gap: 10px; }
+.m-right .gap { height: 18px; }
+.map-hint { margin-top: 14px; font-size: 0.88rem; color: var(--muted); text-align: center; }
+@media (max-width: 820px) {
+  .map { grid-template-columns: 1fr; gap: 14px; }
+  .map svg.links { display: none; }
+  .m-mid { order: -1; gap: 10px; }
+  .m-mid::before { display: none; }
+  .spine-label { margin-top: 0; order: -1; }
+  .m-right .gap { display: none; }
+}
+
+/* ---------- industry picker ---------- */
+.picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.picker .lbl { font-size: 0.9rem; color: var(--muted); margin-right: 4px; }
+.lab-link { margin-left: auto; display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--spine); color: var(--spine); font-weight: 600; font-size: 0.9rem; text-decoration: none; background: var(--surface); }
+.lab-link:hover { background: var(--spine-soft); }
+@media (max-width: 640px) { .lab-link { margin-left: 0; } .sticky-picker { position: static; } }
+.practice h3 { grid-column: 1 / -1; font-size: 1rem; margin-top: 6px; }
+.chip { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 0.92rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sticky-picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+/* ---------- generic blocks ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.quote { border-left: 4px solid var(--spine); padding: 4px 0 4px 16px; font-size: 1.08rem; max-width: 70ch; }
+.quote cite { display: block; margin-top: 6px; font-size: 0.85rem; font-style: normal; color: var(--muted); }
+.ex { background: var(--spine-soft); border-radius: 10px; padding: 12px 14px; font-size: 0.95rem; }
+.ex .tag { display: block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--spine); margin-bottom: 4px; }
+
+/* ladder data -> decision */
+.ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rung { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; font-size: 0.93rem; }
+.rung b { font-family: var(--font-display); font-size: 1.02rem; }
+@media (max-width: 720px) { .ladder { grid-template-columns: 1fr 1fr; } }
+
+/* phases */
+.phases { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; counter-reset: ph; }
+.phase { position: relative; border-top: 4px solid var(--spine); background: var(--surface); border-radius: 8px; padding: 10px 10px 12px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 4px; }
+.phase b { font-family: var(--font-display); font-size: 1rem; }
+.phase .n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.phase .maps { margin-top: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--spine); }
+@media (max-width: 900px) { .phases { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* concepts */
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
+.concept { scroll-margin-top: 80px; }
+.concept .head { display: flex; align-items: baseline; gap: 10px; }
+.concept .num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.concept .def { font-size: 0.98rem; }
+.two-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.9rem; }
+.two-lists h4 { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+@media (max-width: 420px) { .two-lists { grid-template-columns: 1fr; } }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 4px var(--spine); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .node { transition: none; } }
+
+/* tables */
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+td.issue { background: var(--t4-soft); color: var(--t4); font-weight: 600; }
+td.fixed { background: var(--t2-soft); color: var(--t2); font-weight: 600; }
+tr.dropped td { text-decoration: line-through; color: var(--muted); }
+.dq-tag { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: var(--t4-soft); color: var(--t4); margin-left: 6px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.btn[aria-pressed="true"] { border-color: var(--spine); background: var(--spine-soft); color: var(--spine); }
+.dq-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; font-size: 0.86rem; }
+.dq-dims div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.dq-dims b { display: block; font-size: 0.9rem; }
+
+/* types */
+.types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.type { scroll-margin-top: 80px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.type .q { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
+.type .stripe { height: 6px; border-radius: 3px; }
+.type dl { margin: 0; display: grid; gap: 8px; font-size: 0.9rem; }
+.type dt { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.type dd { margin: 0; }
+.type:nth-child(1) { min-height: 0; }
+@media (min-width: 981px) { .type:nth-child(2) { margin-bottom: 18px; } .type:nth-child(3) { margin-bottom: 36px; } .type:nth-child(4) { margin-bottom: 54px; } }
+@media (max-width: 980px) { .types { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .types { grid-template-columns: 1fr; } }
+.axis-note { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+
+/* worked cases */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.step { min-height: 52px; border-radius: 10px; padding: 8px 10px; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+.step small { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.step span { font-weight: 600; font-size: 0.92rem; }
+.step[aria-selected="true"] { border-width: 2px; }
+.step.s1[aria-selected="true"] { border-color: var(--t1); background: var(--t1-soft); }
+.step.s2[aria-selected="true"] { border-color: var(--t2); background: var(--t2-soft); }
+.step.s3[aria-selected="true"] { border-color: var(--t3); background: var(--t3-soft); }
+.step.s4[aria-selected="true"] { border-color: var(--t4); background: var(--t4-soft); }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr 1fr; } }
+.case-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .case-body { grid-template-columns: 1fr; } }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.kpi small { display: block; font-size: 0.78rem; color: var(--muted); }
+.kpi b { font-family: var(--font-display); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.answer { display: flex; flex-direction: column; gap: 10px; font-size: 0.95rem; }
+.answer .qline { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+.slider { display: grid; gap: 6px; }
+.slider input { width: 100%; accent-color: var(--t4); }
+.slider label { font-size: 0.9rem; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.calc { font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-x: auto; }
+
+/* quiz */
+.quiz { display: grid; gap: 10px; }
+.qitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.qitem .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.qitem .opts button { min-height: 36px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 0.84rem; font-weight: 600; }
+.qitem .opts button.right { background: var(--t2-soft); border-color: var(--good); color: var(--good); }
+.qitem .opts button.wrong { background: var(--t4-soft); border-color: var(--bad); color: var(--bad); }
+.qitem .fb { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 720px) { .qitem { grid-template-columns: 1fr; } }
+.score { font-weight: 600; }
+
+/* practice + sources */
+.practice { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.practice a { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+.practice a:hover { border-color: var(--spine); }
+.practice a b { font-family: var(--font-display); font-size: 1.05rem; color: var(--spine); }
+.practice a span { font-size: 0.88rem; color: var(--muted); }
+.sources ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; font-size: 0.92rem; }
+.sources li span { color: var(--muted); }
+footer { color: var(--muted); font-size: 0.86rem; max-width: 80ch; }
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <div class="eyebrow">Data Analysis · Foundation</div>
+    <h1>Data Analytics Foundations</h1>
+    <p class="lead">What data analytics is, the six concepts every analyst works with, and the four types of questions analytics answers. Each idea comes with examples from FMCG, supply chain, finance and lending, and two worked cases you can change.</p>
+  </header>
+
+  <section class="sec" aria-labelledby="map-h">
+    <h2 id="map-h" class="eyebrow" style="font-family:var(--font-mono);font-size:0.74rem;font-weight:500">Roadmap</h2>
+    <div class="mapwrap">
+      <div class="map" id="map">
+        <svg class="links" id="links" aria-hidden="true"></svg>
+        <div class="m-left" id="m-concepts">
+          <button class="node" data-go="concepts" id="n-concepts">Key Concepts of Data</button>
+          <div class="tiles">
+            <button class="node" data-go="c-collection">Collection</button>
+            <button class="node" data-go="c-cleanup">Cleanup</button>
+            <button class="node" data-go="c-exploration">Exploration</button>
+            <button class="node" data-go="c-visualisation">Visualisation</button>
+            <button class="node wide" data-go="c-statistics">Statistical Analysis</button>
+            <button class="node wide" data-go="c-ml">Machine Learning</button>
+          </div>
+        </div>
+        <div class="m-mid">
+          <button class="node core" data-go="intro" id="n-intro">Introduction</button>
+          <button class="node core" data-go="types" id="n-types">Types of Data Analytics</button>
+          <div class="spine-label">Building a Strong Foundation</div>
+        </div>
+        <div class="m-right">
+          <button class="node" data-go="intro" id="n-what">What is Data Analytics</button>
+          <div class="gap"></div>
+          <button class="node" data-go="t-descriptive" id="n-t1">Descriptive Analytics</button>
+          <button class="node" data-go="t-diagnostic" id="n-t2">Diagnostic Analytics</button>
+          <button class="node" data-go="t-predictive" id="n-t3">Predictive Analytics</button>
+          <button class="node" data-go="t-prescriptive" id="n-t4">Prescriptive Analytics</button>
+        </div>
+      </div>
+      <p class="map-hint">Click any box to jump to it.</p>
+    </div>
+  </section>
+
+  <div class="sticky-picker">
+    <div class="picker" role="group" aria-label="Industry for the examples">
+      <span class="lbl">Examples from</span>
+      <button class="chip" data-ind="fmcg" aria-pressed="true">FMCG</button>
+      <button class="chip" data-ind="supply" aria-pressed="false">Supply chain</button>
+      <button class="chip" data-ind="finance" aria-pressed="false">Finance</button>
+      <button class="chip" data-ind="lending" aria-pressed="false">Lending</button>
+      <a class="lab-link" id="lab-link" href="#"></a>
+    </div>
+  </div>
+
+  <!-- ===================== INTRODUCTION ===================== -->
+  <section class="sec" id="intro" aria-labelledby="intro-h">
+    <div class="eyebrow">Introduction</div>
+    <h2 id="intro-h">What is data analytics?</h2>
+    <p class="quote">Data analytics is “the collection, transformation, and organization” of facts so that people can draw conclusions, make predictions and make better decisions.<cite>Paraphrasing Google’s Data Analytics course, <i>Introducing Data Analytics and Analytical Thinking</i></cite></p>
+    <p class="sec-intro">The point is the decision, not the dashboard. Data becomes useful when it moves up a ladder: raw facts are organised into information, information is interpreted into an insight, and the insight changes what someone does.</p>
+    <div class="ladder" id="ladder"></div>
+
+    <h3 style="margin-top:8px">The analysis process</h3>
+    <p class="sec-intro">Google’s course teaches six phases that repeat as you learn more. CRISP-DM, the long-standing industry standard for data-mining projects, has the same shape: business understanding, data understanding, data preparation, modelling, evaluation and deployment. The tag under each phase shows which concept on this page it uses most.</p>
+    <div class="phases" id="phases"></div>
+  </section>
+
+  <!-- ===================== KEY CONCEPTS ===================== -->
+  <section class="sec" id="concepts" aria-labelledby="concepts-h">
+    <div class="eyebrow">Key concepts of data</div>
+    <h2 id="concepts-h">Six things every analyst does</h2>
+    <p class="sec-intro">These are the building blocks of every project. The first four turn raw data into something you can trust and read; the last two let you generalise from it. Switch the industry above to change the examples.</p>
+    <div class="concepts" id="concept-cards"></div>
+
+    <div class="panel" id="dq-panel">
+      <h3>Try it: clean a distributor order extract</h3>
+      <p class="muted" style="font-size:0.95rem">The UK Government Data Quality Framework uses six data quality dimensions defined by DAMA UK. Each problem below breaks one of them. Show the issues, then apply the fixes an analyst would write down in a cleaning log.</p>
+      <div class="dq-dims" id="dq-dims"></div>
+      <div class="btnrow">
+        <button class="btn" id="dq-show" aria-pressed="false">Show issues</button>
+        <button class="btn" id="dq-fix" aria-pressed="false">Apply fixes</button>
+      </div>
+      <div class="tw" id="dq-table"></div>
+      <div id="dq-log" class="calc" hidden></div>
+    </div>
+  </section>
+
+  <!-- ===================== TYPES ===================== -->
+  <section class="sec" id="types" aria-labelledby="types-h">
+    <div class="eyebrow">Types of data analytics</div>
+    <h2 id="types-h">Four questions, each harder and more valuable</h2>
+    <p class="sec-intro">The four types are often drawn as a staircase, the “analytics ascendancy model” commonly attributed to Gartner: each step builds on the one before it, takes more effort, and moves closer to a decision. Most organisations still spend most of their time on the first step.</p>
+    <div class="types" id="type-cards"></div>
+    <div class="axis-note"><span>Hindsight</span><span>Difficulty and value increase →</span><span>Foresight</span></div>
+  </section>
+
+  <!-- ===================== WORKED CASES ===================== -->
+  <section class="sec" id="cases" aria-labelledby="cases-h">
+    <div class="eyebrow">Worked cases</div>
+    <h2 id="cases-h">One dataset, four questions</h2>
+    <p class="sec-intro">Each case walks the same data up all four steps. The numbers are made up for teaching but behave like real data. On the last step, move the slider and watch the decision change.</p>
+    <div class="tabs" role="tablist" aria-label="Case">
+      <button class="tab" role="tab" data-case="fmcg" aria-selected="true">FMCG distributor: restock a SKU</button>
+      <button class="tab" role="tab" data-case="lending" aria-selected="false">Consumer lending: set a score cut-off</button>
+    </div>
+    <div class="panel">
+      <div class="steps" role="tablist" aria-label="Analytics type" id="steps">
+        <button class="step s1" role="tab" data-step="0"><small>1 · Descriptive</small><span>What happened?</span></button>
+        <button class="step s2" role="tab" data-step="1"><small>2 · Diagnostic</small><span>Why did it happen?</span></button>
+        <button class="step s3" role="tab" data-step="2"><small>3 · Predictive</small><span>What will happen?</span></button>
+        <button class="step s4" role="tab" data-step="3"><small>4 · Prescriptive</small><span>What should we do?</span></button>
+      </div>
+      <div class="case-body">
+        <div id="case-chart" style="min-width:0"></div>
+        <div class="answer" id="case-answer"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section class="sec" id="quiz" aria-labelledby="quiz-h">
+    <div class="eyebrow">Check yourself</div>
+    <h2 id="quiz-h">Which type of analytics is this?</h2>
+    <p class="sec-intro">Classify each business question. The words “what happened”, “why”, “will” and “should” are the usual clues, but read the whole question.</p>
+    <div class="quiz" id="quiz-list"></div>
+    <p class="score" id="quiz-score" aria-live="polite"></p>
+  </section>
+
+  <!-- ===================== PRACTICE ===================== -->
+  <section class="sec" aria-labelledby="practice-h">
+    <div class="eyebrow">Practise</div>
+    <h2 id="practice-h">Put the foundation to work</h2>
+    <div class="practice">
+      <h3>Industry labs: one business case each, built on a well-known open-source repository</h3>
+      <a href="../industry/retail-demand-forecasting/index.html"><b>FMCG · Retail Demand Forecasting</b><span>Seasonality, a backtest against Prophet and a buffered supply plan. Data: facebook/prophet.</span></a>
+      <a href="../industry/delivery-route-planning/index.html"><b>Supply chain · Delivery Route Planning</b><span>Routing methods and the cheapest truck size. Data: google/or-tools.</span></a>
+      <a href="../industry/investment-risk-return/index.html"><b>Finance · Investment Risk and Return</b><span>150 years of returns, drawdowns and an equity-share rule. Metrics: ranaroussi/quantstats.</span></a>
+      <a href="../industry/credit-scorecard/index.html"><b>Lending · Credit Scorecard</b><span>WoE, IV, a points scorecard and a cost-based cut-off. Data: ShichenXie/scorecardpy.</span></a>
+      <h3>SQL, Python and Excel labs</h3>
+      <a href="../index.html"><b>Set vs Loop Lab</b><span>How SQL, Python and Excel think about the same question.</span></a>
+      <a href="../labs/coffee-chain/index.html"><b>Coffee Chain Lab</b><span>Descriptive and diagnostic analytics on retail orders.</span></a>
+      <a href="../labs/debt-classification/index.html"><b>Debt Classification Lab</b><span>Classify loans, provisions, NPL and roll rates.</span></a>
+      <a href="../labs/loan-recommendation/index.html"><b>Loan Recommendation Lab</b><span>Eligibility, recommendation and offer sizing.</span></a>
+    </div>
+  </section>
+
+  <!-- ===================== SOURCES ===================== -->
+  <section class="sec sources" aria-labelledby="src-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="src-h">Where the definitions come from</h2>
+    <ol>
+      <li><a href="https://www.coursera.org/learn/google-introducing-data-analytics-and-analytical-thinking" target="_blank" rel="noopener">Google Career Certificates: Introducing Data Analytics and Analytical Thinking</a> <span>(Coursera). Definition of data analytics and the six phases: ask, prepare, process, analyze, share, act.</span></li>
+      <li><a href="https://s2.smu.edu/tfomby/eco5385_eco6380/data/SPSS/CRISPWP-0800%20Data%20Mining%20Standards.pdf" target="_blank" rel="noopener">Chapman et al., CRISP-DM 1.0: Step-by-step data mining guide (2000)</a> <span>The six CRISP-DM phases and the data understanding and preparation tasks.</span></li>
+      <li><a href="https://www.gov.uk/government/news/meet-the-data-quality-dimensions" target="_blank" rel="noopener">UK Government Data Quality Hub: Meet the data quality dimensions</a> <span>Accuracy, completeness, uniqueness, consistency, timeliness and validity, as defined by DAMA UK.</span></li>
+      <li><a href="https://itl.nist.gov/div898/handbook/eda/section1/eda11.htm" target="_blank" rel="noopener">NIST/SEMATECH e-Handbook of Statistical Methods: What is EDA?</a> <span>Exploratory data analysis as an approach that is mostly graphical and lets the data reveal its structure. The <a href="https://itl.nist.gov/div898/handbook/dtoc.htm" target="_blank" rel="noopener">full handbook</a> covers the statistics used here.</span></li>
+      <li><a href="https://service-manual.ons.gov.uk/data-visualisation/guidance" target="_blank" rel="noopener">Office for National Statistics: Data visualisation guidance</a> <span>Principles, chart types, colour, axes and chart text.</span></li>
+      <li><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google for Developers: Machine Learning Crash Course</a> <span>Supervised learning, loss, model evaluation and data preparation.</span></li>
+      <li><a href="https://www-cloudfront-alias.coursera.org/articles/descriptive-predictive-and-prescriptive-analytics" target="_blank" rel="noopener">Coursera: Descriptive, predictive and prescriptive analytics</a> <span>The questions each type answers, with examples.</span></li>
+      <li><a href="https://arxiv.org/pdf/2412.00034" target="_blank" rel="noopener">Moesmann and Pedersen, Data-Driven Prescriptive Analytics Applications: A Comprehensive Survey (2024)</a> <span>The analytics ascendancy model attributed to Gartner and definitions of predictive and prescriptive analytics.</span></li>
+    </ol>
+  </section>
+
+  <footer>All company figures on this page are invented for teaching. The forecasting and cut-off methods are deliberately simple versions of real practice; production models in a bank or an FMCG company add seasonality, more variables, validation and governance.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var fmt = function (v, d) { return Number(v).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); };
+  var IND = { fmcg: "FMCG", supply: "Supply chain", finance: "Finance", lending: "Lending" };
+  var LABS = { fmcg: ["Retail Demand Forecasting", "../industry/retail-demand-forecasting/index.html"], supply: ["Delivery Route Planning", "../industry/delivery-route-planning/index.html"],
+               finance: ["Investment Risk and Return", "../industry/investment-risk-return/index.html"], lending: ["Credit Scorecard", "../industry/credit-scorecard/index.html"] };
+  var ind = "fmcg";
+  try { var saved = localStorage.getItem("daf-ind"); if (saved && IND[saved]) ind = saved; } catch (e) {}
+
+  /* ---------------- content ---------------- */
+  var LADDER = [
+    { t: "Data", d: "Raw facts.", ex: { fmcg: "12,480 invoice lines from 35 distributors last week.", supply: "41,000 pallet movements logged by the warehouse system.", finance: "18,200 general ledger journal lines for September.", lending: "3,150 loan applications with bureau reports." } },
+    { t: "Information", d: "Facts organised and summarised.", ex: { fmcg: "Sell-out of cup noodles in Hanoi fell 12% week on week.", supply: "On-time-in-full (OTIF) was 89% against a 95% target.", finance: "Operating expenses were 4% over budget in Q3.", lending: "The 30+ days-past-due rate of the July cohort is 6.2%." } },
+    { t: "Insight", d: "Information interpreted: why, and so what.", ex: { fmcg: "The fall came from two stock-outs at one distributor, not lower demand.", supply: "Most late deliveries were one carrier on one route after a schedule change.", finance: "The overspend is overtime in two warehouses during the peak season.", lending: "A new online channel brings more low-score applicants; default within each score band has not changed." } },
+    { t: "Decision", d: "An action someone takes.", ex: { fmcg: "Raise that distributor's safety stock and review its reorder point weekly.", supply: "Move the route to a second carrier and add a delivery-slot check.", finance: "Approve temporary staff for the peak instead of overtime.", lending: "Keep the channel but raise its score cut-off by one band." } }
+  ];
+  var PHASES = [
+    { t: "Ask", d: "Define the problem and the decision it serves. Who will act on the answer?", m: "Introduction" },
+    { t: "Prepare", d: "Find, access and gather the data you need. Check where it comes from.", m: "Collection" },
+    { t: "Process", d: "Clean and transform it so it can be trusted.", m: "Cleanup" },
+    { t: "Analyze", d: "Explore, summarise, test and model the data.", m: "Exploration · Statistics · ML" },
+    { t: "Share", d: "Show the result so the audience understands it.", m: "Visualisation" },
+    { t: "Act", d: "Make the decision, then measure what happened and start again.", m: "Prescriptive" }
+  ];
+  var CONCEPTS = [
+    { id: "c-collection", t: "Collection", def: "Getting the right data, with its meaning written down. Decide which records, at what level of detail (grain), for which period, from which system, and with what permission.",
+      act: ["List the question's data needs before extracting anything", "Choose the grain, such as order line, day or customer", "Record the source, owner and refresh time of each table", "Respect consent and privacy rules for personal data"],
+      warn: ["Pulling everything because you can", "Two systems using different codes for the same product", "Samples that leave out a group, such as new outlets"],
+      ex: { fmcg: "Sell-in comes from the ERP (orders to distributors), sell-out from the distributor management system (DMS) and retail audit panels, plus the promotion calendar. Make sure SKU and outlet codes match across all three.",
+            supply: "Warehouse system movements, purchase orders with supplier lead times, transport GPS pings and an on-time-in-full record for every delivery.",
+            finance: "General ledger journal lines, receivable and payable sub-ledgers, bank statements and the budget, all taken at the same period-close date.",
+            lending: "The application form, the credit bureau report (CIC in Vietnam, pulled with the applicant's consent), repayment history from the loan system and collection call logs." } },
+    { id: "c-cleanup", t: "Cleanup", def: "Making data fit for its purpose: finding and fixing duplicates, gaps, wrong formats and impossible values, and keeping a log of every change so the result can be reproduced.",
+      act: ["Profile each column: counts, blanks, distinct values, ranges", "Check the six quality dimensions (try the table below)", "Fix at the source where possible, otherwise in a documented script", "Keep raw data untouched and write cleaned data to a new table"],
+      warn: ["Silently dropping rows, which changes totals", "Filling blanks with zero when zero means something", "Cleaning by hand in a spreadsheet that nobody can repeat"],
+      ex: { fmcg: "The same DMS file uploaded twice, SKU codes that changed after a pack redesign, and returns recorded as negative quantities mixed in with sales.",
+            supply: "Stock counts that differ between the warehouse system and the ERP, missing receipt dates, and quantities in cartons mixed with quantities in pieces.",
+            finance: "Duplicated supplier invoices, foreign-currency amounts without a currency code, and journals posted to the wrong period.",
+            lending: "Blank income fields, dates of birth in two formats, the same customer under two IDs, and days past due recalculated after a payment reversal." } },
+    { id: "c-exploration", t: "Exploration", def: "Looking at the data before you model it. NIST describes exploratory data analysis as an approach that relies mostly on graphs to reveal structure, find outliers and test assumptions.",
+      act: ["Plot distributions, not only averages", "Compare groups and periods side by side", "Look for outliers, gaps and sudden breaks", "Write down questions for the business as you go"],
+      warn: ["Jumping straight to a model", "Reading too much into one chart", "Treating an outlier as an error without checking"],
+      ex: { fmcg: "The distribution of weekly sales per outlet, the seasonal peak before Tết, and promotion weeks showing up as outliers.",
+            supply: "Lead-time distributions per supplier (often with a long right tail), weeks of stock cover by SKU, and an ABC classification by volume.",
+            finance: "Expense trends by cost centre, unusual journal amounts such as round numbers or weekend postings, and days sales outstanding by customer.",
+            lending: "Score distributions by channel, default rate by score band and by month of origination, and income plotted against loan amount." } },
+    { id: "c-visualisation", t: "Visualisation", def: "Turning numbers into a picture that answers one question at a glance. Pick the chart by the question, label it clearly and keep the scale honest.",
+      act: ["Trend over time: line chart", "Compare categories: bar chart, sorted", "Distribution: histogram or box plot", "Relationship: scatter plot; part of a whole: stacked bar"],
+      warn: ["Bar charts whose axis does not start at zero", "Pie charts with many slices", "Colour as the only way to tell series apart"],
+      ex: { fmcg: "A line of weekly sell-out with promotion weeks marked, and a sorted bar chart of the top SKUs by revenue.",
+            supply: "An OTIF trend by week, a histogram of supplier lead times, and a heat map of stock cover by warehouse and SKU.",
+            finance: "A waterfall from budgeted to actual profit, and variance bars by cost centre.",
+            lending: "Vintage curves (cumulative default by months on book for each origination month) and an approval funnel from application to disbursement." } },
+    { id: "c-statistics", t: "Statistical Analysis", def: "Measuring centre and spread, and judging whether a difference is real or just noise. Descriptive statistics summarise the data you have; inferential statistics reason about the wider population or the future.",
+      act: ["Mean and median, standard deviation and percentiles", "Confidence intervals around an estimate", "Hypothesis tests and A/B tests", "Correlation and regression, remembering correlation is not causation"],
+      warn: ["Calling a small difference a trend", "Comparing groups that differ in other ways", "Testing many things and reporting only the one that worked"],
+      ex: { fmcg: "An A/B test of a shelf display across matched outlets: is the sales uplift bigger than normal week-to-week noise?",
+            supply: "The standard deviation of demand and lead time sets the safety stock; control charts track picking error rates.",
+            finance: "Budget variance analysis, a confidence range around forecast cash collections, and the link between payment delay and customer size.",
+            lending: "A significance test of default rates between two channels, and a stability check that this month's score distribution still matches the one the model was built on." } },
+    { id: "c-ml", t: "Machine Learning", def: "Letting an algorithm learn patterns from historical examples so it can predict new cases. Supervised learning predicts a known target (regression for numbers, classification for categories); unsupervised learning finds groups or anomalies without a target.",
+      act: ["Define the target and the features available at decision time", "Split data into training and test sets", "Measure on unseen data and compare with a simple baseline", "Monitor the model after it goes live"],
+      warn: ["Features that leak the future into training", "Overfitting: great on history, poor on new data", "Unexplainable models where decisions must be justified"],
+      ex: { fmcg: "Demand forecasting by SKU and outlet, and clustering outlets into segments for different visit frequencies.",
+            supply: "Predicting late deliveries from carrier, route and weather, and detecting anomalies in cold-chain temperature sensors.",
+            finance: "Predicting when each invoice will be paid, and flagging unusual expense claims for audit.",
+            lending: "Probability-of-default scorecards (logistic regression is still common because each factor can be explained to the customer and the regulator), and fraud detection on applications." } }
+  ];
+  var TYPES = [
+    { id: "t-descriptive", t: "Descriptive", q: "What happened?", c: "t1", m: "Aggregation, KPIs, reports and dashboards", o: "A trusted fact base: totals, rates, trends",
+      ex: { fmcg: "Sell-out fell 12% in October against September in Hanoi general trade.", supply: "OTIF was 89% last month, below the 95% target.", finance: "Operating expenses were 4% over budget in Q3.", lending: "The 30+ days-past-due rate of the July cohort is 6.2% after three months." } },
+    { id: "t-diagnostic", t: "Diagnostic", q: "Why did it happen?", c: "t2", m: "Drill-down, segmentation, comparison, root-cause analysis", o: "The drivers behind a change",
+      ex: { fmcg: "Drilling down shows the drop sits in two districts where a competitor cut prices; stock was available throughout.", supply: "Most late deliveries come from one carrier on one route after a schedule change.", finance: "The overspend is overtime in two warehouses during the peak season.", lending: "Default rose because of a mix shift: more low-score applicants from a new channel, while default within each score band is unchanged." } },
+    { id: "t-predictive", t: "Predictive", q: "What will happen?", c: "t3", m: "Forecasting, regression, classification models", o: "Estimates with a range of uncertainty",
+      ex: { fmcg: "Forecast demand for the next eight weeks by SKU, including the Tết peak.", supply: "Predict which purchase orders will arrive late next week.", finance: "Forecast cash collections for the next 13 weeks.", lending: "Estimate each applicant's probability of default within 12 months." } },
+    { id: "t-prescriptive", t: "Prescriptive", q: "What should we do?", c: "t4", m: "Optimisation, simulation, decision rules, experiments", o: "A recommended action and its trade-offs",
+      ex: { fmcg: "Choose order quantities and promotion depth that maximise margin within the trade budget.", supply: "Set the reorder point and safety stock per SKU for a 95% service level.", finance: "Choose which supplier invoices to pay early to earn discounts without breaching the cash limit.", lending: "Set the score cut-off and credit limit that maximise profit after expected losses." } }
+  ];
+  var QUIZ = [
+    { q: "How many cartons did each distributor sell last month?", a: 0, why: "It summarises the past." },
+    { q: "Why did on-time delivery drop in week 42?", a: 1, why: "It looks for the cause of a change." },
+    { q: "What is the chance this applicant defaults within 12 months?", a: 2, why: "It estimates a future event." },
+    { q: "Which minimum credit score maximises expected profit?", a: 3, why: "It chooses an action by comparing outcomes." },
+    { q: "Which customers will probably pay their invoices late next quarter?", a: 2, why: "It predicts behaviour that has not happened yet." },
+    { q: "How much should each warehouse order to reach a 95% service level?", a: 3, why: "It recommends a quantity to act on." },
+    { q: "What was the NPL ratio at the end of Q3?", a: 0, why: "It reports a figure that already exists." },
+    { q: "Is the margin decline caused by price, product mix or cost?", a: 1, why: "It decomposes a change into its drivers." }
+  ];
+  var TNAMES = ["Descriptive", "Diagnostic", "Predictive", "Prescriptive"];
+
+  /* ---------------- render static parts ---------------- */
+  function renderLadder() {
+    document.getElementById("ladder").innerHTML = LADDER.map(function (r, i) {
+      return '<div class="rung"><span class="eyebrow">' + (i + 1) + " of 4</span><b>" + r.t + '</b><span class="muted" style="font-size:0.85rem">' + r.d + "</span><span>" + esc(r.ex[ind]) + "</span></div>";
+    }).join("");
+  }
+  document.getElementById("phases").innerHTML = PHASES.map(function (p, i) {
+    return '<div class="phase"><span class="n">' + (i + 1) + "</span><b>" + p.t + "</b><span>" + p.d + '</span><span class="maps">' + p.m + "</span></div>";
+  }).join("");
+  function renderConcepts() {
+    document.getElementById("concept-cards").innerHTML = CONCEPTS.map(function (c, i) {
+      return '<article class="panel concept" id="' + c.id + '"><div class="head"><span class="num">0' + (i + 1) + "</span><h3>" + c.t + '</h3></div><p class="def">' + c.def + '</p><div class="two-lists"><div><h4>What you do</h4><ul>' +
+        c.act.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div><div><h4>Watch out for</h4><ul>" + c.warn.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") +
+        '</ul></div></div><div class="ex"><span class="tag">In ' + IND[ind] + "</span>" + esc(c.ex[ind]) + "</div></article>";
+    }).join("");
+  }
+  function renderTypes() {
+    document.getElementById("type-cards").innerHTML = TYPES.map(function (t, i) {
+      return '<article class="type" id="' + t.id + '"><div class="stripe" style="background:var(--' + t.c + ')"></div><span class="eyebrow">' + (i + 1) + " · " + t.t + '</span><div class="q">' + t.q + "</div><dl><dt>Typical methods</dt><dd>" + t.m + "</dd><dt>Output</dt><dd>" + t.o +
+        '</dd><dt>In ' + IND[ind] + '</dt><dd style="background:var(--' + t.c + '-soft);border-radius:8px;padding:8px 10px">' + esc(t.ex[ind]) + "</dd></dl></article>";
+    }).join("");
+  }
+
+  /* ---------------- data quality table ---------------- */
+  var DQ_DIMS = [
+    ["Accuracy", "Data reflects reality."], ["Completeness", "Everything needed for the use is present."], ["Uniqueness", "No unintended duplicates."],
+    ["Consistency", "Values do not conflict within or across datasets."], ["Timeliness", "Available when expected and needed."], ["Validity", "Matches the expected format, type and range."]
+  ];
+  document.getElementById("dq-dims").innerHTML = DQ_DIMS.map(function (d) { return "<div><b>" + d[0] + "</b>" + d[1] + "</div>"; }).join("");
+  var DQ_COLS = ["order_id", "order_date", "outlet_id", "sku", "qty_cartons", "loaded_at"];
+  var DQ_ROWS = [
+    { v: ["SO-1041", "2026-10-05", "HN-0112", "NDL-CUP-65", "24", "2026-10-06"] },
+    { v: ["SO-1042", "2026-10-05", "HN-0087", "NDL-CUP-65", "18", "2026-10-06"] },
+    { v: ["SO-1042", "2026-10-05", "HN-0087", "NDL-CUP-65", "18", "2026-10-06"], issue: { 0: "Uniqueness" }, fix: { drop: true, note: "SO-1042 appears twice from a repeated DMS upload: keep one row." } },
+    { v: ["SO-1043", "2026-10-06", "", "NDL-CUP-65", "30", "2026-10-07"], issue: { 2: "Completeness" }, fix: { 2: "HN-0153", note: "outlet_id blank: looked up from the delivery note (HN-0153)." } },
+    { v: ["SO-1044", "2026-13-06", "HN-0112", "NDL-CUP-65", "12", "2026-10-07"], issue: { 1: "Validity" }, fix: { 1: "2026-10-06", note: "Month 13 is impossible: the invoice shows 2026-10-06." } },
+    { v: ["SO-1045", "2026-10-06", "HN-0240", "NDLCUP65", "20", "2026-10-07"], issue: { 3: "Consistency" }, fix: { 3: "NDL-CUP-65", note: "SKU written without dashes: mapped to the master code NDL-CUP-65." } },
+    { v: ["SO-1046", "2026-10-07", "HN-0087", "NDL-CUP-65", "2400", "2026-10-08"], issue: { 4: "Accuracy" }, fix: { 4: "24", note: "2,400 cartons is 100 times this outlet's usual order: the distributor confirmed 24." } },
+    { v: ["SO-1047", "2026-10-07", "HN-0301", "NDL-CUP-65", "16", "2026-10-16"], issue: { 5: "Timeliness" }, fix: { note: "Loaded 9 days late, after the weekly report was sent: flag it and restate week 41." } }
+  ];
+  var dq = { show: false, fix: false };
+  function renderDQ() {
+    var head = "<tr>" + DQ_COLS.map(function (c, i) { return '<th class="' + (i === 4 ? "n" : "") + '">' + c + "</th>"; }).join("") + "</tr>";
+    var body = DQ_ROWS.map(function (r) {
+      var dropped = dq.fix && r.fix && r.fix.drop;
+      return '<tr class="' + (dropped ? "dropped" : "") + '">' + r.v.map(function (v, i) {
+        var bad = r.issue && r.issue[i] !== undefined, fixed = dq.fix && r.fix && r.fix[i] !== undefined;
+        var val = fixed ? r.fix[i] : v, cls = (i === 4 ? "n " : "") + (fixed ? "fixed" : (bad && dq.show ? "issue" : ""));
+        var tag = bad && dq.show && !fixed ? '<span class="dq-tag">' + r.issue[i] + "</span>" : "";
+        return '<td class="' + cls + '">' + (val === "" ? '<span class="muted">(blank)</span>' : esc(val)) + tag + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    document.getElementById("dq-table").innerHTML = "<table><thead>" + head + "</thead><tbody>" + body + "</tbody></table>";
+    var log = document.getElementById("dq-log");
+    log.hidden = !dq.fix;
+    log.textContent = "Cleaning log\n" + DQ_ROWS.filter(function (r) { return r.fix; }).map(function (r, i) { return (i + 1) + ". " + r.fix.note; }).join("\n");
+    document.getElementById("dq-show").setAttribute("aria-pressed", String(dq.show));
+    document.getElementById("dq-fix").setAttribute("aria-pressed", String(dq.fix));
+  }
+  document.getElementById("dq-show").addEventListener("click", function () { dq.show = !dq.show; renderDQ(); });
+  document.getElementById("dq-fix").addEventListener("click", function () { dq.fix = !dq.fix; if (dq.fix) dq.show = true; renderDQ(); });
+
+  /* ---------------- SVG chart helpers ---------------- */
+  function niceMax(v) { var p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  function chart(o) {
+    var W = 640, H = o.h || 260, L = 46, R = 14, T = 14, B = 34;
+    var n = o.labels.length, ymax = o.ymax || niceMax(Math.max.apply(null, o.series.reduce(function (a, s) { return a.concat(s.values.filter(function (x) { return x !== null; })).concat(s.hi || []); }, []))), ymin = 0;
+    var xw = (W - L - R) / n, X = function (i) { return L + xw * (i + 0.5); }, Y = function (v) { return T + (H - T - B) * (1 - (v - ymin) / (ymax - ymin)); };
+    var g = "", k;
+    for (k = 0; k <= 4; k++) { var v = ymin + (ymax - ymin) * k / 4, y = Y(v); g += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (o.yfmt ? o.yfmt(v) : fmt(v)) + "</text>"; }
+    o.labels.forEach(function (lab, i) { if (n <= 12 || i % 2 === 0) g += '<text x="' + X(i) + '" y="' + (H - 12) + '" text-anchor="middle">' + esc(lab) + "</text>"; });
+    (o.shade || []).forEach(function (s) { g += '<rect x="' + (X(s[0]) - xw / 2) + '" y="' + T + '" width="' + xw * (s[1] - s[0] + 1) + '" height="' + (H - T - B) + '" fill="var(' + s[2] + ')" opacity="0.55"/>'; });
+    o.series.forEach(function (s) {
+      if (s.type === "bar") {
+        var bw = xw * (s.width || 0.62);
+        s.values.forEach(function (v, i) { if (v === null) return; var c = s.colors ? s.colors[i] : s.color; g += '<rect x="' + (X(i) - bw / 2) + '" y="' + Y(v) + '" width="' + bw + '" height="' + (Y(0) - Y(v)) + '" rx="2" fill="var(' + c + ')"/>'; if (s.labels) g += '<text x="' + X(i) + '" y="' + (Y(v) - 4) + '" text-anchor="middle">' + s.labels[i] + "</text>"; });
+        return;
+      }
+      if (s.lo) {
+        var up = [], dn = [];
+        s.values.forEach(function (v, i) { if (s.lo[i] !== null && s.lo[i] !== undefined) { up.push(X(i) + "," + Y(s.hi[i])); dn.unshift(X(i) + "," + Y(s.lo[i])); } });
+        g += '<polygon points="' + up.concat(dn).join(" ") + '" fill="var(' + s.color + ')" opacity="0.18"/>';
+      }
+      var pts = [], d = "";
+      s.values.forEach(function (v, i) { if (v === null) { d += pts.length ? "" : ""; pts.push(null); return; } d += (pts.length && pts[pts.length - 1] !== null ? " L" : " M") + X(i) + " " + Y(v); pts.push(v); });
+      g += '<path d="' + d + '" fill="none" stroke="var(' + s.color + ')" stroke-width="2.5"' + (s.dash ? ' stroke-dasharray="6 5"' : "") + "/>";
+      s.values.forEach(function (v, i) { if (v === null) return; g += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="' + (s.hl && s.hl.indexOf(i) > -1 ? 5 : 3) + '" fill="var(' + (s.hl && s.hl.indexOf(i) > -1 ? s.hlColor : s.color) + ')"/>'; });
+    });
+    (o.notes || []).forEach(function (nt) { g += '<text x="' + X(nt[0]) + '" y="' + (Y(nt[1]) - 10) + '" text-anchor="middle" style="fill:var(--ink);font-weight:500">' + esc(nt[2]) + "</text>"; });
+    var leg = o.legend ? '<div class="legend">' + o.legend.map(function (l) { return '<span><i style="background:var(' + l[1] + ')"></i>' + esc(l[0]) + "</span>"; }).join("") + "</div>" : "";
+    return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(o.title || "chart") + '">' + g + "</svg>" + leg;
+  }
+
+  /* ---------------- FMCG case ---------------- */
+  var F = (function () {
+    var noise = [9, -14, 17, -6, 12, -18, 0, 15, -9, 6, 0, 0, -12, 18, -3, 9], oos = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 5, 0, 0, 0, 0];
+    var weeks = [], demand = [], sales = [];
+    for (var w = 1; w <= 16; w++) {
+      var d = 118 + 2.5 * w + noise[w - 1]; if (w === 7) d *= 1.35; d = Math.round(d);
+      weeks.push("W" + w); demand.push(d); sales.push(Math.round(d * (7 - oos[w - 1]) / 7));
+    }
+    // fit a line on normal weeks only (no promotion, no stock-out)
+    var xs = [], ys = [];
+    for (var i = 0; i < 16; i++) if (i !== 6 && oos[i] === 0) { xs.push(i + 1); ys.push(sales[i]); }
+    var n = xs.length, mx = xs.reduce(function (a, b) { return a + b; }, 0) / n, my = ys.reduce(function (a, b) { return a + b; }, 0) / n;
+    var sxy = 0, sxx = 0; for (i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) * (xs[i] - mx); }
+    var b = sxy / sxx, a = my - b * mx, sse = 0; for (i = 0; i < n; i++) sse += Math.pow(ys[i] - (a + b * xs[i]), 2);
+    var sigma = Math.sqrt(sse / (n - 2));
+    var fit = function (w) { return a + b * w; };
+    var lost = [10, 11].map(function (i) { return Math.round(fit(i + 1)) - sales[i]; });
+    var avg = sales.reduce(function (s, x) { return s + x; }, 0) / 16;
+    return { weeks: weeks, sales: sales, oos: oos, a: a, b: b, sigma: sigma, fit: fit, lost: lost, avg: avg, n: n, price: 180000, onHand: 90, onOrder: 120, lead: 2, review: 1 };
+  })();
+  var SERVICE = [[0.80, 0.842], [0.90, 1.282], [0.95, 1.645], [0.98, 2.054], [0.99, 2.326]];
+  var fState = { svc: 2 };
+
+  function fmcgStep(step) {
+    var c = "", a = "", s = F.sales, last = s[15], prev = s[14];
+    if (step === 0) {
+      var tot = s.reduce(function (x, y) { return x + y; }, 0);
+      c = chart({ title: "Weekly sell-out", labels: F.weeks, series: [{ values: s, color: "--t1", hl: [6, 10, 11], hlColor: "--t4" }], notes: [[6, s[6], "promo"], [11, s[11], "dip"]], legend: [["Cartons sold per week", "--t1"]] });
+      a = '<div class="qline">What happened?</div><p>Distributor HN-02 sells <b>cup noodles 65 g</b> (cartons of 24). Over 16 weeks it sold <b>' + fmt(tot) + "</b> cartons, about <b>" + fmt(F.avg) + "</b> a week.</p>" +
+        '<div class="kpis"><div class="kpi"><small>Total, 16 weeks</small><b>' + fmt(tot) + '</b></div><div class="kpi"><small>Last week (W16)</small><b>' + fmt(last) + '</b></div><div class="kpi"><small>Change vs W15</small><b>' + (last >= prev ? "+" : "") + fmt(100 * (last / prev - 1), 1) + "%</b></div></div>" +
+        "<p>Two things stand out: a spike in <b>W7</b> and a sharp dip in <b>W11 to W12</b>, when sales fell to " + fmt(s[10]) + " and " + fmt(s[11]) + " cartons. Descriptive analytics reports this; it does not say why.</p>";
+    } else if (step === 1) {
+      c = chart({ title: "Days out of stock per week", h: 230, labels: F.weeks, ymax: 7, yfmt: function (v) { return fmt(v); }, series: [{ type: "bar", values: F.oos.map(function (x) { return x || null; }), color: "--t4", labels: F.oos.map(function (x) { return x ? x + " d" : ""; }) }], legend: [["Days the SKU was out of stock at the distributor", "--t4"]] });
+      a = '<div class="qline">Why did it happen?</div><p>Drill into the causes one at a time:</p><ul><li><b>W7</b> matches the promotion calendar: a 10% price-off week. That week is not normal demand, so leave it out of the trend.</li><li><b>W11 to W12</b>: the warehouse report shows the SKU was <b>out of stock for ' + F.oos[10] + " and " + F.oos[11] + " days</b>. Outlet count and sales per in-stock day were normal.</li></ul>" +
+        "<p>So the dip was a supply failure, not falling demand. Comparing sales with the trend from normal weeks, about <b>" + fmt(F.lost[0] + F.lost[1]) + " cartons</b> were lost, roughly <b>" + fmt((F.lost[0] + F.lost[1]) * F.price / 1e6, 1) + " million VND</b> of revenue at " + fmt(F.price) + " VND a carton.</p>";
+    } else if (step === 2) {
+      var labels = F.weeks.concat(["W17", "W18", "W19", "W20"]), hist = s.concat([null, null, null, null]);
+      var fc = labels.map(function (x, i) { return i >= 15 ? F.fit(i + 1) : null; });
+      var lo = fc.map(function (v, i) { return i >= 16 ? v - 1.282 * F.sigma : (i === 15 ? v : null); }), hi = fc.map(function (v, i) { return i >= 16 ? v + 1.282 * F.sigma : (i === 15 ? v : null); });
+      c = chart({ title: "Forecast", labels: labels, series: [{ values: hist, color: "--t1" }, { values: fc, lo: lo, hi: hi, color: "--t3", dash: true }], shade: [[16, 19, "--t3-soft"]], legend: [["Actual sales", "--t1"], ["Forecast with 80% range", "--t3"]] });
+      a = '<div class="qline">What will happen?</div><p>Fit a straight trend line to the <b>' + F.n + " normal weeks</b>, leaving out the promotion week and the two stock-out weeks because they do not show true demand.</p>" +
+        '<div class="calc">demand ≈ ' + fmt(F.a, 1) + " + " + fmt(F.b, 2) + " × week\nσ of the errors ≈ " + fmt(F.sigma, 1) + " cartons</div>" +
+        "<p>Expected demand for <b>W17 to W20</b> is " + [17, 18, 19, 20].map(function (w) { return fmt(F.fit(w)); }).join(", ") + " cartons. The shaded band is an 80% range (±1.28σ): real weeks will vary, and the plan has to allow for that.</p>";
+    } else {
+      var z = SERVICE[fState.svc][1], P = F.lead + F.review;
+      var dP = F.fit(17) + F.fit(18) + F.fit(19), ss = z * F.sigma * Math.sqrt(P), S = dP + ss;
+      var order = Math.max(0, Math.ceil((S - F.onHand - F.onOrder) / 10) * 10);
+      var rows = SERVICE.map(function (x, i) { var sss = x[1] * F.sigma * Math.sqrt(P); return [Math.round(x[0] * 100) + "%", Math.round(sss), Math.max(0, Math.ceil((dP + sss - F.onHand - F.onOrder) / 10) * 10), i === fState.svc]; });
+      c = chart({ title: "Order size by service level", h: 240, labels: rows.map(function (r) { return r[0]; }), series: [{ type: "bar", width: 0.5, values: rows.map(function (r) { return r[2]; }), colors: rows.map(function (r) { return r[3] ? "--t4" : "--t4-soft"; }), labels: rows.map(function (r) { return fmt(r[2]); }) }], legend: [["Cartons to order this week, by target service level", "--t4"]] });
+      a = '<div class="qline">What should we do?</div><p>Order enough to cover demand until the <i>next</i> order can arrive: lead time ' + F.lead + " weeks plus a " + F.review + "-week review cycle, so " + P + " weeks, plus safety stock for the uncertainty.</p>" +
+        '<div class="slider"><label for="svc">Target service level: ' + Math.round(SERVICE[fState.svc][0] * 100) + '% (chance of not running out before the next delivery)</label><input id="svc" type="range" min="0" max="4" step="1" value="' + fState.svc + '"></div>' +
+        '<div class="calc">demand over ' + P + " weeks   = " + fmt(dP) + "\nsafety stock = z × σ × √" + P + " = " + z.toFixed(3) + " × " + fmt(F.sigma, 1) + " × " + Math.sqrt(P).toFixed(2) + " = " + fmt(ss) +
+        "\ntarget stock = " + fmt(S) + "\n− on hand " + F.onHand + " − on order " + F.onOrder + "\norder (rounded up to 10) = " + fmt(order) + " cartons</div>" +
+        "<p><b>Recommendation:</b> order <b>" + fmt(order) + " cartons</b> this week. Going from 95% to 99% adds " + fmt(rows[4][1] - rows[2][1]) + " cartons of safety stock: each step up in service costs more stock to hold. That trade-off is the decision.</p>";
+    }
+    return { c: c, a: a };
+  }
+
+  /* ---------------- Lending case ---------------- */
+  var BANDS = [
+    { b: "300–449", lo: 300, pd: 0.32, early: 0.14 }, { b: "450–549", lo: 450, pd: 0.18, early: 0.08 }, { b: "550–649", lo: 550, pd: 0.09, early: 0.04 },
+    { b: "650–749", lo: 650, pd: 0.04, early: 0.02 }, { b: "750–850", lo: 750, pd: 0.015, early: 0.007 }
+  ];
+  var MONTHS = ["Apr", "May", "Jun", "Jul", "Aug", "Sep"];
+  var MIX = [[5, 12, 30, 33, 20], [5, 12, 30, 33, 20], [6, 12, 30, 32, 20], [10, 18, 29, 28, 15], [12, 20, 28, 26, 14], [12, 21, 28, 25, 14]];
+  var APPLICANTS = [120, 180, 260, 280, 160];
+  var LOAN = 20e6, MARGIN = 2.4e6, LGD = 0.6;
+  var lState = { cut: 2 };
+  var earlyRate = function (mix) { return mix.reduce(function (s, m, i) { return s + m / 100 * BANDS[i].early; }, 0); };
+  function profitFor(cut) {
+    var appr = 0, def = 0, prof = 0;
+    for (var i = cut; i < BANDS.length; i++) { var nA = APPLICANTS[i], p = BANDS[i].pd; appr += nA; def += nA * p; prof += nA * ((1 - p) * MARGIN - p * LGD * LOAN); }
+    return { appr: appr, def: def, prof: prof };
+  }
+  function lendingStep(step) {
+    var c = "", a = "";
+    var rates = MIX.map(function (m) { return 100 * earlyRate(m); });
+    if (step === 0) {
+      c = chart({ title: "Early delinquency by origination month", labels: MONTHS, series: [{ values: rates, color: "--t1", hl: [3, 4, 5], hlColor: "--t4" }], yfmt: function (v) { return fmt(v, 1) + "%"; }, ymax: 8, legend: [["30+ days past due by month 3, % of loans", "--t1"]] });
+      a = '<div class="qline">What happened?</div><p>A consumer lender disburses about 1,000 loans of 20 million VND a month. The share of loans 30+ days past due by their third month rose from <b>' + fmt(rates[0], 1) + "%</b> for April loans to <b>" + fmt(rates[5], 1) + "%</b> for September loans.</p>" +
+        '<div class="kpis"><div class="kpi"><small>Apr cohort</small><b>' + fmt(rates[0], 1) + '%</b></div><div class="kpi"><small>Sep cohort</small><b>' + fmt(rates[5], 1) + '%</b></div><div class="kpi"><small>Change</small><b>+' + fmt(rates[5] - rates[0], 1) + " pts</b></div></div><p>The jump starts with the July cohort. That is the fact; the cause is not yet known.</p>";
+    } else if (step === 1) {
+      var h = "<tr><th>Score band</th><th class=\"n\">Share Apr–Jun</th><th class=\"n\">Share Jul–Sep</th><th class=\"n\">Early delinquency in band</th></tr>";
+      BANDS.forEach(function (b, i) { var s1 = (MIX[0][i] + MIX[1][i] + MIX[2][i]) / 3, s2 = (MIX[3][i] + MIX[4][i] + MIX[5][i]) / 3; h += "<tr><td>" + b.b + '</td><td class="n">' + fmt(s1, 1) + '%</td><td class="n">' + fmt(s2, 1) + '%</td><td class="n">' + fmt(100 * b.early, 1) + "% both periods</td></tr>"; });
+      c = '<div class="tw"><table>' + h + "</table></div>";
+      a = '<div class="qline">Why did it happen?</div><p>Split the portfolio by credit score band. Within every band the early delinquency rate is <b>the same before and after July</b>, so borrowers in a given band did not get worse.</p><p>What changed is the <b>mix</b>. An online channel launched in July brought more applicants from the two lowest bands (from about ' +
+        fmt((MIX[0][0] + MIX[0][1]), 0) + "% to " + fmt((MIX[5][0] + MIX[5][1]), 0) + "% of loans). Riskier customers, not worse customers. This is a classic mix effect, and you find it only by segmenting.</p>";
+    } else if (step === 2) {
+      var exp = BANDS.map(function (b, i) { return APPLICANTS[i] * b.pd; }), tot = exp.reduce(function (x, y) { return x + y; }, 0);
+      c = chart({ title: "Probability of default by band", labels: BANDS.map(function (b) { return b.b; }), series: [{ type: "bar", values: BANDS.map(function (b) { return 100 * b.pd; }), color: "--t3", labels: BANDS.map(function (b) { return fmt(100 * b.pd, 1) + "%"; }) }], yfmt: function (v) { return fmt(v) + "%"; }, ymax: 40, legend: [["12-month probability of default (PD) by score band, from past loans", "--t3"]] });
+      a = '<div class="qline">What will happen?</div><p>From past loans, estimate the chance of default within 12 months (PD) for each score band. Next month the lender expects <b>' + fmt(APPLICANTS.reduce(function (x, y) { return x + y; }, 0)) + " applicants</b> in this mix: " + APPLICANTS.map(function (n, i) { return n + " in " + BANDS[i].b; }).join(", ") + ".</p>" +
+        "<p>If it approved everyone, about <b>" + fmt(tot) + " loans</b> would default within a year (" + fmt(100 * tot / 1000, 1) + "%). Real scorecards estimate PD for each applicant with a model such as logistic regression; bands keep this example readable.</p>";
+    } else {
+      var res = BANDS.map(function (b, i) { return profitFor(i); }), best = 0;
+      res.forEach(function (r, i) { if (r.prof > res[best].prof) best = i; });
+      var cur = res[lState.cut];
+      c = chart({ title: "Expected profit by cut-off", h: 240, labels: BANDS.map(function (b) { return "≥ " + b.lo; }), series: [{ type: "bar", width: 0.5, values: res.map(function (r) { return Math.max(0, r.prof / 1e6); }), colors: res.map(function (r, i) { return i === lState.cut ? "--t4" : "--t4-soft"; }), labels: res.map(function (r) { return fmt(r.prof / 1e6); }) }], yfmt: function (v) { return fmt(v); }, legend: [["Expected profit per month, million VND, by minimum score", "--t4"]] });
+      var per = BANDS.map(function (b) { return (1 - b.pd) * MARGIN - b.pd * LGD * LOAN; });
+      a = '<div class="qline">What should we do?</div><p>Each approved loan earns about <b>2.4 million VND</b> if repaid and loses <b>60% of 20 million</b> (12 million) if it defaults. So a band is worth approving only when its PD is below 2.4 ÷ (2.4 + 12) ≈ <b>16.7%</b>.</p>' +
+        '<div class="slider"><label for="cut">Minimum score to approve: ' + BANDS[lState.cut].lo + '</label><input id="cut" type="range" min="0" max="4" step="1" value="' + lState.cut + '"></div>' +
+        '<div class="calc">approved          = ' + fmt(cur.appr) + "\nexpected defaults = " + fmt(cur.def) + "\nexpected profit   = " + fmt(cur.prof / 1e6) + " million VND / month\n\nprofit per loan by band (million VND):\n" + BANDS.map(function (b, i) { return "  " + b.b + "  " + (per[i] >= 0 ? " " : "") + fmt(per[i] / 1e6, 2); }).join("\n") + "</div>" +
+        "<p><b>Recommendation:</b> approve from <b>" + BANDS[best].lo + "</b> upwards, for an expected " + fmt(res[best].prof / 1e6) + " million VND a month. The 450–549 band is a close call (PD 18%, just above break-even): price it higher or ask for more information instead of a flat yes or no.</p>";
+    }
+    return { c: c, a: a };
+  }
+
+  /* ---------------- case state ---------------- */
+  var caseState = { kase: "fmcg", step: 0 };
+  function renderCase() {
+    var r = caseState.kase === "fmcg" ? fmcgStep(caseState.step) : lendingStep(caseState.step);
+    document.getElementById("case-chart").innerHTML = r.c;
+    document.getElementById("case-answer").innerHTML = r.a;
+    document.querySelectorAll("[data-case]").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-case") === caseState.kase)); });
+    document.querySelectorAll("#steps .step").forEach(function (b) { b.setAttribute("aria-selected", String(+b.getAttribute("data-step") === caseState.step)); });
+  }
+  document.querySelectorAll("[data-case]").forEach(function (b) { b.addEventListener("click", function () { caseState.kase = b.getAttribute("data-case"); renderCase(); }); });
+  document.getElementById("steps").addEventListener("click", function (e) { var b = e.target.closest(".step"); if (b) { caseState.step = +b.getAttribute("data-step"); renderCase(); } });
+  document.getElementById("case-answer").addEventListener("input", function (e) {
+    if (e.target.id === "svc") { fState.svc = +e.target.value; renderCase(); var s = document.getElementById("svc"); if (s) s.focus(); }
+    if (e.target.id === "cut") { lState.cut = +e.target.value; renderCase(); var c = document.getElementById("cut"); if (c) c.focus(); }
+  });
+
+  /* ---------------- quiz ---------------- */
+  var answers = {};
+  function renderQuiz() {
+    document.getElementById("quiz-list").innerHTML = QUIZ.map(function (q, i) {
+      var got = answers[i];
+      return '<div class="qitem"><span>' + (i + 1) + ". " + esc(q.q) + '</span><div class="opts">' + TNAMES.map(function (t, j) {
+        var cls = got === undefined ? "" : j === q.a ? "right" : j === got ? "wrong" : "";
+        return '<button data-q="' + i + '" data-a="' + j + '" class="' + cls + '">' + t + "</button>";
+      }).join("") + "</div>" + (got !== undefined ? '<div class="fb">' + (got === q.a ? "Correct. " : "It is " + TNAMES[q.a] + ". ") + q.why + "</div>" : "") + "</div>";
+    }).join("");
+    var done = Object.keys(answers).length, right = Object.keys(answers).filter(function (k) { return answers[k] === QUIZ[k].a; }).length;
+    document.getElementById("quiz-score").textContent = done ? right + " of " + done + " correct" + (done === QUIZ.length ? ". All answered." : "") : "";
+  }
+  document.getElementById("quiz-list").addEventListener("click", function (e) { var b = e.target.closest("button[data-q]"); if (!b) return; var q = +b.getAttribute("data-q"); if (answers[q] === undefined) { answers[q] = +b.getAttribute("data-a"); renderQuiz(); } });
+
+  /* ---------------- industry picker ---------------- */
+  function setInd(v) {
+    ind = v; try { localStorage.setItem("daf-ind", v); } catch (e) {}
+    document.querySelectorAll(".chip[data-ind]").forEach(function (c) { c.setAttribute("aria-pressed", String(c.getAttribute("data-ind") === v)); });
+    renderLadder(); renderConcepts(); renderTypes();
+    var lk = document.getElementById("lab-link"); lk.href = LABS[v][1]; lk.textContent = "Open the " + IND[v].toLowerCase().replace("fmcg", "FMCG") + " lab: " + LABS[v][0] + " →";
+  }
+  document.querySelectorAll(".chip[data-ind]").forEach(function (c) { c.addEventListener("click", function () { setInd(c.getAttribute("data-ind")); }); });
+
+  /* ---------------- roadmap links and navigation ---------------- */
+  function drawLinks() {
+    var map = document.getElementById("map"), svg = document.getElementById("links");
+    if (getComputedStyle(svg).display === "none") return;
+    var mb = map.getBoundingClientRect();
+    var box = function (id) { var r = document.getElementById(id).getBoundingClientRect(); return { l: r.left - mb.left, r: r.right - mb.left, cy: r.top - mb.top + r.height / 2 }; };
+    var path = function (a, b) { var mx = (a.x + b.x) / 2; return '<path d="M' + a.x + " " + a.y + " C" + mx + " " + a.y + " " + mx + " " + b.y + " " + b.x + " " + b.y + '" fill="none" stroke="var(--spine)" stroke-width="2.5" stroke-dasharray="2 6" stroke-linecap="round"/>'; };
+    var intro = box("n-intro"), types = box("n-types"), con = box("n-concepts"), what = box("n-what");
+    var d = path({ x: con.r, y: con.cy }, { x: intro.l, y: intro.cy }) + path({ x: intro.r, y: intro.cy }, { x: what.l, y: what.cy });
+    ["n-t1", "n-t2", "n-t3", "n-t4"].forEach(function (id) { var t = box(id); d += path({ x: types.r, y: types.cy }, { x: t.l, y: t.cy }); });
+    svg.setAttribute("viewBox", "0 0 " + mb.width + " " + mb.height);
+    svg.innerHTML = d;
+  }
+  document.getElementById("map").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-go]"); if (!b) return;
+    var t = document.getElementById(b.getAttribute("data-go")); if (!t) return;
+    t.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash");
+  });
+  window.addEventListener("resize", drawLinks);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawLinks);
+
+  setInd(ind); renderDQ(); renderCase(); renderQuiz(); drawLinks();
+})();
+</script>
+</html>

@@ -6,7 +6,10 @@ from sitekit import SITE, wrap_doc
 
 LINKS = {"coffee": "labs/coffee-chain/index.html",
          "debt": "labs/debt-classification/index.html",
-         "loan": "labs/loan-recommendation/index.html"}
+         "loan": "labs/loan-recommendation/index.html",
+         "foundation": "foundation/index.html",
+         "ind-fmcg": "industry/retail-demand-forecasting/index.html", "ind-sc": "industry/delivery-route-planning/index.html",
+         "ind-fin": "industry/investment-risk-return/index.html", "ind-lend": "industry/credit-scorecard/index.html"}
 
 html = open(os.path.join(HERE, "index.src.html"), encoding="utf8").read()
 for k, v in LINKS.items():

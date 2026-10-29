@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credit Scorecard Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: roadmap map on top (as in the course diagram), then Introduction, Key concepts, Types, two worked cases, quiz, sources. */
+:root {
+  --bg: #f2f5f9;
+  --surface: #ffffff;
+  --ink: #15212f;
+  --muted: #586678;
+  --line: #d7dfe8;
+  --node: #ffe7a3;          /* roadmap boxes */
+  --node-ink: #2a2207;
+  --core: #ffd84a;          /* roadmap core nodes */
+  --spine: #2f6fd6;         /* roadmap spine and dotted links */
+  --spine-soft: #dce8fb;
+  --t1: #2f6fd6; --t2: #0b7a72; --t3: #8a5a00; --t4: #b4361f;   /* descriptive, diagnostic, predictive, prescriptive */
+  --t1-soft: #e2ecfb; --t2-soft: #d8f0ed; --t3-soft: #f6ebd4; --t4-soft: #f9e1dc;
+  --code-bg: #eaeff5;
+  --good: #1a7f45; --bad: #b3261e;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+    --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+    --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+    --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+    --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1520; --surface: #152131; --ink: #e6edf5; --muted: #98a7b8; --line: #283a4f;
+  --node: #4a3d12; --node-ink: #fff3cc; --core: #8a7212; --spine: #6ea2ff; --spine-soft: #1a2b47;
+  --t1: #7eaaff; --t2: #4cc6b9; --t3: #e0b45c; --t4: #ff8f78;
+  --t1-soft: #1b2a45; --t2-soft: #12312e; --t3-soft: #332810; --t4-soft: #3a1f19;
+  --code-bg: #0c131c; --good: #55c383; --bad: #ff8a80;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.58;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.2vw, 3.3rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+h4 { font-size: 0.98rem; font-weight: 600; }
+p { margin: 0; }
+ul { margin: 0; padding-left: 1.15em; display: grid; gap: 4px; }
+a { color: var(--spine); }
+.muted { color: var(--muted); }
+.eyebrow { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.lead { font-size: 1.1rem; color: var(--muted); max-width: 66ch; }
+.sec { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 16px; }
+.sec-intro { max-width: 68ch; color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.tnum { font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--spine); outline-offset: 2px; }
+
+/* ---------- roadmap map ---------- */
+.mapwrap { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px clamp(14px, 3vw, 28px); }
+.map { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr); gap: 28px clamp(24px, 5vw, 72px); align-items: start; }
+.map svg.links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.node { position: relative; z-index: 1; display: block; width: 100%; min-height: 44px; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 8px; background: var(--node); color: var(--node-ink); font-weight: 600; font-size: 0.95rem; text-align: center; cursor: pointer; box-shadow: 2px 2px 0 var(--ink); transition: transform 0.12s, box-shadow 0.12s; }
+.node:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+.node.core { background: var(--core); }
+.m-left { position: relative; z-index: 1; border: 2px solid var(--ink); border-radius: 10px; background: var(--surface); padding: 0 12px 12px; box-shadow: 2px 2px 0 var(--ink); }
+.m-left > .node { margin: -2px -14px 12px; width: calc(100% + 28px); }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tiles .node { font-size: 0.9rem; box-shadow: none; }
+.tiles .node.wide { grid-column: 1 / -1; }
+.m-mid { position: relative; display: flex; flex-direction: column; gap: 28px; align-items: stretch; padding-bottom: 8px; }
+.m-mid::before { content: ""; position: absolute; left: 50%; top: -28px; bottom: -28px; width: 3px; transform: translateX(-50%); background: var(--spine); border-radius: 2px; }
+.spine-label { position: relative; z-index: 1; align-self: center; margin-top: 36px; padding: 6px 10px; background: var(--surface); font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; text-align: center; }
+.m-right { display: flex; flex-direction: column; gap: 10px; }
+.m-right .gap { height: 18px; }
+.map-hint { margin-top: 14px; font-size: 0.88rem; color: var(--muted); text-align: center; }
+@media (max-width: 820px) {
+  .map { grid-template-columns: 1fr; gap: 14px; }
+  .map svg.links { display: none; }
+  .m-mid { order: -1; gap: 10px; }
+  .m-mid::before { display: none; }
+  .spine-label { margin-top: 0; order: -1; }
+  .m-right .gap { display: none; }
+}
+
+/* ---------- industry picker ---------- */
+.picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.picker .lbl { font-size: 0.9rem; color: var(--muted); margin-right: 4px; }
+.chip { min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; font-size: 0.92rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.sticky-picker { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+
+/* ---------- generic blocks ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: clamp(16px, 2.6vw, 24px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.quote { border-left: 4px solid var(--spine); padding: 4px 0 4px 16px; font-size: 1.08rem; max-width: 70ch; }
+.quote cite { display: block; margin-top: 6px; font-size: 0.85rem; font-style: normal; color: var(--muted); }
+.ex { background: var(--spine-soft); border-radius: 10px; padding: 12px 14px; font-size: 0.95rem; }
+.ex .tag { display: block; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--spine); margin-bottom: 4px; }
+
+/* ladder data -> decision */
+.ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rung { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; font-size: 0.93rem; }
+.rung b { font-family: var(--font-display); font-size: 1.02rem; }
+@media (max-width: 720px) { .ladder { grid-template-columns: 1fr 1fr; } }
+
+/* phases */
+.phases { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; counter-reset: ph; }
+.phase { position: relative; border-top: 4px solid var(--spine); background: var(--surface); border-radius: 8px; padding: 10px 10px 12px; font-size: 0.88rem; display: flex; flex-direction: column; gap: 4px; }
+.phase b { font-family: var(--font-display); font-size: 1rem; }
+.phase .n { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
+.phase .maps { margin-top: auto; font-family: var(--font-mono); font-size: 0.72rem; color: var(--spine); }
+@media (max-width: 900px) { .phases { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* concepts */
+.concepts { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
+.concept { scroll-margin-top: 80px; }
+.concept .head { display: flex; align-items: baseline; gap: 10px; }
+.concept .num { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); }
+.concept .def { font-size: 0.98rem; }
+.two-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.9rem; }
+.two-lists h4 { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+@media (max-width: 420px) { .two-lists { grid-template-columns: 1fr; } }
+.flash { animation: flash 1.2s ease-out; }
+@keyframes flash { from { box-shadow: 0 0 0 4px var(--spine); } to { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .flash { animation: none; } .node { transition: none; } }
+
+/* tables */
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); background: var(--code-bg); }
+tr:last-child td { border-bottom: 0; }
+td.n, th.n { text-align: right; }
+td.issue { background: var(--t4-soft); color: var(--t4); font-weight: 600; }
+td.fixed { background: var(--t2-soft); color: var(--t2); font-weight: 600; }
+tr.dropped td { text-decoration: line-through; color: var(--muted); }
+.dq-tag { display: inline-block; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: var(--t4-soft); color: var(--t4); margin-left: 6px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.btn[aria-pressed="true"] { border-color: var(--spine); background: var(--spine-soft); color: var(--spine); }
+.dq-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; font-size: 0.86rem; }
+.dq-dims div { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.dq-dims b { display: block; font-size: 0.9rem; }
+
+/* types */
+.types { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.type { scroll-margin-top: 80px; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--line); background: var(--surface); min-width: 0; }
+.type .q { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; }
+.type .stripe { height: 6px; border-radius: 3px; }
+.type dl { margin: 0; display: grid; gap: 8px; font-size: 0.9rem; }
+.type dt { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.type dd { margin: 0; }
+.type:nth-child(1) { min-height: 0; }
+@media (min-width: 981px) { .type:nth-child(2) { margin-bottom: 18px; } .type:nth-child(3) { margin-bottom: 36px; } .type:nth-child(4) { margin-bottom: 54px; } }
+@media (max-width: 980px) { .types { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .types { grid-template-columns: 1fr; } }
+.axis-note { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.74rem; color: var(--muted); }
+
+/* worked cases */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { min-height: 40px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.step { min-height: 52px; border-radius: 10px; padding: 8px 10px; text-align: left; cursor: pointer; border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; gap: 2px; }
+.step small { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.step span { font-weight: 600; font-size: 0.92rem; }
+.step[aria-selected="true"] { border-width: 2px; }
+.step.s1[aria-selected="true"] { border-color: var(--t1); background: var(--t1-soft); }
+.step.s2[aria-selected="true"] { border-color: var(--t2); background: var(--t2-soft); }
+.step.s3[aria-selected="true"] { border-color: var(--t3); background: var(--t3-soft); }
+.step.s4[aria-selected="true"] { border-color: var(--t4); background: var(--t4-soft); }
+@media (max-width: 560px) { .steps { grid-template-columns: 1fr 1fr; } }
+.case-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .case-body { grid-template-columns: 1fr; } }
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.kpi { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.kpi small { display: block; font-size: 0.78rem; color: var(--muted); }
+.kpi b { font-family: var(--font-display); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.answer { display: flex; flex-direction: column; gap: 10px; font-size: 0.95rem; }
+.answer .qline { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+.slider { display: grid; gap: 6px; }
+.slider input { width: 100%; accent-color: var(--t4); }
+.slider label { font-size: 0.9rem; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.calc { font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; overflow-x: auto; }
+
+/* quiz */
+.quiz { display: grid; gap: 10px; }
+.qitem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+.qitem .opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.qitem .opts button { min-height: 36px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 0.84rem; font-weight: 600; }
+.qitem .opts button.right { background: var(--t2-soft); border-color: var(--good); color: var(--good); }
+.qitem .opts button.wrong { background: var(--t4-soft); border-color: var(--bad); color: var(--bad); }
+.qitem .fb { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 720px) { .qitem { grid-template-columns: 1fr; } }
+.score { font-weight: 600; }
+
+/* practice + sources */
+.practice { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.practice a { display: flex; flex-direction: column; gap: 4px; text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: var(--surface); }
+.practice a:hover { border-color: var(--spine); }
+.practice a b { font-family: var(--font-display); font-size: 1.05rem; color: var(--spine); }
+.practice a span { font-size: 0.88rem; color: var(--muted); }
+.sources ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; font-size: 0.92rem; }
+.sources li span { color: var(--muted); }
+footer { color: var(--muted); font-size: 0.86rem; max-width: 80ch; }
+/* ---------- industry lab additions ---------- */
+.repo { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.repo .nm { font-family: var(--font-mono); font-size: 0.95rem; font-weight: 500; }
+.repo .meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+.repo .meta span { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+.repo p { grid-column: 1 / -1; font-size: 0.92rem; }
+.repo a.go { font-weight: 600; white-space: nowrap; }
+@media (max-width: 560px) { .repo { grid-template-columns: 1fr; } }
+.brief { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.brief > div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 0.94rem; }
+.brief b.k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.stage { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.stage i { width: 22px; height: 6px; border-radius: 3px; display: inline-block; }
+.stage.s1 i { background: var(--t1); } .stage.s2 i { background: var(--t2); } .stage.s3 i { background: var(--t3); } .stage.s4 i { background: var(--t4); }
+.row2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .row2 { grid-template-columns: 1fr; } }
+.controls { display: grid; gap: 12px; }
+.controls .slider label { font-weight: 600; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { min-height: 38px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.num-in { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.num-in input { font: inherit; font-family: var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; width: 100%; }
+.ex-list { display: grid; gap: 12px; }
+.exq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+.exq .qt { font-weight: 600; }
+.exq .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.exq input, .exq select { font: inherit; font-family: var(--font-mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 40px; min-width: 0; width: min(260px, 100%); }
+.exq .fbk { font-size: 0.9rem; min-height: 1.4em; }
+.exq .fbk.good { color: var(--good); font-weight: 600; } .exq .fbk.bad { color: var(--bad); }
+.exq details { font-size: 0.9rem; color: var(--muted); }
+pre.code { margin: 0; background: var(--code-bg); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; }
+.memo { border-left: 4px solid var(--t4); background: var(--surface); border-radius: 0 12px 12px 0; padding: 14px 18px; display: grid; gap: 8px; font-size: 0.96rem; }
+.memo b.k { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t4); font-weight: 500; }
+.backlink { color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+.backlink:hover { color: var(--ink); text-decoration: underline; }
+.controls > *, .panel > * { min-width: 0; }
+.num-in select { width: 100%; min-width: 0; max-width: 100%; }
+</style>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="../../foundation/index.html">← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · Lending</div>
+    <h1>Credit Scorecard Lab</h1>
+    <p class="lead">A consumer lender wants an application scorecard that a loan officer and a regulator can read line by line. Find which applicant attributes separate good from bad borrowers, turn a model into points, test it on applicants it has not seen, and choose the approval cut-off.</p>
+    <div class="repo">
+      <span class="nm">ShichenXie/scorecardpy</span>
+      <span class="meta"><span>★ about 805</span><span>MIT licence</span><span>Python port of the R package scorecard</span></span>
+      <p>scorecardpy is a widely used open-source toolkit for traditional credit scorecards: weight-of-evidence binning, information value, logistic regression and points scaling. Every number on this page comes from running its README workflow on its bundled German credit data.</p>
+      <a class="go" href="https://github.com/ShichenXie/scorecardpy" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Decision</b>Which score an applicant needs to be approved.</div>
+      <div><b class="k">Why points, not a black box</b>Each answer on the application adds or removes points, so a declined customer can be told why, and the model can be audited.</div>
+      <div><b class="k">Cost of mistakes</b>The dataset's own cost matrix: approving a bad borrower costs <b>5</b>, declining a good one costs <b>1</b>.</div>
+      <div><b class="k">Data</b>1,000 past applicants from a German bank with 20 attributes; 300 turned out bad. scorecardpy splits them into 700 for building and 300 for testing.</div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · who turned out bad?</span>
+    <h2 id="d-h">Bad rate by attribute</h2>
+    <p class="sec-intro">Binning groups each attribute into a few ranges or categories. The bad rate in each bin shows whether the attribute tells good and bad apart. Weight of evidence (WoE) puts it on one scale: ln(share of all bads in the bin ÷ share of all goods in the bin). Positive means riskier than average.</p>
+    <div class="panel controls">
+      <label class="num-in" for="var">Attribute<select id="var" style="font:inherit;min-height:40px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--ink)"></select></label>
+      <div class="row2"><div id="ch-bin"></div><div class="tw" id="bin-table"></div></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · which attributes matter most?</span>
+    <h2 id="g-h">Information value ranks the attributes</h2>
+    <p class="sec-intro">Information value (IV) adds up how strongly every bin of an attribute separates goods from bads. A common rule of thumb: below 0.02 useless, 0.02 to 0.1 weak, 0.1 to 0.3 medium, above 0.3 strong. scorecardpy drops attributes below 0.02 before modelling.</p>
+    <div class="panel"><div id="ch-iv"></div></div>
+    <p class="sec-intro" id="iv-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · how risky is this applicant?</span>
+    <h2 id="p-h">The scorecard</h2>
+    <p class="sec-intro">A logistic regression on the WoE values picks the attributes and their weights; scorecardpy then scales the result to points. Every applicant starts with the base points and gains or loses points for each answer. On this scale 600 points means odds of 19 goods to 1 bad, and every 50 points doubles those odds.</p>
+    <div class="row2">
+      <div class="panel"><h3>Score an applicant</h3><div id="scorer" class="controls"></div></div>
+      <div class="controls">
+        <div class="kpis" id="score-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+        <div class="panel"><h3>How well it ranks unseen applicants</h3><div id="ch-dist"></div><div class="kpis" id="perf"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · where should the cut-off be?</span>
+    <h2 id="r-h">Choose the approval cut-off</h2>
+    <p class="sec-intro">A higher cut-off approves fewer people and fewer bad borrowers. Total cost = cost of a bad approval × bads approved + cost of a good decline × goods declined, counted on the 300 test applicants. The 5 : 1 ratio comes from the dataset; your own business will have its own ratio.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-cost"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="cut" id="cut-l"></label><input id="cut" type="range" min="300" max="750" step="1" value="500"></div>
+        <div class="slider"><label for="ratio" id="ratio-l"></label><input id="ratio" type="range" min="1" max="10" step="1" value="5"></div>
+        <div class="kpis" id="cut-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Build the scorecard with scorecardpy</h2>
+    <p class="sec-intro">Install with <code>pip install scorecardpy scikit-learn "pandas&lt;2.3"</code>; the package still uses pandas options removed in pandas 3. This is the README workflow from the repository, with the bad flag set to 1.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://github.com/ShichenXie/scorecardpy" target="_blank" rel="noopener">ShichenXie/scorecardpy</a> <span>(MIT). WoE binning, information value, scorecard scaling and the bundled German credit data.</span></li>
+      <li><a href="https://archive.ics.uci.edu/dataset/144" target="_blank" rel="noopener">UCI Machine Learning Repository: Statlog (German Credit Data)</a> <span>Hans Hofmann, 1994, CC BY 4.0. Source of the data and of the 5 : 1 cost matrix.</span></li>
+      <li><a href="../../foundation/index.html">Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>The data is from 1994 and in Deutsche Mark, and it is small. Real scorecards are built on tens of thousands of loans, validated on a separate time period, monitored for drift, and must exclude protected attributes such as sex or nationality whatever their information value. Choosing the cut-off on the test set, as here, flatters the result; in practice use a separate validation sample.</footer>
+</div>
+
+<script>
+(function () {
+"use strict";
+/* ---------- shared helpers for the industry labs ---------- */
+var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+var fmt = function (v, d) { return Number(v).toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); };
+var $ = function (id) { return document.getElementById(id); };
+function niceStep(range, ticks) { var raw = range / ticks, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+/* chart({labels, xticks:[i..], series:[{values, color, dash, type:'line'|'bar', width, colors, labels}], band:{lo,hi,color}, shade:[[i0,i1,token]], ylog, ymin, ymax, yfmt, h, legend:[[name, token]], vline:[i,label]}) */
+function chart(o) {
+  var W = 680, H = o.h || 270, L = 58, R = 14, T = 16, B = 34, n = o.labels.length;
+  var all = [];
+  o.series.forEach(function (s) { s.values.forEach(function (v) { if (v !== null && isFinite(v)) all.push(v); }); });
+  if (o.band) o.band.hi.concat(o.band.lo).forEach(function (v) { if (v !== null && isFinite(v)) all.push(v); });
+  var lo = o.ymin !== undefined ? o.ymin : Math.min.apply(null, all), hi = o.ymax !== undefined ? o.ymax : Math.max.apply(null, all);
+  var tr = o.ylog ? Math.log10 : function (v) { return v; };
+  var ticks = [];
+  if (o.ylog) { var e0 = Math.floor(Math.log10(lo)), e1 = Math.ceil(Math.log10(hi)); lo = Math.pow(10, e0); hi = Math.pow(10, e1); for (var e = e0; e <= e1; e++) ticks.push(Math.pow(10, e)); }
+  else {
+    if (o.ymin === undefined) lo = Math.min(lo, 0) < 0 ? lo : (o.zero === false ? lo : 0);
+    var st = niceStep(hi - lo, 4); lo = Math.floor(lo / st) * st; hi = Math.ceil(hi / st) * st; for (var t = lo; t <= hi + st / 2; t += st) ticks.push(t);
+  }
+  var bar = o.series.some(function (s) { return s.type === "bar"; });
+  var X = bar ? function (i) { return L + (W - L - R) * (i + 0.5) / n; } : function (i) { return L + (W - L - R) * (n === 1 ? 0.5 : i / (n - 1)); };
+  var Y = function (v) { return T + (H - T - B) * (1 - (tr(v) - tr(lo)) / (tr(hi) - tr(lo))); };
+  var g = "";
+  ticks.forEach(function (v) { var y = Y(v); g += '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + (o.yfmt ? o.yfmt(v) : fmt(v)) + "</text>"; });
+  (o.xticks || o.labels.map(function (x, i) { return i; })).forEach(function (i) { var anc = !bar && i === n - 1 ? "end" : !bar && i === 0 ? "start" : "middle"; g += '<text x="' + X(i) + '" y="' + (H - 12) + '" text-anchor="' + anc + '">' + esc(o.labels[i]) + "</text>"; });
+  (o.shade || []).forEach(function (s) { var x0 = bar ? X(s[0]) - (W - L - R) / n / 2 : X(s[0]), x1 = bar ? X(s[1]) + (W - L - R) / n / 2 : X(s[1]); g += '<rect x="' + x0 + '" y="' + T + '" width="' + Math.max(1, x1 - x0) + '" height="' + (H - T - B) + '" fill="var(' + s[2] + ')" opacity="0.6"/>'; });
+  if (o.band) { var up = [], dn = []; o.band.hi.forEach(function (v, i) { if (v !== null) { up.push(X(i) + "," + Y(v)); dn.unshift(X(i) + "," + Y(o.band.lo[i])); } }); g += '<polygon points="' + up.concat(dn).join(" ") + '" fill="var(' + o.band.color + ')" opacity="0.2"/>'; }
+  o.series.forEach(function (s) {
+    if (s.type === "bar") {
+      var bw = (W - L - R) / n * (s.width || 0.64);
+      s.values.forEach(function (v, i) { if (v === null) return; var y0 = Y(Math.max(lo, 0)), y1 = Y(v); g += '<rect x="' + (X(i) - bw / 2) + '" y="' + Math.min(y0, y1) + '" width="' + bw + '" height="' + Math.abs(y0 - y1) + '" rx="2" fill="var(' + (s.colors ? s.colors[i] : s.color) + ')"/>'; if (s.labels && s.labels[i] !== "") g += '<text x="' + X(i) + '" y="' + (Math.min(y0, y1) - 4) + '" text-anchor="middle">' + esc(s.labels[i]) + "</text>"; });
+      return;
+    }
+    var d = "", pen = false;
+    s.values.forEach(function (v, i) { if (v === null || !isFinite(v)) { pen = false; return; } d += (pen ? " L" : " M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); pen = true; });
+    g += '<path d="' + d + '" fill="none" stroke="var(' + s.color + ')" stroke-width="' + (s.w || 2) + '"' + (s.dash ? ' stroke-dasharray="6 5"' : "") + ' stroke-linejoin="round"/>';
+    if (n <= 40) s.values.forEach(function (v, i) { if (v !== null) g += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="2.6" fill="var(' + s.color + ')"/>'; });
+  });
+  if (o.vline) { var vx = X(o.vline[0]); g += '<line x1="' + vx + '" x2="' + vx + '" y1="' + T + '" y2="' + (H - B) + '" stroke="var(--muted)" stroke-dasharray="3 4"/><text x="' + (vx + 4) + '" y="' + (T + 12) + '" style="fill:var(--ink)">' + esc(o.vline[1]) + "</text>"; }
+  var leg = o.legend ? '<div class="legend">' + o.legend.map(function (l) { return '<span><i style="background:var(' + l[1] + ')"></i>' + esc(l[0]) + "</span>"; }).join("") + "</div>" : "";
+  return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(o.title || "chart") + '">' + g + "</svg>" + leg;
+}
+/* exercises: [{q, type:'num'|'select', answer, tol, options, hint, explain}] */
+function renderExercises(rootId, items) {
+  var root = $(rootId);
+  root.innerHTML = items.map(function (it, i) {
+    var input = it.type === "select" ? '<select id="ex' + i + '" aria-label="Answer"><option value="">Choose</option>' + it.options.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + "</option>"; }).join("") + "</select>"
+      : '<input id="ex' + i + '" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(it.placeholder || "your answer") + '" aria-label="Answer">';
+    return '<div class="exq"><span class="qt">' + (i + 1) + ". " + it.q + '</span><div class="row">' + input + '<button class="btn" data-ex="' + i + '">Check</button></div><div class="fbk" id="fb' + i + '" aria-live="polite"></div>' +
+      (it.hint ? "<details><summary>Hint</summary>" + it.hint + "</details>" : "") + "</div>";
+  }).join("");
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ex]"); if (!b) return;
+    var i = +b.getAttribute("data-ex"), it = items[i], raw = $("ex" + i).value.trim(), fb = $("fb" + i), ok;
+    if (!raw) { fb.className = "fbk bad"; fb.textContent = "Enter an answer first."; return; }
+    if (it.type === "select") ok = raw === it.answer;
+    else { var c = raw.replace(/\s/g, "").replace("%", ""); if (/^-?\d{1,3}(\.\d{3})+$/.test(c)) c = c.replace(/\./g, ""); var v = parseFloat(c.replace(/,/g, "")); ok = isFinite(v) && Math.abs(v - it.answer()) <= it.tol; }
+    fb.className = "fbk " + (ok ? "good" : "bad");
+    fb.innerHTML = ok ? "Correct. " + (it.explain ? it.explain() : "") : "Not yet. " + (it.retry || "Check the section above and try again.");
+  });
+}
+function copyButton(btnId, text) {
+  var b = $(btnId); if (!b) return;
+  b.addEventListener("click", function () {
+    var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy code"; }, 1500); };
+    var fail = function () { var pre = b.parentNode.parentNode.querySelector("pre"); var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = "Press Ctrl+C"; };
+    try { navigator.clipboard.writeText(text).then(done, fail); } catch (e) { fail(); }
+  });
+}
+
+var DATA = {"bins":{"other_installment_plans":[["bank%,%stores",186,110,76,0.40860215053763443,0.47755083488111855,0.04593584221237427],["none",814,590,224,0.2751842751842752,-0.12117862465752169,0.011656229609913988]],"present_employment_since":[["unemployed%,%... < 1 year",234,141,93,0.3974358974358974,0.4311374631622912,0.046809210286191616],["1 <= ... < 4 years",339,235,104,0.30678466076696165,0.03210324538441747,0.0003516069732579069],["4 <= ... < 7 years",174,135,39,0.22413793103448276,-0.39441527192157944,0.024791817092213567],["... >= 7 years",253,189,64,0.25296442687747034,-0.23556607131276697,0.013348744041056796]],"installment_rate_in_percentage_of_disposable_income":[["[-inf,3.0)",367,271,96,0.2615803814713896,-0.19047276902466104,0.012788885920227236],["[3.0,4.0)",157,112,45,0.28662420382165604,-0.06453852113757118,0.0006453852113757123],["[4.0,inf)",476,317,159,0.33403361344537813,0.15730028873015456,0.0121345937020405]],"housing":[["rent",179,109,70,0.39106145251396646,0.4044452202074189,0.03139265280657585],["own",713,527,186,0.2608695652173913,-0.1941560144409575,0.025795013347155792],["for free",108,64,44,0.4074074074074074,0.472604410945793,0.026105767461767612]],"status_of_existing_checking_account":[["... < 0 DM%,%0 <= ... < 200 DM",543,303,240,0.4419889502762431,0.6142039782198258,0.22550060343213604],["... >= 200 DM / salary assignments for at least 1 year",63,49,14,0.2222222222222222,-0.40546510810816444,0.009460852522523839],["no checking account",394,348,46,0.116751269035533,-1.176263222898176,0.4044104985392777]],"age_in_years":[["[-inf,26.0)",190,110,80,0.42105263157894735,0.528844129268669,0.0579210236818066],["[26.0,28.0)",101,74,27,0.26732673267326734,-0.16093036681263712,0.0025289057641985847],["[28.0,35.0)",257,172,85,0.33073929961089493,0.14245464006406708,0.005359007888124426],["[35.0,37.0)",79,67,12,0.1518987341772152,-0.872488109215762,0.04861005179916388],["[37.0,inf)",373,277,96,0.257372654155496,-0.2123714543322987,0.016079552970874048]],"savings_account_and_bonds":[["... < 100 DM",603,386,217,0.3598673300165838,0.2713578444628324,0.046647705643372644],["100 <= ... < 500 DM",103,69,34,0.3300970873786408,0.1395518804061056,0.0020600515678996533],["500 <= ... < 1000 DM%,%... >= 1000 DM%,%unknown/ no savings account",294,245,49,0.16666666666666666,-0.7621400520468967,0.14226614304875404]],"duration_in_month":[["[-inf,8.0)",87,78,9,0.10344827586206896,-1.3121863889661687,0.10684946310153089],["[8.0,16.0)",344,264,80,0.23255813953488372,-0.3466246080852311,0.038293766226558876],["[16.0,34.0)",399,270,129,0.3233082706766917,0.10868830575050087,0.004813339254665036],["[34.0,44.0)",100,58,42,0.42,0.5245244681241528,0.029972826749951595],["[44.0,inf)",70,30,40,0.5714285714285714,1.1349799328389845,0.10268866059019383]],"credit_amount":[["[-inf,1400.0)",267,185,82,0.30711610486891383,0.033661282573131786,0.00030455446137595357],["[1400.0,1800.0)",105,87,18,0.17142857142857143,-0.7282385003712155,0.046815332166721006],["[1800.0,4000.0)",382,287,95,0.2486910994764398,-0.2583074637718767,0.02410869661870849],["[4000.0,9200.0)",196,120,76,0.3877551020408163,0.39053945789148875,0.03198704131301718],["[9200.0,inf)",50,21,29,0.58,1.1700712526502546,0.07800475017668364]],"purpose":[["retraining%,%car (used)",112,94,18,0.16071428571428573,-0.8056251639866356,0.059846440753292936],["radio/television",280,218,62,0.22142857142857142,-0.41006281735679395,0.0429589618183308],["furniture/equipment%,%domestic appliances%,%business%,%repairs%,%car (new)%,%others%,%education",608,388,220,0.3618421052631579,0.2799200671162917,0.05011902154082174]],"other_debtors_or_guarantors":[["none%,%co-applicant",948,658,290,0.3059071729957806,0.027973852042406162,0.0007459693877974994],["guarantor",52,42,10,0.19230769230769232,-0.587786664902119,0.015674311064056503]],"credit_history":[["no credits taken/ all credits paid back duly%,%all credits at this bank paid back duly",89,36,53,0.5955056179775281,1.2340708354832155,0.1545526808248027],["existing credits paid back duly till now",530,361,169,0.31886792452830187,0.08831861697739617,0.00420564842749506],["delay in paying off in the past",88,60,28,0.3181818181818182,0.08515780834030696,0.0006488213968785296],["critical account/ other credits existing (not at this bank)",293,243,50,0.17064846416382254,-0.7337405775251988,0.1324227042295478]],"property":[["real estate",282,222,60,0.2127659574468085,-0.461034959262975,0.054006952370805626],["building society savings agreement/ life insurance",232,161,71,0.30603448275862066,0.028573372444055948,0.00019048914962703929],["car or other, not in attribute Savings account/bonds",332,230,102,0.3072289156626506,0.03419136474827934,0.0003907584542660505],["unknown / no property",154,87,67,0.43506493506493504,0.5860823611235859,0.05805006243509803]]},"iv":{"other_installment_plans":0.05759207182228826,"present_employment_since":0.08530137839271988,"installment_rate_in_percentage_of_disposable_income":0.02556886483364345,"housing":0.08329343361549925,"status_of_existing_checking_account":0.6393719544939376,"age_in_years":0.13049854210416753,"savings_account_and_bonds":0.19097390026002634,"duration_in_month":0.28261805592290024,"credit_amount":0.18122037473650626,"purpose":0.15292442411244547,"other_debtors_or_guarantors":0.016420280451854,"credit_history":0.2918298548787241,"property":0.11263826240979674},"card":{"other_installment_plans":[["bank%,%stores",-24.0],["none",6.0]],"present_employment_since":[["unemployed%,%... < 1 year",-9.0],["1 <= ... < 4 years",-1.0],["4 <= ... < 7 years",8.0],["... >= 7 years",5.0]],"installment_rate_in_percentage_of_disposable_income":[["[-inf,3.0)",24.0],["[3.0,4.0)",8.0],["[4.0,inf)",-20.0]],"housing":[["rent",-14.0],["own",7.0],["for free",-17.0]],"status_of_existing_checking_account":[["... < 0 DM%,%0 <= ... < 200 DM",-34.0],["... >= 200 DM / salary assignments for at least 1 year",23.0],["no checking account",66.0]],"age_in_years":[["[-inf,26.0)",-32.0],["[26.0,28.0)",10.0],["[28.0,35.0)",-8.0],["[35.0,37.0)",52.0],["[37.0,inf)",13.0]],"savings_account_and_bonds":[["... < 100 DM",-11.0],["100 <= ... < 500 DM",-6.0],["500 <= ... < 1000 DM%,%... >= 1000 DM%,%unknown/ no savings account",31.0]],"duration_in_month":[["[-inf,8.0)",52.0],["[8.0,16.0)",14.0],["[16.0,34.0)",-4.0],["[34.0,44.0)",-21.0],["[44.0,inf)",-45.0]],"credit_amount":[["[-inf,1400.0)",-2.0],["[1400.0,1800.0)",43.0],["[1800.0,4000.0)",15.0],["[4000.0,9200.0)",-23.0],["[9200.0,inf)",-70.0]],"purpose":[["retraining%,%car (used)",59.0],["radio/television",30.0],["furniture/equipment%,%domestic appliances%,%business%,%repairs%,%car (new)%,%others%,%education",-20.0]],"other_debtors_or_guarantors":[["none%,%co-applicant",-2.0],["guarantor",33.0]],"credit_history":[["no credits taken/ all credits paid back duly%,%all credits at this bank paid back duly",-51.0],["existing credits paid back duly till now",-4.0],["delay in paying off in the past",-4.0],["critical account/ other credits existing (not at this bank)",30.0]],"property":[["real estate",5.0],["building society savings agreement/ life insurance",-0.0],["car or other, not in attribute Savings account/bonds",-0.0],["unknown / no property",-7.0]]},"base":447.0,"test":{"score":[367,401,359,347,487,361,597,544,545,468,436,474,459,371,573,550,549,526,493,290,409,502,395,414,522,642,526,475,582,591,500,471,385,608,588,503,430,505,459,456,286,513,434,616,594,540,351,391,508,652,575,604,399,510,659,480,613,346,479,425,495,563,335,573,556,266,431,375,638,353,395,323,339,558,552,441,571,352,372,663,303,470,511,451,484,533,630,261,394,315,626,620,398,465,563,525,482,413,502,466,432,238,421,358,676,333,527,386,339,639,561,519,431,197,265,570,498,410,564,559,651,595,440,433,615,456,386,539,518,427,561,397,461,469,554,621,503,518,393,497,533,401,372,683,395,574,604,326,529,456,285,563,450,419,567,527,404,474,441,671,491,446,448,391,455,629,538,402,349,446,523,345,452,587,345,383,380,374,484,272,454,397,425,415,375,498,476,336,421,465,477,469,424,399,369,437,431,467,503,419,416,501,367,571,403,675,471,310,409,509,556,398,624,437,459,626,244,419,332,352,326,590,317,354,616,621,390,502,571,472,598,487,546,473,618,609,452,389,329,523,438,585,439,461,324,227,553,468,519,389,630,501,575,478,401,513,532,469,672,551,456,402,414,580,538,398,569,349,489,586,397,308,293,435,539,413,381,550,668,416,576,383,379,424,486,351,673,436,515,438,315,555,565,440,498,329,634,501,346,558],"bad":[1,0,1,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,1,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,1,1,1,0,1,0,0,0,0,1,1,0,1,1,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,1,0,0,1,0,0,0,0,1,1,0,0,0,0,0,0,0,0,1,0,1,1,0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,1,0,1,0,1,0,0,1,0,0,0,0,0,0,1,1,0,1,0,0,1,0,1,1,0,1,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1,1,0,0,0,0,1,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,1,1,0,0,1,0,0,0,1,1,1,0,0,0,0,0,0,0,1,0,0,0,1,1,0,0,0,0]},"train":{"score":[568,602,351,531,568,478,660,267,415,440,409,624,310,568,464,548,627,489,540,507,340,365,382,547,344,409,494,403,539,510,403,558,522,375,462,636,320,577,467,438,610,303,218,531,545,509,400,399,416,396,484,383,561,487,466,499,398,308,385,339,588,562,574,458,446,211,595,376,509,515,368,569,643,420,404,411,574,480,376,354,401,417,429,562,590,407,423,448,372,494,363,431,630,490,568,467,473,297,541,413,386,371,506,401,420,702,583,347,545,432,416,310,495,391,507,454,527,420,405,415,424,393,421,412,338,540,614,501,336,497,575,488,415,583,423,555,478,696,664,622,313,460,607,639,331,486,375,537,442,497,518,425,371,347,278,634,420,718,383,396,616,527,557,628,444,588,495,484,549,345,542,460,620,361,585,579,476,446,545,449,563,532,422,528,522,588,617,485,525,505,543,501,423,346,302,483,392,539,363,486,482,299,541,484,572,378,492,436,425,602,532,412,381,332,314,384,371,595,283,472,440,506,457,359,472,413,553,577,550,429,472,515,265,510,486,369,333,417,348,459,538,622,464,447,609,423,468,416,510,297,691,484,340,609,520,554,630,362,381,429,551,333,562,665,443,375,460,444,500,575,350,497,572,515,367,299,399,437,427,422,457,490,656,437,519,403,643,506,580,639,374,536,396,510,485,449,606,498,414,606,300,482,510,398,534,565,562,401,516,385,370,346,576,478,524,593,492,616,386,535,511,531,425,454,520,450,420,488,609,378,438,357,551,440,478,498,364,419,551,423,467,594,603,634,661,433,556,381,435,560,301,705,345,549,508,496,382,526,506,470,263,568,462,556,718,383,456,417,601,536,531,477,465,460,258,463,467,381,477,538,348,526,556,326,641,435,438,404,442,349,458,371,366,446,485,647,370,323,575,348,446,522,515,575,398,543,432,455,474,318,527,511,478,491,413,582,354,346,363,395,528,574,372,317,521,399,518,559,345,474,407,461,275,510,531,468,411,647,554,557,607,343,480,350,555,559,391,369,505,599,464,447,370,576,380,372,291,410,403,392,653,370,330,390,432,566,440,336,420,539,518,474,623,523,473,402,592,605,542,527,327,403,582,334,638,475,426,462,527,530,563,531,452,493,401,462,373,363,572,289,265,659,652,518,582,374,424,322,353,490,663,346,596,425,492,615,640,364,426,590,288,441,380,418,451,366,555,377,573,538,365,415,437,537,407,630,452,677,544,347,694,557,356,518,446,598,428,469,579,498,315,516,612,288,331,425,648,491,485,501,497,523,516,529,527,393,664,298,503,630,297,408,415,507,367,379,360,622,647,326,397,500,395,409,460,534,301,496,513,316,540,506,511,587,325,444,452,526,451,485,424,646,330,440,623,492,417,611,471,476,463,530,564,333,577,425,487,433,393,510,424,570,541,518,391,385,449,265,537,600,457,544,392,690,460,609,564,575,426,447,458,625,480,471,303,212,622,376,412,377,498,467,405,313,335,590,398,367,625,512,448,282,653,588,475,323,327,537,512,446,453,551,532,382,552,627,406,509,473,540,493,498,330,552,441,361,447,457,558,406,362,373,510,622,471,559,471,549,325,448],"bad":[0,0,1,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,1,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,0,1,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,0,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,1,1,0,1,0,0,1,1,0,0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,1,1,0,0,0,0,0,1,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,1,1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,0,1,0,0,1,0,1,0,1,1,1,0,1,0,0,1,0,1,1,0,0,0,0,0,0,1,0,1,0,0,1,0,0,1,0,0,0,1,1,1,1,1,0,1,0,0,1,0,0,1,1,0,1,0,0,1,1,1,0,0,0,0,1,1,1,0,0,1,1,1,0,0,1,0,1,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,1,1,1,0,0,1,0,1,0,0,0,1,0,0,1,0,0,1,0,1,1,1,1,0,1,0,1,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,1,0,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,1,0,0,0,0,1,0,1,1,1,0,1,0,1,1,0,0,0,0,1,1,0,0,0,0,1,0,1,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1,0,1,0,1,0,0,1,0,1,0,0,1,0,0,0,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1,0]},"auc":[0.8197181729834792,0.8357671957671958],"ks":0.5317,"gini":0.6715};
+var BINS = DATA.bins, IV = DATA.iv, CARD = DATA.card, BASE = DATA.base;
+var nice = function (v) { return v.replace(/_/g, " ").replace(/\bin percentage of\b/, "as % of"); };
+var binLabel = function (b) { return String(b).replace(/%,%/g, ", "); };
+var vars = Object.keys(IV).sort(function (a, b) { return IV[b] - IV[a]; });
+var B = 50 / Math.LN2, A = 600 + B * Math.log(1 / 19);                 /* scorecardpy scaling: points0 600, odds0 1/19, pdo 50 */
+var pdOf = function (score) { return 1 / (1 + Math.exp((score - A) / B)); };   /* score = A - B ln(bad odds) */
+var allBad = 0, allN = 0; BINS[vars[0]].forEach(function (r) { allBad += r[3]; allN += r[1]; });
+
+/* ---------- descriptive ---------- */
+$("var").innerHTML = vars.map(function (v) { return '<option value="' + v + '">' + esc(nice(v)) + "</option>"; }).join("");
+function renderVar() {
+  var v = $("var").value, rows = BINS[v];
+  $("ch-bin").innerHTML = chart({ title: "Bad rate by bin", h: 250, labels: rows.map(function (r, i) { return "bin " + (i + 1); }), series: [{ type: "bar", values: rows.map(function (r) { return 100 * r[4]; }), colors: rows.map(function (r) { return r[4] > allBad / allN ? "--t4" : "--t2"; }), labels: rows.map(function (r) { return fmt(100 * r[4]) + "%"; }) }, { values: rows.map(function () { return 100 * allBad / allN; }), color: "--muted", dash: true, w: 1.4 }], yfmt: function (x) { return fmt(x) + "%"; }, ymin: 0, legend: [["Bad rate in the bin", "--t4"], ["Average bad rate " + fmt(100 * allBad / allN) + "%", "--muted"]] });
+  $("bin-table").innerHTML = '<table><thead><tr><th>Bin</th><th class="n">Applicants</th><th class="n">Bad rate</th><th class="n">WoE</th></tr></thead><tbody>' + rows.map(function (r, i) { return '<tr><td style="white-space:normal;min-width:180px"><b>' + (i + 1) + ".</b> " + esc(binLabel(r[0])) + '</td><td class="n">' + r[1] + '</td><td class="n">' + fmt(100 * r[4], 1) + '%</td><td class="n">' + (r[5] >= 0 ? "+" : "") + fmt(r[5], 2) + "</td></tr>"; }).join("") + '</tbody></table><p class="muted" style="font-size:0.85rem;padding:8px 12px">IV of this attribute: <b>' + fmt(IV[v], 3) + "</b></p>";
+}
+$("var").addEventListener("change", renderVar); renderVar();
+
+/* ---------- diagnostic ---------- */
+var band = function (iv) { return iv < 0.02 ? "useless" : iv < 0.1 ? "weak" : iv < 0.3 ? "medium" : "strong"; };
+$("ch-iv").innerHTML = chart({ title: "Information value", h: 300, labels: vars.map(function (v, i) { return String(i + 1); }), series: [{ type: "bar", values: vars.map(function (v) { return IV[v]; }), colors: vars.map(function (v) { return CARD[v] ? "--t2" : "--line"; }), labels: vars.map(function (v) { return fmt(IV[v], 2); }) }], yfmt: function (x) { return fmt(x, 1); }, legend: [["Information value, attributes ranked 1 to " + vars.length + " (in the final scorecard)", "--t2"], ["Dropped by the model", "--line"]] });
+$("iv-text").innerHTML = "Ranked: " + vars.map(function (v, i) { return "<b>" + (i + 1) + "</b> " + esc(nice(v)) + " (" + fmt(IV[v], 2) + ", " + band(IV[v]) + ")"; }).join("; ") + ". The state of the applicant's current account is by far the strongest signal: applicants with no current account at this bank had the lowest bad rate, and those with an overdrawn account or a balance under 200 DM the highest. Weak attributes such as telephone or job were filtered out before binning (on their raw IV), and the penalised regression kept all " + vars.filter(function (v) { return CARD[v]; }).length + " attributes that remained, each with its own weight.";
+
+/* ---------- predictive: scorer ---------- */
+var cardVars = vars.filter(function (v) { return CARD[v]; }), pick = {};
+/* start from the most common answer for each attribute (a typical applicant) */
+cardVars.forEach(function (v) { var cnt = {}; BINS[v].forEach(function (r) { cnt[r[0]] = r[1]; }); var best = 0; CARD[v].forEach(function (r, i) { if ((cnt[r[0]] || 0) > (cnt[CARD[v][best][0]] || 0)) best = i; }); pick[v] = best; });
+function renderScorer() {
+  $("scorer").innerHTML = cardVars.map(function (v) {
+    return '<label class="num-in" for="sc-' + v + '">' + esc(nice(v)) + '<select id="sc-' + v + '" data-v="' + v + '" style="font:inherit;font-size:0.86rem;min-height:38px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink)">' +
+      CARD[v].map(function (r, i) { return '<option value="' + i + '"' + (i === pick[v] ? " selected" : "") + ">" + esc(binLabel(r[0])) + "  (" + (r[1] > 0 ? "+" + fmt(r[1]) : r[1] < 0 ? "−" + fmt(-r[1]) : "0") + " points)</option>"; }).join("") + "</select></label>";
+  }).join("");
+  updateScore();
+}
+function updateScore() {
+  var s = BASE; cardVars.forEach(function (v) { s += CARD[v][pick[v]][1]; });
+  $("score-kpis").innerHTML = '<div class="kpi"><small>Score (base ' + fmt(BASE) + ")</small><b>" + fmt(s) + '</b></div><div class="kpi"><small>Estimated chance of default</small><b>' + fmt(100 * pdOf(s), 1) + "%</b></div>";
+}
+$("scorer").addEventListener("change", function (e) { var v = e.target.getAttribute("data-v"); if (v) { pick[v] = +e.target.value; updateScore(); } });
+renderScorer();
+/* score distribution, test set */
+var TS = DATA.test.score, TB = DATA.test.bad, lo = 300, hi = 750, step = 25, nb = (hi - lo) / step;
+var hg = [], hb = [], labs = []; for (var k = 0; k < nb; k++) { hg.push(0); hb.push(0); labs.push(String(lo + k * step)); }
+TS.forEach(function (s, i) { var k = Math.min(nb - 1, Math.max(0, Math.floor((s - lo) / step))); if (TB[i]) hb[k]++; else hg[k]++; });
+$("ch-dist").innerHTML = chart({ title: "Score distribution", h: 220, labels: labs, xticks: [0, 4, 8, 12, 16], series: [{ type: "bar", width: 0.42, values: hg, color: "--t2" }, { values: hb, color: "--t4", w: 2.2 }], yfmt: function (x) { return fmt(x); }, legend: [["Good borrowers per 25-point band", "--t2"], ["Bad borrowers", "--t4"]] });
+$("perf").innerHTML = [["AUC, test", fmt(DATA.auc[1], 3)], ["KS, test", fmt(DATA.ks, 3)], ["Gini, test", fmt(DATA.gini, 3)]].map(function (k) { return '<div class="kpi"><small>' + k[0] + "</small><b>" + k[1] + "</b></div>"; }).join("");
+
+/* ---------- prescriptive: cut-off ---------- */
+var CUT = 500, RATIO = 5, NT = TS.length, NBAD = TB.reduce(function (a, b) { return a + b; }, 0);
+function evalCut(c, ratio) { var ab = 0, ag = 0, dg = 0; TS.forEach(function (s, i) { if (s >= c) { if (TB[i]) ab++; else ag++; } else if (!TB[i]) dg++; }); return { appr: ab + ag, ab: ab, dg: dg, cost: ratio * ab + dg }; }
+function bestCut(ratio) { var b = null; for (var c = 300; c <= 750; c++) { var e = evalCut(c, ratio); if (!b || e.cost < b.cost) { b = e; b.c = c; } } return b; }
+function renderCut() {
+  var e = evalCut(CUT, RATIO), best = bestCut(RATIO);
+  $("cut-l").textContent = "Approve applicants scoring at least " + CUT;
+  $("ratio-l").textContent = "Cost of approving a bad borrower: " + RATIO + " × the cost of declining a good one";
+  $("cut-kpis").innerHTML = [["Approval rate", fmt(100 * e.appr / NT, 1) + "%"], ["Bad rate among approved", e.appr ? fmt(100 * e.ab / e.appr, 1) + "%" : "–"], ["Bads approved / goods declined", e.ab + " / " + e.dg], ["Total cost", fmt(e.cost)]].map(function (k) { return '<div class="kpi"><small>' + k[0] + "</small><b>" + k[1] + "</b></div>"; }).join("");
+  var cs = [], lab = [], tk = []; for (var c = 300; c <= 750; c += 5) { cs.push(evalCut(c, RATIO).cost); lab.push(String(c)); if (c % 75 === 0) tk.push(lab.length - 1); }
+  $("ch-cost").innerHTML = chart({ title: "Cost by cut-off", h: 250, labels: lab, xticks: tk, series: [{ values: cs, color: "--t4", w: 2.2 }], vline: [Math.round((CUT - 300) / 5), "your cut-off"], yfmt: function (x) { return fmt(x); }, legend: [["Total cost on the 300 test applicants, by cut-off", "--t4"]] });
+  $("memo").innerHTML = '<b class="k">Recommendation</b><span>At a ' + RATIO + " : 1 cost ratio the cheapest cut-off is <b>" + best.c + "</b>: approve " + fmt(100 * best.appr / NT) + "% of applicants with a " + fmt(100 * best.ab / best.appr, 1) + "% bad rate, for a cost of " + fmt(best.cost) + " against " + fmt(RATIO * NBAD) + " if everyone were approved.</span><span>Lower the cost ratio, as a lender with better collections or higher margins would, and the best cut-off falls, so more people get credit.</span>";
+}
+$("cut").addEventListener("input", function (ev) { CUT = +ev.target.value; renderCut(); });
+$("ratio").addEventListener("input", function (ev) { RATIO = +ev.target.value; renderCut(); });
+renderCut();
+
+/* ---------- exercises ---------- */
+var b5 = bestCut(5);
+renderExercises("ex", [
+  { q: "What is the bad rate across all 1,000 applicants, in %?", type: "num", tol: 0.05, answer: function () { return 100 * allBad / allN; }, placeholder: "e.g. 25", hint: "It is the dashed line in the bad rate chart.", explain: function () { return "A high base rate: this sample over-represents bad loans compared with most portfolios."; } },
+  { q: "What is the information value of the current account status attribute (2 decimals)?", type: "num", tol: 0.006, answer: function () { return IV.status_of_existing_checking_account; }, placeholder: "e.g. 0.25", hint: "Select it in the attribute list, or read the IV chart.", explain: function () { return "Above 0.3, so a strong predictor."; } },
+  { q: "What is the AUC on the 300 test applicants (3 decimals)?", type: "num", tol: 0.0006, answer: function () { return DATA.auc[1]; }, placeholder: "e.g. 0.750", hint: "Shown under the score distribution.", explain: function () { return "0.5 is a coin toss and 1.0 is perfect; around 0.8 is typical for application scorecards."; } },
+  { q: "With the dataset's 5 : 1 cost ratio, what is the lowest total cost any cut-off reaches on the test set?", type: "num", tol: 0.5, answer: function () { return b5.cost; }, placeholder: "e.g. 200", hint: "Set the ratio to 5 and look for the bottom of the cost curve.", explain: function () { return "It is reached at a cut-off of " + b5.c + "."; } }
+]);
+
+/* ---------- code ---------- */
+var CODE = [
+  "import scorecardpy as sc",
+  "from sklearn.linear_model import LogisticRegression",
+  "from sklearn.metrics import roc_auc_score",
+  "",
+  "dat = sc.germancredit()",
+  'dat["creditability"] = (dat["creditability"] == "bad").astype(int)   # 1 = bad borrower',
+  "",
+  "dt_s = sc.var_filter(dat, y=\"creditability\")              # drop IV < 0.02 and similar",
+  "train, test = sc.split_df(dt_s, \"creditability\").values() # 70 / 30 split",
+  "bins = sc.woebin(dt_s, y=\"creditability\")                 # weight-of-evidence binning",
+  "train_woe, test_woe = sc.woebin_ply(train, bins), sc.woebin_ply(test, bins)",
+  "",
+  "X_tr, y_tr = train_woe.drop(columns=\"creditability\"), train_woe[\"creditability\"]",
+  "X_te, y_te = test_woe.drop(columns=\"creditability\"), test_woe[\"creditability\"]",
+  "lr = LogisticRegression(penalty=\"l1\", C=0.9, solver=\"saga\", max_iter=5000, random_state=0).fit(X_tr, y_tr)",
+  "print(\"test AUC\", round(roc_auc_score(y_te, lr.predict_proba(X_te)[:, 1]), 3))",
+  "",
+  "card = sc.scorecard(bins, lr, X_tr.columns)   # 600 points = 19:1 odds, 50 points to double",
+  "test_score = sc.scorecard_ply(test, card, print_step=0)",
+  "",
+  "# cheapest cut-off with the UCI cost matrix: bad approved = 5, good declined = 1",
+  "best = min(range(300, 751), key=lambda c: 5 * ((test_score.score >= c) & (y_te == 1)).sum()",
+  "                                         + ((test_score.score < c) & (y_te == 0)).sum())",
+  "print(\"best cut-off\", best)"
+].join("\n");
+$("code").textContent = CODE; copyButton("copy", CODE);
+
+})();
+</script>
+</html>

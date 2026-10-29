@@ -1,0 +1,94 @@
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="{{foundation}}"{{target}}>← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · Lending</div>
+    <h1>Credit Scorecard Lab</h1>
+    <p class="lead">A consumer lender wants an application scorecard that a loan officer and a regulator can read line by line. Find which applicant attributes separate good from bad borrowers, turn a model into points, test it on applicants it has not seen, and choose the approval cut-off.</p>
+    <div class="repo">
+      <span class="nm">ShichenXie/scorecardpy</span>
+      <span class="meta"><span>★ about 805</span><span>MIT licence</span><span>Python port of the R package scorecard</span></span>
+      <p>scorecardpy is a widely used open-source toolkit for traditional credit scorecards: weight-of-evidence binning, information value, logistic regression and points scaling. Every number on this page comes from running its README workflow on its bundled German credit data.</p>
+      <a class="go" href="https://github.com/ShichenXie/scorecardpy" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Decision</b>Which score an applicant needs to be approved.</div>
+      <div><b class="k">Why points, not a black box</b>Each answer on the application adds or removes points, so a declined customer can be told why, and the model can be audited.</div>
+      <div><b class="k">Cost of mistakes</b>The dataset's own cost matrix: approving a bad borrower costs <b>5</b>, declining a good one costs <b>1</b>.</div>
+      <div><b class="k">Data</b>1,000 past applicants from a German bank with 20 attributes; 300 turned out bad. scorecardpy splits them into 700 for building and 300 for testing.</div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · who turned out bad?</span>
+    <h2 id="d-h">Bad rate by attribute</h2>
+    <p class="sec-intro">Binning groups each attribute into a few ranges or categories. The bad rate in each bin shows whether the attribute tells good and bad apart. Weight of evidence (WoE) puts it on one scale: ln(share of all bads in the bin ÷ share of all goods in the bin). Positive means riskier than average.</p>
+    <div class="panel controls">
+      <label class="num-in" for="var">Attribute<select id="var" style="font:inherit;min-height:40px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);color:var(--ink)"></select></label>
+      <div class="row2"><div id="ch-bin"></div><div class="tw" id="bin-table"></div></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · which attributes matter most?</span>
+    <h2 id="g-h">Information value ranks the attributes</h2>
+    <p class="sec-intro">Information value (IV) adds up how strongly every bin of an attribute separates goods from bads. A common rule of thumb: below 0.02 useless, 0.02 to 0.1 weak, 0.1 to 0.3 medium, above 0.3 strong. scorecardpy drops attributes below 0.02 before modelling.</p>
+    <div class="panel"><div id="ch-iv"></div></div>
+    <p class="sec-intro" id="iv-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · how risky is this applicant?</span>
+    <h2 id="p-h">The scorecard</h2>
+    <p class="sec-intro">A logistic regression on the WoE values picks the attributes and their weights; scorecardpy then scales the result to points. Every applicant starts with the base points and gains or loses points for each answer. On this scale 600 points means odds of 19 goods to 1 bad, and every 50 points doubles those odds.</p>
+    <div class="row2">
+      <div class="panel"><h3>Score an applicant</h3><div id="scorer" class="controls"></div></div>
+      <div class="controls">
+        <div class="kpis" id="score-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+        <div class="panel"><h3>How well it ranks unseen applicants</h3><div id="ch-dist"></div><div class="kpis" id="perf"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · where should the cut-off be?</span>
+    <h2 id="r-h">Choose the approval cut-off</h2>
+    <p class="sec-intro">A higher cut-off approves fewer people and fewer bad borrowers. Total cost = cost of a bad approval × bads approved + cost of a good decline × goods declined, counted on the 300 test applicants. The 5 : 1 ratio comes from the dataset; your own business will have its own ratio.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-cost"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="cut" id="cut-l"></label><input id="cut" type="range" min="300" max="750" step="1" value="500"></div>
+        <div class="slider"><label for="ratio" id="ratio-l"></label><input id="ratio" type="range" min="1" max="10" step="1" value="5"></div>
+        <div class="kpis" id="cut-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Build the scorecard with scorecardpy</h2>
+    <p class="sec-intro">Install with <code>pip install scorecardpy scikit-learn "pandas&lt;2.3"</code>; the package still uses pandas options removed in pandas 3. This is the README workflow from the repository, with the bad flag set to 1.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://github.com/ShichenXie/scorecardpy" target="_blank" rel="noopener">ShichenXie/scorecardpy</a> <span>(MIT). WoE binning, information value, scorecard scaling and the bundled German credit data.</span></li>
+      <li><a href="https://archive.ics.uci.edu/dataset/144" target="_blank" rel="noopener">UCI Machine Learning Repository: Statlog (German Credit Data)</a> <span>Hans Hofmann, 1994, CC BY 4.0. Source of the data and of the 5 : 1 cost matrix.</span></li>
+      <li><a href="{{foundation}}"{{target}}>Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>The data is from 1994 and in Deutsche Mark, and it is small. Real scorecards are built on tens of thousands of loans, validated on a separate time period, monitored for drift, and must exclude protected attributes such as sex or nationality whatever their information value. Choosing the cut-off on the test set, as here, flatters the result; in practice use a separate validation sample.</footer>
+</div>
