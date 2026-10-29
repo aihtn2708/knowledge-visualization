@@ -28,6 +28,7 @@ jobs:
       - name: Build all labs
         run: python src/build_all.py
       - name: Committed pages match the sources
-        run: git diff --exit-code -- .. ':(exclude)*.xlsx'
+        # workbooks are rebuilt with new timestamps each time, so only pages and scripts are compared
+        run: git -C ../.. diff --exit-code -- da-study-labs ':(exclude)da-study-labs/labs/*/*.xlsx'
       - name: Browser test
         run: python tests/test_site.py
