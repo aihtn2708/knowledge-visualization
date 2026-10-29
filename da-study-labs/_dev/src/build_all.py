@@ -29,6 +29,8 @@ def main():
         run(os.path.join(d, "assemble.py"))
     for src, dst in (("minipy.js", "minipy.js"), ("minixl.js", "minixl.js")):
         shutil.copy(os.path.join(ROOT, "src", "engines", src), os.path.join(SITE, "assets", "js", dst))
+    run(os.path.join(ROOT, "src", "industry", "build.py"))
+    run(os.path.join(ROOT, "src", "foundation", "build.py"))
     run(os.path.join(ROOT, "src", "hub", "build.py"))
     print("Done. Open da-study-labs/index.html, or run from the repo root: python -m http.server 8000")
 

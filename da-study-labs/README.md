@@ -4,10 +4,16 @@ Hands-on labs for learning to think like a data analyst in **SQL**, **Python** a
 
 This folder lives inside the `knowledge-visualization` site and does not change any other page. Once it is on `main`, GitHub Pages serves it at:
 
+- Data Analytics Foundations: `https://aihtn2708.github.io/knowledge-visualization/da-study-labs/foundation/`
 - Hub (Set vs Loop Lab): `https://aihtn2708.github.io/knowledge-visualization/da-study-labs/`
 - Coffee Chain Lab (beginner): `.../da-study-labs/labs/coffee-chain/`
 - Debt Classification Lab (intermediate): `.../da-study-labs/labs/debt-classification/`
 - Loan Recommendation Lab (intermediate to advanced): `.../da-study-labs/labs/loan-recommendation/`
+- Industry labs, one business case each on a well-known open-source repository:
+  - FMCG, Retail Demand Forecasting (facebook/prophet data): `.../da-study-labs/industry/retail-demand-forecasting/`
+  - Supply chain, Delivery Route Planning (google/or-tools example): `.../da-study-labs/industry/delivery-route-planning/`
+  - Finance, Investment Risk and Return (Shiller S&P 500 data, ranaroussi/quantstats metrics): `.../da-study-labs/industry/investment-risk-return/`
+  - Lending, Credit Scorecard (ShichenXie/scorecardpy German credit data): `.../da-study-labs/industry/credit-scorecard/`
 
 Each lab has 4 or 5 tasks. For every task you can write SQL, Python or Excel formulas in the page, run them and get a verdict against the expected result, with hints, reference solutions (plus pandas versions to run locally) and an Excel workbook to download.
 
@@ -16,6 +22,8 @@ Each lab has 4 or 5 tasks. For every task you can write SQL, Python or Excel for
 ```
 da-study-labs/
   index.html                 Set vs Loop Lab, the hub with the assignments table
+  foundation/index.html      Data Analytics Foundations: roadmap, key concepts, four types of analytics, worked cases
+  industry/<lab>/index.html  industry business-case labs (FMCG, supply chain, finance, lending)
   labs/<lab>/index.html      one page per lab, data embedded
   labs/<lab>/*.xlsx          workbook with the data and Excel reference solutions
   assets/js/                 minipy.js (Python interpreter), minixl.js (formula engine)
@@ -25,6 +33,9 @@ da-study-labs/
     src/shared/              page template shared by the labs
     src/hub/                 hub page source
     src/labs/<lab>/          build.py (data + verification), assemble.py (page), solutions and page parts
+    src/foundation/          Foundations page source and build script
+    src/industry/            industry labs: shared style and chart code, one folder per lab (page text, analysis,
+                             data.json, ref*.py reference analyses run with prophet, ortools, quantstats, scorecardpy)
     tests/test_site.py       opens every page in Chromium and runs every reference solution
     requirements.txt
 ```

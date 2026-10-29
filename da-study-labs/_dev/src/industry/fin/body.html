@@ -1,0 +1,96 @@
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="{{foundation}}"{{target}}>← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · Finance</div>
+    <h1>Investment Risk and Return Lab</h1>
+    <p class="lead">A company's investment committee must decide how much of a long-term reserve fund to hold in shares. Measure 150 years of US stock market returns, find out what the bad periods looked like, estimate how risk falls with time, and set an equity share that fits the fund's horizon.</p>
+    <div class="repo">
+      <span class="nm">ranaroussi/quantstats</span>
+      <span class="meta"><span>★ about 7.7k</span><span>Apache-2.0 licence</span><span>Python</span></span>
+      <p>QuantStats is a widely used Python library for portfolio analytics. This lab computes its core metrics (CAGR, volatility, Sharpe ratio, maximum drawdown) in the browser, and they match QuantStats to four decimals. The data is Robert Shiller's monthly S&amp;P 500 series from the <code>datasets/s-and-p-500</code> repository (public domain).</p>
+      <a class="go" href="https://ossinsight.io/analyze/ranaroussi/quantstats" target="_blank" rel="noopener">About the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Decision</b>What share of a reserve fund to invest in a broad stock index, given when the money will be needed.</div>
+      <div><b class="k">Risk that matters</b>Losing purchasing power: ending the period with less, after inflation, than at the start.</div>
+      <div><b class="k">Measures</b>Annual growth (CAGR), volatility, Sharpe ratio, maximum drawdown, and the share of past periods that ended in a real loss.</div>
+      <div><b class="k">Data</b><span id="data-line"></span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · what happened?</span>
+    <h2 id="d-h">Growth of one dollar, with dividends reinvested</h2>
+    <div class="panel controls">
+      <div class="seg" id="seg-period"></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><div id="ch-growth"></div></div>
+    <p class="sec-intro">The chart uses a log scale, so equal steps mean equal percentage growth. Monthly prices in this series are monthly averages, so short crashes look a little milder than in daily data.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · what drove the bad years?</span>
+    <h2 id="g-h">Drawdowns: how far and how long</h2>
+    <div class="panel"><div id="ch-dd"></div></div>
+    <div class="grid2">
+      <div class="panel"><h3>The five deepest falls</h3><div class="tw" id="dd-table"></div></div>
+      <div class="panel"><h3>Where the return came from</h3><p class="muted" style="font-size:0.9rem">Average annual contribution over the selected period.</p><div class="tw" id="src-table"></div><p class="muted" style="font-size:0.88rem" id="src-note"></p></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · what could happen over our horizon?</span>
+    <h2 id="p-h">Risk shrinks with time, but not to zero</h2>
+    <p class="sec-intro">History does not predict the next decade, but every past window of a given length shows the range of outcomes an investor actually lived through. Slide the holding period.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-roll"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="hz" id="hz-l"></label><input id="hz" type="range" min="1" max="30" step="1" value="10"></div>
+        <div class="kpis" id="roll-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · what should we do?</span>
+    <h2 id="r-h">Set the equity share</h2>
+    <p class="sec-intro">Mix shares with a simple safe asset that earns the 10-year government bond yield with no price changes. For each mix, count how often a past window of the fund's horizon ended below inflation. The committee sets the horizon and the largest chance of a real loss it accepts.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-mix"></div><div class="tw" id="mix-table"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="mh" id="mh-l"></label><input id="mh" type="range" min="3" max="25" step="1" value="10"></div>
+        <div class="slider"><label for="ml" id="ml-l"></label><input id="ml" type="range" min="2" max="30" step="1" value="12"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Check the numbers with QuantStats</h2>
+    <p class="sec-intro">Install with <code>pip install pandas quantstats</code>. The script downloads the Shiller data from GitHub, builds monthly total returns and prints the same metrics as the page for the full period.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://datahub.io/core/s-and-p-500" target="_blank" rel="noopener">S&amp;P 500 monthly data (datahub core, GitHub datasets/s-and-p-500)</a> <span>Compiled by Robert Shiller; price, dividends, CPI and 10-year rate. Licence ODC-PDDL-1.0. This lab uses January 1871 to June 2023, the last month with dividends and CPI.</span></li>
+      <li><a href="https://ossinsight.io/analyze/ranaroussi/quantstats" target="_blank" rel="noopener">ranaroussi/quantstats</a> <span>Portfolio analytics library (Apache-2.0) used to verify volatility, Sharpe ratio and maximum drawdown.</span></li>
+      <li><a href="{{foundation}}"{{target}}>Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>Educational analysis of historical data, not investment advice. The Sharpe ratio here uses the 10-year bond yield as the risk-free rate because the series has no short-term rate; that makes Sharpe ratios a little lower than with Treasury bills. The safe asset ignores bond price changes, taxes and fees.</footer>
+</div>
