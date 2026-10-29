@@ -1,0 +1,91 @@
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Consumer finance · SQL · Python · Excel</div>
+    <h1>Loan Recommendation Lab</h1>
+    <p class="lead">You are an analyst at a consumer finance company. Eighty people asked for a loan online. Use each person's credit score and credit history to decide who qualifies for which product, recommend the best one and work out how much to offer. Write SQL, Python and Excel formulas right here and check each result.</p>
+    <div class="legend">
+      <span class="tag"><i class="dot sql"></i>SQL (SQLite)</span>
+      <span class="tag"><i class="dot py"></i>Python (core language)</span>
+      <span class="tag"><i class="dot xl"></i>Excel formulas</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="brief-h">
+    <h2 id="brief-h">The brief</h2>
+    <div class="panel">
+      <p>Lotus Consumer Finance (a made-up company) runs a pre-screening campaign. Every <b>applicant</b> has a monthly income, existing monthly installments elsewhere, a requested amount and term, and a <b>credit score</b> from 300 to 850 (higher is safer). A blank score means the person has no credit history yet (a "thin file"). The <b>history</b> table lists each past loan with its worst number of days past due (<code>max_dpd</code>). All amounts are in VND.</p>
+      <p>The company sells four <b>products</b>. A person is <b>eligible</b> for a product when all three hold: (1) the worst <code>max_dpd</code> over all their past loans is 90 or less, (2) <code>monthly_income ≥ min_income</code>, and (3) <code>credit_score ≥ min_score</code>, or the score is blank and <code>thin_file_ok = 1</code>. The product rules, rates and limits are invented for this exercise and are not any lender's policy.</p>
+      <p>The products are listed from cheapest to most expensive (<code>flat_rate</code> is the yearly interest on the original amount). The <b>recommendation</b> is the cheapest product the person is eligible for. The <b>offer</b> is the largest amount that fits the product limits and the person's budget, explained in task 5.</p>
+      <div class="two">
+        <div style="display:grid;gap:8px;min-width:0">
+          <h3>applicants <span class="muted" style="font-weight:400;font-size:0.85rem">80 rows</span></h3>
+          <div class="schema" id="schema-applicants"></div>
+          <div class="tw" id="applicants-prev"></div>
+          <details><summary>Show all 80 rows</summary><div class="tw tall" id="applicants-all" style="margin-top:8px"></div></details>
+        </div>
+        <div style="display:grid;gap:8px;align-content:start;min-width:0">
+          <h3>products <span class="muted" style="font-weight:400;font-size:0.85rem">4 rows</span></h3>
+          <div class="schema" id="schema-products"></div>
+          <div class="tw" id="products-tab"></div>
+          <p class="muted" style="font-size:0.88rem;margin:0"><code>max_dti</code> is the highest share of income that all monthly installments together may take.</p>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px;min-width:0">
+        <h3>history <span class="muted" style="font-weight:400;font-size:0.85rem">132 rows, past loans of 60 applicants</span></h3>
+        <div class="schema" id="schema-history"></div>
+        <div class="tw" id="history-prev"></div>
+        <details><summary>Show all 132 rows</summary><div class="tw tall" id="history-all" style="margin-top:8px"></div></details>
+      </div>
+      <details id="own-tools" data-zone>
+        <summary>Prefer your own tools? Copy the data</summary>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div class="tabs" role="tablist" id="setup-tabs">
+            <button class="tab" role="tab" data-t="xl" aria-selected="true"><i class="dot xl"></i>Excel</button>
+            <button class="tab" role="tab" data-t="sql" aria-selected="false"><i class="dot sql"></i>SQL</button>
+            <button class="tab" role="tab" data-t="py" aria-selected="false"><i class="dot py"></i>Python</button>
+          </div>
+          <div id="setup-body"></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="tasks-h">
+    <h2 id="tasks-h">Five tasks</h2>
+    <p class="muted" style="max-width:66ch">Pick a task, then solve it in any of the three tools. Each tool checks your result against the expected answer. Solve a task in all three to compare how they think.</p>
+    <div class="cards" id="cards" role="tablist" aria-label="Tasks"></div>
+    <div class="panel" id="task" data-zone></div>
+  </section>
+
+  <section aria-labelledby="wrap-h" class="wrapup">
+    <h2 id="wrap-h">Same answers, different thinking</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Task</th><th class="sql">SQL</th><th class="py">Python</th><th class="xl">Excel</th></tr></thead>
+        <tbody>
+          <tr><td>1. Score bands</td><td class="c sql">CASE WHEN, NULL falls to ELSE</td><td class="c py">if / elif on <code>None</code>, dict of totals</td><td class="c xl">COUNTIFS / AVERAGEIFS with band limits</td></tr>
+          <tr><td>2. History profile</td><td class="c sql">MAX(max_dpd) per applicant, LEFT JOIN</td><td class="c py">dict of worst dpd, missing key = no history</td><td class="c xl">MAXIFS, then nested IF</td></tr>
+          <tr><td>3. Who is eligible?</td><td class="c sql">JOIN products ON the three rules</td><td class="c py">function <code>eligible(a, p)</code>, nested loops</td><td class="c xl">COUNTIFS with limits read from products</td></tr>
+          <tr><td>4. Recommend one product</td><td class="c sql">ROW_NUMBER() OVER (PARTITION BY applicant)</td><td class="c py">loop over products, first match wins</td><td class="c xl">0/1 grid, then MATCH(1, row, 0)</td></tr>
+          <tr><td>5. Offer and affordability</td><td class="c sql">MIN / MAX of several limits, CAST to round down</td><td class="c py">min(), max(), floor division</td><td class="c xl">helper columns: term, affordable, capped, offer</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="think">
+      <div class="sql"><h4>SQL</h4><p>Eligibility is a join on rules, so every applicant is compared with every product in one statement. The hard part is NULL: a missing score is neither above nor below a threshold, so you have to say what it means.</p></div>
+      <div class="py"><h4>Python</h4><p>The rules become a function you can read like the policy document. Adding a new rule, such as an age limit, is one more <code>if</code> line. The price is that you write every loop yourself.</p></div>
+      <div class="xl"><h4>Excel</h4><p>A 0/1 grid of applicants by products lets an underwriter see why someone failed. Each step of the offer sits in its own column, so a reviewer can audit it. Changing a limit on the products sheet updates everything.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>The data is generated for this lab and describes no real people. The SQL runs on SQLite, the Python on a small built-in interpreter (loops, dicts, lists, comprehensions, functions, f-strings, math and collections), and the Excel formulas on a small built-in engine. All three give the same results on these 80 applicants.</p>
+    <p>Background: the 300 to 850 score scale and the Low, Medium and High bands (300–500, 501–700, 701–850) follow
+      <a href="https://www.seabank.com.vn/en/tin-tuc/tu-van-dich-vu/tu-van--meo/diem-tin-dung-la-gi-cach-tra-cuu-va-kiem-tra-online-nhanh-chong-chinh-xac" target="_blank" rel="noopener">SeABank's explanation of the CIC credit score</a>.
+      That a higher score means easier approval, lower rates and higher limits is described in
+      <a href="https://shinhanfinance.com.vn/en/news/post/107645/diem-tin-dung-anh-huong-nhu-the-nao-den-kha-nang-vay-tien" target="_blank" rel="noopener">Shinhan Finance's article on how scores affect borrowing</a>.
+      The "91 days or more is bad debt" line matches debt group 3 in
+      <a href="https://english.luatvietnam.vn/circular-no-11-2021-tt-nhnn-dated-july-30-2021-of-the-state-bank-of-vietnam-providing-the-classification-of-assets-risk-provisioning-levels-and-met-206806-doc1.html" target="_blank" rel="noopener">Circular 11/2021/TT-NHNN</a>.
+      Eligibility rules, rates and limits are fictional.</p>
+  </footer>
+</div>

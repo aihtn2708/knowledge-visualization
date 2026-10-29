@@ -1,0 +1,82 @@
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Consumer finance · SQL · Python · Excel</div>
+    <h1>Debt Classification Lab</h1>
+    <p class="lead">You are a credit-risk analyst at a consumer finance company. Sort 120 loans into debt groups by days past due, work out the provisions, measure bad debt and see how loans move between groups. Write SQL, Python and Excel formulas right here and check each result.</p>
+    <div class="legend">
+      <span class="tag"><i class="dot sql"></i>SQL (SQLite)</span>
+      <span class="tag"><i class="dot py"></i>Python (core language)</span>
+      <span class="tag"><i class="dot xl"></i>Excel formulas</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="brief-h">
+    <h2 id="brief-h">The brief</h2>
+    <div class="panel">
+      <p>Lotus Consumer Finance (a made-up company) lends to individuals: personal loans, motorbike loans, credit cards and appliance installments. At every month-end the risk team puts each loan into one of five <b>debt groups</b> by <b>days past due</b> (<code>dpd</code>, the number of days the oldest unpaid amount is overdue) and sets aside a <b>provision</b> for each group. You have the loan book at <b>30 Sep 2026</b>, the same book one month earlier in the column <code>dpd_prev</code> (31 Aug 2026), and the rules table. All amounts are in VND.</p>
+      <p>The rules are a simplified version of Circular 11/2021/TT-NHNN (as amended by Circular 31/2024/TT-NHNN) on asset classification and provisioning in Vietnam. <b>Groups 3, 4 and 5 are bad debt</b> (non-performing loans, NPL). <b>Provision</b> for a loan = outstanding × the rate of its group. Collateral, restructured loans and the qualitative criteria are left out, so this is a teaching model and not compliance advice.</p>
+      <div class="two">
+        <div style="display:grid;gap:8px;min-width:0">
+          <h3>loans <span class="muted" style="font-weight:400;font-size:0.85rem">120 rows, 70 customers</span></h3>
+          <div class="schema" id="schema-loans"></div>
+          <div class="tw" id="loans-prev"></div>
+          <details><summary>Show all 120 rows</summary><div class="tw tall" id="loans-all" style="margin-top:8px"></div></details>
+        </div>
+        <div style="display:grid;gap:8px;align-content:start;min-width:0">
+          <h3>rules <span class="muted" style="font-weight:400;font-size:0.85rem">5 rows</span></h3>
+          <div class="schema" id="schema-rules"></div>
+          <div class="tw" id="rules-tab"></div>
+          <p class="muted" style="font-size:0.88rem;margin:0">A loan belongs to the group whose range contains its <code>dpd</code>. Boundaries count: 9 days is still group 1, 10 days is group 2.</p>
+        </div>
+      </div>
+      <details id="own-tools" data-zone>
+        <summary>Prefer your own tools? Copy the data</summary>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div class="tabs" role="tablist" id="setup-tabs">
+            <button class="tab" role="tab" data-t="xl" aria-selected="true"><i class="dot xl"></i>Excel</button>
+            <button class="tab" role="tab" data-t="sql" aria-selected="false"><i class="dot sql"></i>SQL</button>
+            <button class="tab" role="tab" data-t="py" aria-selected="false"><i class="dot py"></i>Python</button>
+          </div>
+          <div id="setup-body"></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="tasks-h">
+    <h2 id="tasks-h">Five tasks</h2>
+    <p class="muted" style="max-width:66ch">Pick a task, then solve it in any of the three tools. Each tool checks your result against the expected answer. Solve a task in all three to compare how they think.</p>
+    <div class="cards" id="cards" role="tablist" aria-label="Tasks"></div>
+    <div class="panel" id="task" data-zone></div>
+  </section>
+
+  <section aria-labelledby="wrap-h" class="wrapup">
+    <h2 id="wrap-h">Same answers, different thinking</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Task</th><th class="sql">SQL</th><th class="py">Python</th><th class="xl">Excel</th></tr></thead>
+        <tbody>
+          <tr><td>1. Classify the book</td><td class="c sql">JOIN rules ON dpd BETWEEN min AND max</td><td class="c py">function group_of(dpd), counters in dicts</td><td class="c xl">COUNTIFS / SUMIFS with the range limits from rules</td></tr>
+          <tr><td>2. Provision</td><td class="c sql">SUM(outstanding) * provision_rate per group</td><td class="c py">dict of rates, balance × rate</td><td class="c xl">INDEX the rate, multiply, ROUND</td></tr>
+          <tr><td>3. Portfolio KPIs</td><td class="c sql">SUM(CASE WHEN grp &gt;= 3 ...) in one pass</td><td class="c py">running totals in one loop</td><td class="c xl">a workings table, then SUM of its rows</td></tr>
+          <tr><td>4. One customer, one group</td><td class="c sql">MAX(grp) OVER (PARTITION BY customer)</td><td class="c py">two passes: worst per customer, then count</td><td class="c xl">helper columns: MATCH, then MAXIFS</td></tr>
+          <tr><td>5. Roll-rate matrix</td><td class="c sql">two joins to rules, SUM(CASE ...) pivot</td><td class="c py">nested dict matrix[from][to] += 1</td><td class="c xl">one COUNTIFS filled down and right</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="think">
+      <div class="sql"><h4>SQL</h4><p>The rules live in a table, so classification is a join on a range. Change a threshold in <code>rules</code> and every query follows. Window functions handle the customer-level rule without any loop.</p></div>
+      <div class="py"><h4>Python</h4><p>A small function holds the rule and loops apply it. It is the easiest place to add logic that does not fit a table, such as qualitative overrides or restructuring flags.</p></div>
+      <div class="xl"><h4>Excel</h4><p>Risk and finance teams can see every step: the group of each loan, the provision, the totals. The helper columns make audit easy, but the layout is manual, so a sixth group means new rows and new formulas.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>The data is generated for this lab and is not a real portfolio. The SQL runs on SQLite, the Python on a small built-in interpreter (loops, dicts, lists, comprehensions, functions, f-strings, math and collections), and the Excel formulas on a small built-in engine. All three give the same results on these 120 loans.</p>
+    <p>Rules and thresholds follow the public text of the regulation, simplified for teaching:
+      <a href="https://english.luatvietnam.vn/circular-no-11-2021-tt-nhnn-dated-july-30-2021-of-the-state-bank-of-vietnam-providing-the-classification-of-assets-risk-provisioning-levels-and-met-206806-doc1.html" target="_blank" rel="noopener">Circular 11/2021/TT-NHNN (English)</a>,
+      <a href="https://lawnet.vn/ngan-hang-phap-luat/en/tu-van-phap-luat/tien-te--ngan-hang/provisioning-rates-specific-to-debt-groups-of-credit-institutions-in-vietnam-375619" target="_blank" rel="noopener">specific provision rates by group</a>,
+      <a href="https://www.homecredit.vn/blog/cac-nhom-no-la-gi-clx" target="_blank" rel="noopener">the five debt groups explained</a>,
+      <a href="https://thuvienphapluat.vn/news/headlines/37138/amounts-of-general-provisions-of-credit-institutions-are-now-specified" target="_blank" rel="noopener">general provisions (not used here)</a>.</p>
+  </footer>
+</div>

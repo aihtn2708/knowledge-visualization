@@ -1,0 +1,11 @@
+  var chips = function (cols) { return cols.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join(""); };
+  var idText = function (rows, n) { return rows.map(function (r) { return r.map(function (v, i) { return i < n ? String(v) : v; }); }); };
+  document.getElementById("schema-applicants").innerHTML = chips(ACOLS);
+  document.getElementById("schema-history").innerHTML = chips(HCOLS);
+  document.getElementById("schema-products").innerHTML = chips(PCOLS);
+  var aText = idText(AP, 1), hText = idText(HI, 2);
+  document.getElementById("applicants-prev").innerHTML = table(ACOLS, aText.slice(0, 6), { num: [1, 2, 3, 4, 5] });
+  document.getElementById("applicants-all").innerHTML = table(ACOLS, aText, { num: [1, 2, 3, 4, 5] });
+  document.getElementById("history-prev").innerHTML = table(HCOLS, hText.slice(0, 6), { num: [4, 5] });
+  document.getElementById("history-all").innerHTML = table(HCOLS, hText, { num: [4, 5] });
+  document.getElementById("products-tab").innerHTML = table(PCOLS, PR.map(function (r) { return [String(r[0])].concat(r.slice(1)); }), { num: [2, 3, 4, 5, 6, 7, 8] });

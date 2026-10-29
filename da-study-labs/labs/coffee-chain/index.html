@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coffee Chain Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: brief and data on top, four task cards, one workspace (SQL, Python, Excel tabs) per task, wrap-up last. */
+:root {
+  --bg: #f1f4f8;
+  --surface: #ffffff;
+  --ink: #14202e;
+  --muted: #566577;
+  --line: #d8e0e9;
+  --sql: #0b6e69;
+  --sql-soft: #d6efec;
+  --py: #4a3fb5;
+  --py-soft: #e4e1fa;
+  --xl: #4a7c10;
+  --xl-soft: #e1efca;
+  --code-bg: #eaeff5;
+  --good: #1a7f45;
+  --bad: #b3261e;
+  --warn: #9a5b00;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+    --sql: #46c4ba; --sql-soft: #123230; --py: #a99fff; --py-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311;
+    --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80; --warn: #f0b45a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+  --sql: #46c4ba; --sql-soft: #123230; --py: #a99fff; --py-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311;
+  --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80; --warn: #f0b45a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.4vw, 3.2rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.3rem, 3vw, 1.7rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 14px; }
+header .lead { max-width: 62ch; font-size: 1.08rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--line); background: var(--surface); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.dot.sql { background: var(--sql); } .dot.py { background: var(--py); } .dot.xl { background: var(--xl); }
+
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; }
+.tw.tall { max-height: 340px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 12px; white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 500; color: var(--muted); background: var(--code-bg); position: sticky; top: 0; }
+td { border-top: 1px solid var(--line); }
+td.n, th.n { text-align: right; }
+td .nul { color: var(--muted); font-style: italic; }
+.schema { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-mono); font-size: 0.78rem; padding: 2px 10px; border-radius: 6px; background: var(--code-bg); border: 1px solid var(--line); }
+
+.btn { font: inherit; font-size: 0.9rem; font-weight: 600; min-height: 40px; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.btn:hover:not([disabled]) { border-color: var(--ink); }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn.run-sql { background: var(--sql); border-color: var(--sql); color: var(--surface); }
+.btn.run-py { background: var(--py); border-color: var(--py); color: var(--surface); }
+.btn.run-xl { background: var(--xl); border-color: var(--xl); color: var(--surface); }
+.btn.sm { min-height: 34px; padding: 3px 12px; font-size: 0.82rem; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, td[tabindex]:focus-visible { outline: 3px solid var(--py); outline-offset: 2px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { font: inherit; font-weight: 600; font-size: 0.9rem; min-height: 40px; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.tab[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tab[data-tool="sql"][aria-selected="true"], .tab[data-t="sql"][aria-selected="true"] { border-color: var(--sql); box-shadow: inset 0 0 0 1px var(--sql); }
+.tab[data-tool="py"][aria-selected="true"], .tab[data-t="py"][aria-selected="true"] { border-color: var(--py); box-shadow: inset 0 0 0 1px var(--py); }
+.tab[data-tool="xl"][aria-selected="true"], .tab[data-t="xl"][aria-selected="true"] { border-color: var(--xl); box-shadow: inset 0 0 0 1px var(--xl); }
+.tab .ok { color: var(--good); font-weight: 700; }
+.steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 6px; }
+.copyrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+textarea.fb { width: 100%; min-height: 110px; margin-top: 10px; font-family: var(--font-mono); font-size: 0.78rem; background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+pre.code { margin: 0; padding: 12px 14px; background: var(--code-bg); border-radius: 10px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; }
+.note { padding: 10px 14px; border-radius: 10px; background: var(--code-bg); font-size: 0.92rem; }
+details > summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+
+/* task cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tcard { font: inherit; text-align: left; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tcard:hover { border-color: var(--ink); }
+.tcard[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tcard .lv { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.tcard .ttl { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; line-height: 1.2; }
+.tcard .sk { font-size: 0.82rem; color: var(--muted); }
+.pips { display: flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+.pip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); display: inline-block; }
+.pip.sql.on { background: var(--sql); border-color: var(--sql); } .pip.py.on { background: var(--py); border-color: var(--py); } .pip.xl.on { background: var(--xl); border-color: var(--xl); }
+
+.goal { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; background: var(--bg); }
+.goal .q { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; line-height: 1.3; }
+.hints { display: grid; gap: 8px; }
+.hint { padding: 10px 14px; border-radius: 10px; border: 1px dashed var(--line); font-size: 0.93rem; }
+.hint b { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 2px; }
+.res-title { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+/* workspace */
+.ws { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ws.sql { border-top: 4px solid var(--sql); } .ws.py { border-top: 4px solid var(--py); } .ws.xl { border-top: 4px solid var(--xl); }
+textarea.editor { width: 100%; min-height: 190px; resize: vertical; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; tab-size: 4; background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; white-space: pre; overflow: auto; }
+.status { font-size: 0.85rem; color: var(--muted); }
+.status.bad { color: var(--bad); }
+.outbox { font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 8px 12px; white-space: pre-wrap; max-height: 160px; overflow: auto; }
+.errbox { font-family: var(--font-mono); font-size: 0.85rem; color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; }
+.verdict { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 0.93rem; display: flex; gap: 8px; }
+.verdict b { flex: none; }
+.verdict.ok { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.verdict.part { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.verdict.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.xl-note { font-size: 0.88rem; color: var(--muted); }
+.fbar { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fbar .nm { font-family: var(--font-mono); font-size: 0.82rem; padding: 8px 12px; min-width: 4rem; text-align: center; background: var(--code-bg); border-right: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
+.fbar .fx { font-family: var(--font-mono); font-style: italic; color: var(--xl); padding: 0 10px; display: flex; align-items: center; border-right: 1px solid var(--line); }
+.fbar input { flex: 1; min-width: 0; border: 0; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 0.88rem; padding: 8px 12px; min-height: 40px; }
+.fbar input[readonly] { color: var(--muted); }
+table.xgrid { width: auto; min-width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono); font-size: 0.85rem; }
+table.xgrid th { position: static; text-align: center; padding: 4px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+table.xgrid td { border-top: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 7px 12px; min-width: 100px; height: 36px; cursor: cell; user-select: none; background: var(--surface); }
+table.xgrid td.lock { background: var(--code-bg); color: var(--muted); }
+table.xgrid td.hdr { font-weight: 600; }
+table.xgrid td.filled { background: var(--xl-soft); }
+table.xgrid td.num { text-align: right; }
+table.xgrid td.err { color: var(--bad); font-weight: 600; }
+table.xgrid td.sel { outline: 2px solid var(--xl); outline-offset: -2px; }
+table.xgrid th.rn { min-width: 2.2rem; }
+.fillrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.orders-sheet th.rn, .orders-sheet td.rn { background: var(--code-bg); color: var(--muted); text-align: center; position: static; }
+
+.sol { display: grid; gap: 12px; }
+.formulas { display: grid; gap: 8px; }
+.frow { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: start; }
+.frow .cell { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; color: var(--xl); padding-top: 12px; }
+.frow pre.code { padding: 10px 14px; white-space: pre-wrap; word-break: break-word; }
+.frow .plain { padding: 10px 0; color: var(--muted); font-size: 0.92rem; }
+.think { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.think > div { min-width: 0; border: 1px solid var(--line); border-top: 4px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; font-size: 0.92rem; }
+.think .sql { border-top-color: var(--sql); } .think .py { border-top-color: var(--py); } .think .xl { border-top-color: var(--xl); }
+.think h4 { margin: 0; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.checkrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.fld { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); min-width: 0; flex: 1 1 220px; max-width: 360px; }
+.fld input, .fld select { font: inherit; font-family: var(--font-mono); font-size: 0.95rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-height: 42px; }
+.fb-line { min-height: 1.5em; font-size: 0.93rem; }
+.fb-line.good { color: var(--good); font-weight: 600; } .fb-line.bad { color: var(--bad); } .fb-line.warn { color: var(--warn); }
+
+.wrapup th, .wrapup td { padding: 10px 14px; white-space: normal; vertical-align: top; }
+.wrapup th { position: static; }
+.wrapup td:first-child { font-weight: 600; }
+.wrapup td.c { font-family: var(--font-mono); font-size: 0.8rem; }
+.wrapup th.sql, .wrapup td.sql { color: var(--sql); } .wrapup th.py, .wrapup td.py { color: var(--py); } .wrapup th.xl, .wrapup td.xl { color: var(--xl); }
+.wrapup table { min-width: 640px; }
+footer { color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 520px) { .frow { grid-template-columns: 1fr; gap: 2px; } .frow .cell { padding-top: 0; } }
+@media (prefers-reduced-motion: no-preference) { .btn, .tab, .tcard { transition: border-color 0.15s, background-color 0.15s; } }
+.backlink { display: inline-flex; align-items: center; min-height: 36px; color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+.backlink:hover { color: var(--ink); text-decoration: underline; }
+.dl { font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="backlink" href="../../index.html">← Set vs Loop Lab · all assignments</a>
+    <div class="eyebrow">One assignment · SQL · Python · Excel</div>
+    <h1>Coffee Chain Lab</h1>
+    <p class="lead">You are the analyst for a three-store coffee chain. Write SQL, Python and Excel formulas right here in the page, run them on the same 90 orders, and see whether each one matches the expected result.</p>
+    <div class="legend">
+      <span class="tag"><i class="dot sql"></i>SQL (SQLite)</span>
+      <span class="tag"><i class="dot py"></i>Python (core language)</span>
+      <span class="tag"><i class="dot xl"></i>Excel formulas</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="brief-h">
+    <h2 id="brief-h">The brief</h2>
+    <div class="panel">
+      <p>Brew &amp; Bean runs three stores. The owner wants a Q3 2026 review (July to September) and has handed you an export of every order. <b>Revenue</b> means <code>qty × unit_price</code> on <b>completed</b> orders only. Cancelled orders earn nothing, but they still count when you measure how often orders get cancelled. All prices are in VND.</p>
+      <div class="two">
+        <div style="display:grid;gap:8px;min-width:0">
+          <h3>orders <span class="muted" style="font-weight:400;font-size:0.85rem">90 rows</span></h3>
+          <div class="schema" id="schema-orders"></div>
+          <div class="tw" id="orders-prev"></div>
+          <details><summary>Show all 90 rows</summary><div class="tw tall" id="orders-all" style="margin-top:8px"></div></details>
+        </div>
+        <div style="display:grid;gap:8px;align-content:start;min-width:0">
+          <h3>stores <span class="muted" style="font-weight:400;font-size:0.85rem">3 rows</span></h3>
+          <div class="schema" id="schema-stores"></div>
+          <div class="tw" id="stores-tab"></div>
+        </div>
+      </div>
+      <details id="own-tools" data-zone>
+        <summary>Prefer your own tools? Copy the data</summary>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div class="tabs" role="tablist" id="setup-tabs">
+            <button class="tab" role="tab" data-t="xl" aria-selected="true"><i class="dot xl"></i>Excel</button>
+            <button class="tab" role="tab" data-t="sql" aria-selected="false"><i class="dot sql"></i>SQL</button>
+            <button class="tab" role="tab" data-t="py" aria-selected="false"><i class="dot py"></i>Python</button>
+          </div>
+          <div id="setup-body"></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="tasks-h">
+    <h2 id="tasks-h">Four tasks</h2>
+    <p class="muted" style="max-width:66ch">Pick a task, then solve it in any of the three tools. Each tool checks your result against the expected answer. Solve a task in all three to compare how they think.</p>
+    <div class="cards" id="cards" role="tablist" aria-label="Tasks"></div>
+    <div class="panel" id="task" data-zone></div>
+  </section>
+
+  <section aria-labelledby="wrap-h" class="wrapup">
+    <h2 id="wrap-h">Same answers, different thinking</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Task</th><th class="sql">SQL</th><th class="py">Python</th><th class="xl">Excel</th></tr></thead>
+        <tbody>
+          <tr><td>1. Revenue per store</td><td class="c sql">WHERE + JOIN + GROUP BY</td><td class="c py">loop, filter, dict of totals</td><td class="c xl">SUMIFS once per store</td></tr>
+          <tr><td>2. Cancel rate</td><td class="c sql">SUM(CASE WHEN ...) / COUNT(*)</td><td class="c py">two counters per store</td><td class="c xl">two COUNTIFS, divide</td></tr>
+          <tr><td>3. Monthly growth</td><td class="c sql">LAG() OVER (ORDER BY month)</td><td class="c py">loop with a "previous" variable</td><td class="c xl">C3 / C2 - 1 on month rows you type</td></tr>
+          <tr><td>4. Top product per store</td><td class="c sql">RANK() OVER (PARTITION BY store)</td><td class="c py">loop that keeps the best so far</td><td class="c xl">store × product grid, INDEX / MATCH / MAX</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="think">
+      <div class="sql"><h4>SQL</h4><p>Shortest when the data already sits in tables. You describe the result and the engine picks the plan. Window functions cover anything that depends on neighbouring rows.</p></div>
+      <div class="py"><h4>Python</h4><p>You write the steps: loop, test, update a variable. It is the most flexible, and the same logic scales to any data you can load. With pandas the same four tasks shrink to a few lines each.</p></div>
+      <div class="xl"><h4>Excel</h4><p>Best when people must see and audit every number or change inputs and watch results move. You lay out the groups yourself, so new months or products mean new rows or columns.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><a class="dl" href="coffee-chain-lab.xlsx" download>Download the Excel workbook</a> with the data and one reference solution per task.</p>
+    The data is generated for this lab. The SQL runs on SQLite, the Python runs on a small built-in interpreter (loops, dicts, lists, comprehensions, f-strings, math and collections), and the Excel formulas run on a small built-in engine. All three give the same results on these 90 orders.</footer>
+</div>
+
+<script src="../../assets/js/minipy.js"></script>
+<script src="../../assets/js/minixl.js"></script>
+<script>
+(function () {
+  var DATA = {"orders":[[1001,"2026-07-01",1,"Latte",1,55000,"completed"],[1002,"2026-07-02",1,"Latte",3,55000,"completed"],[1003,"2026-07-02",1,"Latte",1,55000,"completed"],[1004,"2026-07-03",2,"Croissant",4,40000,"completed"],[1005,"2026-07-03",3,"Americano",1,45000,"completed"],[1006,"2026-07-03",3,"Cold Brew",2,60000,"completed"],[1007,"2026-07-04",1,"Cold Brew",2,60000,"completed"],[1008,"2026-07-04",3,"Matcha",2,65000,"completed"],[1009,"2026-07-05",2,"Latte",2,55000,"completed"],[1010,"2026-07-06",1,"Americano",4,45000,"completed"],[1011,"2026-07-09",1,"Latte",4,55000,"completed"],[1012,"2026-07-09",1,"Americano",2,45000,"completed"],[1013,"2026-07-09",3,"Matcha",1,65000,"completed"],[1014,"2026-07-10",1,"Croissant",4,40000,"completed"],[1015,"2026-07-10",3,"Latte",3,55000,"completed"],[1016,"2026-07-11",1,"Cold Brew",1,60000,"completed"],[1017,"2026-07-13",2,"Croissant",3,40000,"completed"],[1018,"2026-07-13",2,"Americano",1,45000,"completed"],[1019,"2026-07-13",3,"Cold Brew",2,60000,"completed"],[1020,"2026-07-14",2,"Matcha",3,65000,"completed"],[1021,"2026-07-15",1,"Cold Brew",3,60000,"completed"],[1022,"2026-07-15",2,"Croissant",1,40000,"cancelled"],[1023,"2026-07-16",3,"Cold Brew",3,60000,"completed"],[1024,"2026-07-20",1,"Cold Brew",2,60000,"completed"],[1025,"2026-07-23",1,"Cold Brew",3,60000,"completed"],[1026,"2026-07-24",1,"Croissant",2,40000,"completed"],[1027,"2026-07-24",1,"Cold Brew",2,60000,"completed"],[1028,"2026-07-30",3,"Cold Brew",1,60000,"completed"],[1029,"2026-08-01",2,"Latte",1,55000,"completed"],[1030,"2026-08-02",1,"Latte",2,55000,"cancelled"],[1031,"2026-08-03",2,"Croissant",1,40000,"completed"],[1032,"2026-08-06",3,"Americano",2,45000,"completed"],[1033,"2026-08-07",1,"Latte",2,55000,"completed"],[1034,"2026-08-09",1,"Croissant",2,40000,"completed"],[1035,"2026-08-10",2,"Matcha",3,65000,"cancelled"],[1036,"2026-08-13",3,"Latte",1,55000,"completed"],[1037,"2026-08-14",2,"Americano",2,45000,"completed"],[1038,"2026-08-14",3,"Matcha",4,65000,"completed"],[1039,"2026-08-19",3,"Cold Brew",2,60000,"cancelled"],[1040,"2026-08-20",3,"Matcha",3,65000,"completed"],[1041,"2026-08-21",3,"Cold Brew",4,60000,"completed"],[1042,"2026-08-22",2,"Cold Brew",1,60000,"cancelled"],[1043,"2026-08-23",2,"Croissant",1,40000,"completed"],[1044,"2026-08-23",3,"Cold Brew",2,60000,"completed"],[1045,"2026-08-24",1,"Americano",3,45000,"completed"],[1046,"2026-08-24",1,"Croissant",2,40000,"completed"],[1047,"2026-08-24",2,"Americano",2,45000,"completed"],[1048,"2026-08-25",2,"Latte",1,55000,"completed"],[1049,"2026-08-26",1,"Cold Brew",3,60000,"completed"],[1050,"2026-08-27",1,"Cold Brew",1,60000,"completed"],[1051,"2026-08-27",3,"Matcha",2,65000,"completed"],[1052,"2026-08-28",2,"Matcha",4,65000,"completed"],[1053,"2026-08-28",2,"Croissant",3,40000,"completed"],[1054,"2026-08-28",2,"Cold Brew",2,60000,"completed"],[1055,"2026-08-30",2,"Matcha",4,65000,"completed"],[1056,"2026-08-31",1,"Cold Brew",1,60000,"completed"],[1057,"2026-08-31",1,"Americano",2,45000,"completed"],[1058,"2026-08-31",2,"Croissant",1,40000,"completed"],[1059,"2026-09-01",1,"Matcha",3,65000,"completed"],[1060,"2026-09-01",2,"Cold Brew",2,60000,"completed"],[1061,"2026-09-05",2,"Americano",1,45000,"completed"],[1062,"2026-09-05",2,"Americano",1,45000,"completed"],[1063,"2026-09-05",2,"Latte",1,55000,"completed"],[1064,"2026-09-05",2,"Matcha",1,65000,"cancelled"],[1065,"2026-09-05",3,"Croissant",4,40000,"completed"],[1066,"2026-09-10",1,"Croissant",2,40000,"completed"],[1067,"2026-09-10",2,"Latte",2,55000,"cancelled"],[1068,"2026-09-11",2,"Croissant",3,40000,"completed"],[1069,"2026-09-12",1,"Matcha",2,65000,"completed"],[1070,"2026-09-12",2,"Croissant",3,40000,"completed"],[1071,"2026-09-12",2,"Croissant",1,40000,"completed"],[1072,"2026-09-12",2,"Latte",3,55000,"cancelled"],[1073,"2026-09-12",2,"Latte",4,55000,"completed"],[1074,"2026-09-14",2,"Latte",2,55000,"completed"],[1075,"2026-09-14",3,"Cold Brew",2,60000,"completed"],[1076,"2026-09-15",2,"Americano",4,45000,"completed"],[1077,"2026-09-18",1,"Croissant",2,40000,"completed"],[1078,"2026-09-18",3,"Cold Brew",1,60000,"completed"],[1079,"2026-09-19",1,"Croissant",4,40000,"completed"],[1080,"2026-09-20",3,"Americano",2,45000,"completed"],[1081,"2026-09-21",3,"Cold Brew",4,60000,"completed"],[1082,"2026-09-22",1,"Matcha",2,65000,"completed"],[1083,"2026-09-22",3,"Matcha",2,65000,"cancelled"],[1084,"2026-09-23",1,"Matcha",1,65000,"completed"],[1085,"2026-09-25",3,"Americano",4,45000,"completed"],[1086,"2026-09-26",2,"Croissant",1,40000,"completed"],[1087,"2026-09-26",3,"Matcha",4,65000,"completed"],[1088,"2026-09-29",1,"Cold Brew",2,60000,"completed"],[1089,"2026-09-30",1,"Latte",3,55000,"completed"],[1090,"2026-09-30",1,"Matcha",2,65000,"completed"]],"stores":[[1,"Saigon Central","Ho Chi Minh City"],[2,"Hanoi Old Quarter","Hanoi"],[3,"Da Nang Beach","Da Nang"]],"sql":{"1":"SELECT s.store_name,\n       SUM(o.qty * o.unit_price) AS revenue\nFROM orders o\nJOIN stores s ON s.store_id = o.store_id\nWHERE o.status = 'completed'\nGROUP BY s.store_name\nORDER BY revenue DESC;","2":"SELECT s.store_name,\n       COUNT(*) AS total_orders,\n       SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,\n       ROUND(100.0 * SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) / COUNT(*), 1) AS cancel_rate_pct\nFROM orders o\nJOIN stores s ON s.store_id = o.store_id\nGROUP BY s.store_name\nORDER BY cancel_rate_pct DESC;","3":"WITH monthly AS (\n  SELECT strftime('%Y-%m', order_date) AS month,\n         SUM(qty * unit_price) AS revenue\n  FROM orders\n  WHERE status = 'completed'\n  GROUP BY 1\n)\nSELECT month,\n       revenue,\n       ROUND(100.0 * (revenue - LAG(revenue) OVER (ORDER BY month))\n             / LAG(revenue) OVER (ORDER BY month), 1) AS mom_growth_pct\nFROM monthly\nORDER BY month;","4":"WITH by_product AS (\n  SELECT store_id, product,\n         SUM(qty * unit_price) AS revenue\n  FROM orders\n  WHERE status = 'completed'\n  GROUP BY store_id, product\n),\nranked AS (\n  SELECT *,\n         RANK() OVER (PARTITION BY store_id ORDER BY revenue DESC) AS rnk\n  FROM by_product\n)\nSELECT s.store_name, r.product, r.revenue\nFROM ranked r\nJOIN stores s ON s.store_id = r.store_id\nWHERE r.rnk = 1\nORDER BY s.store_name;"},"py":{"1":"done = orders[orders[\"status\"] == \"completed\"].copy()\ndone[\"revenue\"] = done[\"qty\"] * done[\"unit_price\"]\n\nresult = (done.merge(stores, on=\"store_id\")\n              .groupby(\"store_name\", as_index=False)[\"revenue\"].sum()\n              .sort_values(\"revenue\", ascending=False))","2":"result = (orders.merge(stores, on=\"store_id\")\n               .assign(is_cancelled=lambda d: d[\"status\"] == \"cancelled\")\n               .groupby(\"store_name\")\n               .agg(total_orders=(\"order_id\", \"count\"),\n                    cancelled=(\"is_cancelled\", \"sum\"))\n               .reset_index())\nresult[\"cancel_rate_pct\"] = (100 * result[\"cancelled\"]\n                             / result[\"total_orders\"]).round(1)\nresult = result.sort_values(\"cancel_rate_pct\", ascending=False)","3":"done = orders[orders[\"status\"] == \"completed\"].copy()\ndone[\"revenue\"] = done[\"qty\"] * done[\"unit_price\"]\ndone[\"month\"] = done[\"order_date\"].dt.strftime(\"%Y-%m\")\n\nresult = done.groupby(\"month\", as_index=False)[\"revenue\"].sum()\nresult[\"mom_growth_pct\"] = (result[\"revenue\"].pct_change() * 100).round(1)","4":"done = orders[orders[\"status\"] == \"completed\"].copy()\ndone[\"revenue\"] = done[\"qty\"] * done[\"unit_price\"]\n\nby_product = (done.groupby([\"store_id\", \"product\"], as_index=False)[\"revenue\"].sum())\nby_product[\"rnk\"] = (by_product.groupby(\"store_id\")[\"revenue\"]\n                               .rank(method=\"min\", ascending=False))\n\nresult = (by_product[by_product[\"rnk\"] == 1]\n          .merge(stores, on=\"store_id\")[[\"store_name\", \"product\", \"revenue\"]]\n          .sort_values(\"store_name\"))"},"xl":{"1":[["A2:A4","store_id typed or copied from the stores sheet"],["B2","=INDEX(stores!$B$2:$B$4, MATCH(A2, stores!$A$2:$A$4, 0))"],["C2","=SUMIFS(orders!$H$2:$H$91, orders!$C$2:$C$91, A2, orders!$G$2:$G$91, \"completed\")"],["Sort","Data > Sort on column C, largest to smallest"]],"2":[["C2","=COUNTIFS(orders!$C$2:$C$91, A2)"],["D2","=COUNTIFS(orders!$C$2:$C$91, A2, orders!$G$2:$G$91, \"cancelled\")"],["E2","=ROUND(100 * D2 / C2, 1)"],["Sort","Data > Sort on column E, largest to smallest"]],"3":[["A2:A4","1 Jul 2026, 1 Aug 2026, 1 Sep 2026 (first day of each month)"],["B2","=TEXT(A2, \"yyyy-mm\")"],["C2","=SUMIFS(orders!$H$2:$H$91, orders!$G$2:$G$91, \"completed\", orders!$B$2:$B$91, \">=\"&A2, orders!$B$2:$B$91, \"<\"&EDATE(A2, 1))"],["D3","=ROUND(100 * (C3 / C2 - 1), 1)"]],"4":[["C1:G1","Product names typed as column headers"],["C2","=SUMIFS(orders!$H$2:$H$91, orders!$C$2:$C$91, $A2, orders!$D$2:$D$91, C$1, orders!$G$2:$G$91, \"completed\")"],["H2","=INDEX($C$1:$G$1, MATCH(MAX(C2:G2), C2:G2, 0))"],["I2","=MAX(C2:G2)"]]},"res":{"1":{"cols":["store_name","revenue"],"rows":[["Saigon Central",3835000],["Da Nang Beach",3085000],["Hanoi Old Quarter",2895000]]},"2":{"cols":["store_name","total_orders","cancelled","cancel_rate_pct"],"rows":[["Hanoi Old Quarter",33,6,18.2],["Da Nang Beach",24,2,8.3],["Saigon Central",33,1,3.0]]},"3":{"cols":["month","revenue","mom_growth_pct"],"rows":[["2026-07",3300000,null],["2026-08",3055000,-7.4],["2026-09",3460000,13.3]]},"4":{"cols":["store_name","product","revenue"],"rows":[["Da Nang Beach","Cold Brew",1260000],["Hanoi Old Quarter","Croissant",840000],["Saigon Central","Cold Brew",1200000]]}},"pyPlain":{"1":"names = {s[\"store_id\"]: s[\"store_name\"] for s in stores}\n\ntotals = {}\nfor o in orders:\n    if o[\"status\"] == \"completed\":\n        totals[o[\"store_id\"]] = totals.get(o[\"store_id\"], 0) + o[\"qty\"] * o[\"unit_price\"]\n\nresult = [(names[sid], revenue) for sid, revenue in totals.items()]\nresult.sort(key=lambda row: row[1], reverse=True)","2":"names = {s[\"store_id\"]: s[\"store_name\"] for s in stores}\n\ntotal = {}\ncancelled = {}\nfor o in orders:\n    sid = o[\"store_id\"]\n    total[sid] = total.get(sid, 0) + 1\n    if o[\"status\"] == \"cancelled\":\n        cancelled[sid] = cancelled.get(sid, 0) + 1\n\nresult = []\nfor sid in total:\n    c = cancelled.get(sid, 0)\n    result.append((names[sid], total[sid], c, round(100 * c / total[sid], 1)))\nresult.sort(key=lambda row: row[3], reverse=True)","3":"monthly = {}\nfor o in orders:\n    if o[\"status\"] == \"completed\":\n        month = o[\"order_date\"][:7]\n        monthly[month] = monthly.get(month, 0) + o[\"qty\"] * o[\"unit_price\"]\n\nresult = []\nprevious = None\nfor month in sorted(monthly):\n    revenue = monthly[month]\n    growth = None if previous is None else round(100 * (revenue - previous) / previous, 1)\n    result.append((month, revenue, growth))\n    previous = revenue","4":"names = {s[\"store_id\"]: s[\"store_name\"] for s in stores}\n\nrevenue = {}\nfor o in orders:\n    if o[\"status\"] == \"completed\":\n        key = (o[\"store_id\"], o[\"product\"])\n        revenue[key] = revenue.get(key, 0) + o[\"qty\"] * o[\"unit_price\"]\n\nbest = {}\nfor key, value in revenue.items():\n    sid, product = key\n    if sid not in best or value > best[sid][1]:\n        best[sid] = (product, value)\n\nresult = [(names[sid], best[sid][0], best[sid][1]) for sid in best]\nresult.sort()"}};
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var fmt = function (v) { return v === null || v === undefined ? "" : typeof v === "number" ? v.toLocaleString("en-US", { maximumFractionDigits: 4 }) : String(v); };
+  var O = DATA.orders, S = DATA.stores;
+  var OCOLS = ["order_id", "order_date", "store_id", "product", "qty", "unit_price", "status"];
+  var SCOLS = ["store_id", "store_name", "city"];
+  var res = DATA.res;
+  var PRODUCTS = ["Americano", "Cold Brew", "Croissant", "Latte", "Matcha"];
+
+  /* ---------- tables ---------- */
+  function table(cols, rows, o) {
+    o = o || {};
+    var head = cols.map(function (c, i) { return '<th class="' + (o.num && o.num.indexOf(i) > -1 ? "n" : "") + '">' + esc(c) + "</th>"; }).join("");
+    var body = rows.map(function (r) {
+      return "<tr>" + r.map(function (v, i) {
+        var isNum = typeof v === "number";
+        return '<td class="' + (isNum ? "n" : "") + '">' + (v === null || v === undefined ? '<span class="nul">NULL</span>' : esc(isNum ? fmt(v) : v)) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+  }
+  var textRows = O.map(function (r) { return r.map(function (v, i) { return i === 0 || i === 2 ? String(v) : v; }); });
+  document.getElementById("schema-orders").innerHTML = OCOLS.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  document.getElementById("schema-stores").innerHTML = SCOLS.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  document.getElementById("orders-prev").innerHTML = table(OCOLS, textRows.slice(0, 6), { num: [4, 5] });
+  document.getElementById("orders-all").innerHTML = table(OCOLS, textRows, { num: [4, 5] });
+  document.getElementById("stores-tab").innerHTML = table(SCOLS, S.map(function (r) { return [String(r[0]), r[1], r[2]]; }));
+
+  /* ---------- copy helper ---------- */
+  function copyText(btn, text) {
+    var label = btn.getAttribute("data-label") || btn.textContent;
+    btn.setAttribute("data-label", label);
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = label; }, 1500); };
+    var fail = function () {
+      var zone = btn.closest("[data-zone]") || btn.parentNode;
+      var ta = zone.querySelector("textarea.fb");
+      if (!ta) { ta = document.createElement("textarea"); ta.className = "fb"; ta.readOnly = true; ta.setAttribute("aria-label", "Text to copy"); zone.appendChild(ta); }
+      ta.value = text; ta.hidden = false; ta.focus(); ta.select();
+      btn.textContent = "Press Ctrl+C"; setTimeout(function () { btn.textContent = label; }, 2500);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail);
+      else fail();
+    } catch (e) { fail(); }
+  }
+  var copyStore = {};
+  var copyBtn = function (key, text, label) { copyStore[key] = text; return '<button class="btn sm" data-copy="' + key + '">' + esc(label || "Copy") + "</button>"; };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy]"); if (!b) return;
+    copyText(b, copyStore[b.getAttribute("data-copy")]);
+  });
+
+  /* ---------- setup texts (own tools) ---------- */
+  var tsv = [OCOLS.join("\t")].concat(O.map(function (r) { return r.join("\t"); })).join("\n");
+  var tsvStores = [SCOLS.join("\t")].concat(S.map(function (r) { return r.join("\t"); })).join("\n");
+  var csv = [OCOLS.join(",")].concat(O.map(function (r) { return r.join(","); })).join("\n");
+  var csvStores = [SCOLS.join(",")].concat(S.map(function (r) { return r.join(","); })).join("\n");
+  var q = function (v) { return typeof v === "number" ? String(v) : "'" + String(v).replace(/'/g, "''") + "'"; };
+  var SQL_SETUP =
+    "CREATE TABLE stores (store_id INTEGER, store_name TEXT, city TEXT);\n" +
+    "INSERT INTO stores VALUES\n" + S.map(function (r) { return "  (" + r.map(q).join(", ") + ")"; }).join(",\n") + ";\n\n" +
+    "CREATE TABLE orders (order_id INTEGER, order_date DATE, store_id INTEGER, product TEXT, qty INTEGER, unit_price INTEGER, status TEXT);\n" +
+    "INSERT INTO orders VALUES\n" + O.map(function (r) { return "  (" + r.map(q).join(", ") + ")"; }).join(",\n") + ";";
+  var pySetup =
+    "import io\nimport pandas as pd\n\n" +
+    'orders = pd.read_csv(io.StringIO("""\n' + csv + '\n"""), parse_dates=["order_date"])\n\n' +
+    'stores = pd.read_csv(io.StringIO("""\n' + csvStores + '\n"""))\n\n' +
+    "print(orders.shape, stores.shape)   # (90, 7) (3, 3)";
+  var setupTabs = {
+    xl: function () {
+      return '<ol class="steps"><li>Create a sheet named <code>orders</code>, click A1 and paste. ' + copyBtn("x-orders", tsv, "Copy orders for Excel") + "</li>" +
+        "<li>Check that column B holds real dates (right-aligned). If they are left-aligned text, use Data &gt; Text to Columns &gt; Finish.</li>" +
+        "<li>Type <code>line_total</code> in H1 and <code>=E2*F2</code> in H2, then fill down to H91.</li>" +
+        "<li>Create a sheet named <code>stores</code>, click A1 and paste. " + copyBtn("x-stores", tsvStores, "Copy stores for Excel") + "</li></ol>";
+    },
+    sql: function () {
+      return '<ol class="steps"><li>Open any SQLite, DuckDB or PostgreSQL tool.</li>' +
+        "<li>Run this script. It creates both tables and inserts all rows. " + copyBtn("s-sql", SQL_SETUP, "Copy SQL setup") + "</li>" +
+        "<li>The solutions use SQLite's <code>strftime</code>. In PostgreSQL write <code>to_char(order_date, 'YYYY-MM')</code>.</li></ol>";
+    },
+    py: function () {
+      return '<ol class="steps"><li>Install pandas if needed: <code>pip install pandas</code>.</li>' +
+        "<li>Paste this into a notebook or script. It builds <code>orders</code> and <code>stores</code> DataFrames. " + copyBtn("p-py", pySetup, "Copy pandas setup") + "</li>" +
+        "<li>The pandas solutions in each task end with a variable named <code>result</code>.</li></ol>";
+    }
+  };
+  function renderSetup(t) {
+    document.querySelectorAll("#setup-tabs .tab").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-t") === t)); });
+    document.getElementById("setup-body").innerHTML = setupTabs[t]();
+  }
+  document.getElementById("setup-tabs").addEventListener("click", function (e) { var b = e.target.closest(".tab"); if (b) renderSetup(b.getAttribute("data-t")); });
+  renderSetup("xl");
+
+  /* ---------- result comparison ---------- */
+  function valEq(a, b) {
+    if (typeof a === "number" && typeof b === "number") return Number.isInteger(a) && Number.isInteger(b) ? a === b : Math.abs(a - b) <= 0.051;
+    return a === b;
+  }
+  function rowMatches(actual, expected) {
+    var pool = actual.slice();
+    for (var i = 0; i < expected.length; i++) {
+      var ev = expected[i]; if (ev === null) continue;
+      var k = -1;
+      for (var j = 0; j < pool.length; j++) if (valEq(pool[j], ev)) { k = j; break; }
+      if (k < 0) return false;
+      pool.splice(k, 1);
+    }
+    return true;
+  }
+  function compareResult(expected, actual) {
+    var used = {}, matched = 0, order = [];
+    expected.forEach(function (e) {
+      for (var i = 0; i < actual.length; i++) if (!used[i] && rowMatches(actual[i], e)) { used[i] = true; matched++; order.push(i); return; }
+    });
+    var inOrder = order.every(function (v, i) { return i === 0 || order[i - 1] < v; });
+    return { matched: matched, total: expected.length, actualRows: actual.length, ok: matched === expected.length && actual.length === expected.length, inOrder: inOrder };
+  }
+
+  /* ---------- tasks ---------- */
+  var storeName = {}; S.forEach(function (s) { storeName[s[0]] = s[1]; });
+  var rev = function (r) { return r[4] * r[5]; };
+  var inclRev = {}; O.forEach(function (r) { inclRev[r[2]] = (inclRev[r[2]] || 0) + rev(r); });
+  var ratioWrong = {}; (function () { var c = {}, d = {}; O.forEach(function (r) { if (r[6] === "cancelled") c[r[2]] = (c[r[2]] || 0) + 1; else d[r[2]] = (d[r[2]] || 0) + 1; }); Object.keys(d).forEach(function (k) { ratioWrong[k] = Math.round(1000 * (c[k] || 0) / d[k]) / 10; }); })();
+  var sepAll = (function () { var m = {}; O.forEach(function (r) { var k = r[1].slice(0, 7); m[k] = (m[k] || 0) + rev(r); }); return Math.round(1000 * (m["2026-09"] / m["2026-08"] - 1)) / 10; })();
+  var qtyTop = (function () { var out = {}; S.forEach(function (s) { var t = {}; O.forEach(function (r) { if (r[2] === s[0] && r[6] === "completed") t[r[3]] = (t[r[3]] || 0) + r[4]; }); out[s[1]] = Object.keys(t).sort(function (a, b) { return t[b] - t[a]; })[0]; }); return out; })();
+  var flatVals = function (rows) { var v = []; rows.forEach(function (r) { r.forEach(function (x) { v.push(x); }); }); return v; };
+  var hasNum = function (vals, n) { return vals.some(function (x) { return typeof x === "number" && Math.abs(x - n) < 0.051; }); };
+
+  var LAST = O.length + 1;
+  var OR = function (c) { return "orders!$" + c + "$2:$" + c + "$" + LAST; };
+  var IDX = "=INDEX(stores!$B$2:$B$4,MATCH(A2,stores!$A$2:$A$4,0))";
+  var d = function (s) { return { d: s }; };
+
+  var TASKS = [
+    {
+      lv: "Warm-up", title: "Revenue per store", skills: "filter, join, group, sum",
+      q: "Which store earned the most revenue, and how much did each store earn? Rank the stores from highest to lowest.",
+      out: "store_name, revenue", order: "highest revenue first",
+      slip: function (vals) { var hit = Object.keys(inclRev).some(function (k) { return hasNum(vals, inclRev[k]); }); return hit ? "One figure counts cancelled orders too. Only completed orders earn revenue." : null; },
+      check: { label: "Revenue of the top store (VND)", kind: "num", answer: res["1"].rows[0][1], tol: 0.5, placeholder: "e.g. 1500000" },
+      hints: [
+        "Think in sets: first the set of completed orders, then one total per store.",
+        "SQL: WHERE, JOIN and GROUP BY. Python: a dict of totals filled in a loop. Excel: SUMIFS with two criteria, one row per store.",
+        "Revenue is qty × unit_price. Calculate it per order first (in Excel the orders sheet already has it in column H), then add it up per store."
+      ],
+      think: {
+        sql: "WHERE removes cancelled orders before grouping. JOIN brings in the store name. The query reads as a description of the result table.",
+        py: "You keep a dictionary of running totals and update it as you visit each order. The loop spells out what GROUP BY does for you.",
+        xl: "You decide the groups by typing the three store ids into rows. SUMIFS then answers one cell at a time, and the criteria are visible as arguments."
+      },
+      xl: {
+        rows: 4, ncols: 3, rightLimit: 3, cols: [2, 3],
+        pre: [["store_id", "store_name", "revenue"], [1], [2], [3]],
+        sol: [["B2", IDX, "down"], ["C2", '=SUMIFS(' + OR("H") + ',' + OR("C") + ',A2,' + OR("G") + ',"completed")', "down"]]
+      }
+    },
+    {
+      lv: "Core", title: "Cancel rate per store", skills: "conditional aggregation",
+      q: "For each store, what percentage of its orders were cancelled? Round to one decimal place.",
+      out: "store_name, total_orders, cancelled, cancel_rate_pct", order: "highest rate first",
+      slip: function (vals) {
+        var hit = Object.keys(ratioWrong).some(function (k) { return hasNum(vals, ratioWrong[k]) && !hasNum(vals, res["2"].rows.filter(function (r) { return r[0] === storeName[k]; })[0][3]); });
+        if (hit) return "A rate looks like cancelled ÷ completed. The denominator should be all orders of the store.";
+        var frac = vals.some(function (x) { return typeof x === "number" && x > 0 && x < 1; });
+        return frac ? "Give the rate as a percentage, so multiply the fraction by 100." : null;
+      },
+      check: { label: "Cancel rate of Hanoi Old Quarter (%)", kind: "num", answer: res["2"].rows[0][3], tol: 0.05, placeholder: "e.g. 12.5" },
+      hints: [
+        "This time cancelled orders are part of the data you need. Do not filter them out. Count all orders and count the cancelled ones.",
+        "SQL: a CASE expression inside SUM turns each row into 1 or 0. Python: two dicts or counters. Excel: COUNTIFS with and without the status criterion.",
+        "Rate = 100 × cancelled ÷ total_orders, then round to one decimal."
+      ],
+      think: {
+        sql: "SUM(CASE WHEN ... THEN 1 ELSE 0 END) converts a condition into a number so a single GROUP BY pass produces both counts.",
+        py: "Two counters per store are updated in the same loop. You must handle a store that has no cancellations yet, which SQL does without being asked.",
+        xl: "Two COUNTIFS cells sit side by side and a third divides them. Nothing is hidden, so you can spot a wrong denominator by looking."
+      },
+      xl: {
+        rows: 4, ncols: 5, rightLimit: 5, cols: [2, 3, 4, 5],
+        pre: [["store_id", "store_name", "total_orders", "cancelled", "cancel_rate_pct"], [1], [2], [3]],
+        sol: [["B2", IDX, "down"], ["C2", "=COUNTIFS(" + OR("C") + ",A2)", "down"], ["D2", '=COUNTIFS(' + OR("C") + ',A2,' + OR("G") + ',"cancelled")', "down"], ["E2", "=ROUND(100*D2/C2,1)", "down"]]
+      }
+    },
+    {
+      lv: "Core", title: "Monthly growth", skills: "dates, previous row",
+      q: "What was total revenue in July, August and September, and how much did it grow or shrink compared with the month before?",
+      out: "month, revenue, mom_growth_pct", order: "by month (July has no previous month, so its growth is empty)",
+      slip: function (vals) { return hasNum(vals, sepAll) && !hasNum(vals, res["3"].rows[2][2]) ? "That growth uses all orders. Remove cancelled orders before adding up each month." : null; },
+      check: { label: "September growth vs August (%)", kind: "num", answer: res["3"].rows[2][2], tol: 0.05, placeholder: "e.g. 5.0" },
+      hints: [
+        "Two sets of work: reduce the orders to one number per month, then compare each month with the one before it.",
+        "SQL: strftime for the month, GROUP BY, then LAG() OVER (ORDER BY month). Python: slice the date text, add to a dict, then loop over sorted months. Excel: SUMIFS with a start date and an end date, then the cell above.",
+        "Growth % = 100 × (this month ÷ last month − 1). In Excel the month start dates are in column A, and EDATE(A2, 1) gives the next month."
+      ],
+      think: {
+        sql: "LAG() looks at the previous row in an order you declare. There is no counter or saved variable, only a statement about neighbours.",
+        py: "A variable named previous carries state from one loop pass to the next. The sort order matters, so the months must be visited in order.",
+        xl: "You type the month list yourself and growth refers to the cell above (C3 / C2). A new month means a new row and a copied formula."
+      },
+      xl: {
+        rows: 4, ncols: 4, rightLimit: 4, cols: [2, 3, 4],
+        pre: [["month_start", "month", "revenue", "mom_growth_pct"], [d("2026-07-01")], [d("2026-08-01")], [d("2026-09-01")]],
+        sol: [["B2", '=TEXT(A2,"yyyy-mm")', "down"], ["C2", '=SUMIFS(' + OR("H") + ',' + OR("G") + ',"completed",' + OR("B") + ',">="&A2,' + OR("B") + ',"<"&EDATE(A2,1))', "down"], ["D3", "=ROUND(100*(C3/C2-1),1)", "down"]]
+      }
+    },
+    {
+      lv: "Stretch", title: "Top product per store", skills: "rank within group, ties",
+      q: "Which product earns the most revenue in each store?",
+      out: "store_name, product, revenue", order: "alphabetical by store name",
+      slip: function (vals) {
+        var wrong = Object.keys(qtyTop).some(function (k) { var exp = res["4"].rows.filter(function (r) { return r[0] === k; })[0][1]; return qtyTop[k] !== exp && vals.indexOf(qtyTop[k]) > -1; });
+        return wrong ? "A product shown sells the most units in its store, but the question asks about revenue." : null;
+      },
+      check: { label: "Top product at Hanoi Old Quarter", kind: "select", answer: res["4"].rows[1][1] },
+      hints: [
+        "You need a grouped result inside a group: revenue per store and product first, then the best product within each store.",
+        "SQL: RANK() OVER (PARTITION BY store_id ORDER BY revenue DESC), then keep rank 1. Python: totals per (store, product), then keep the best so far per store. Excel: a grid of stores by products using SUMIFS, then INDEX and MATCH on the row maximum.",
+        "Check for ties. RANK() keeps both tied products, while MATCH returns only the first one. In this data there is no tie."
+      ],
+      think: {
+        sql: "PARTITION BY restarts the ranking for every store, so one query ranks all stores at once. Filtering on rank = 1 happens in an outer query.",
+        py: "A dictionary keyed by (store, product) holds the totals. A second loop keeps the best product seen so far for each store.",
+        xl: "The grid shows every store and product total, so you see the runner-up too. It scales sideways: a sixth product means a new column and copied formulas."
+      },
+      xl: {
+        rows: 4, ncols: 9, rightLimit: 7, cols: [2, 8, 9],
+        pre: [["store_id", "store_name"].concat(PRODUCTS).concat(["top_product", "top_revenue"]), [1], [2], [3]],
+        sol: [["B2", IDX, "down"], ["C2", '=SUMIFS(' + OR("H") + ',' + OR("C") + ',$A2,' + OR("D") + ',C$1,' + OR("G") + ',"completed")', "both"], ["H2", "=INDEX($C$1:$G$1,MATCH(MAX(C2:G2),C2:G2,0))", "down"], ["I2", "=MAX(C2:G2)", "down"]]
+      }
+    }
+  ];
+
+  var ORDERS_PY = O.map(function (r) { var o = {}; OCOLS.forEach(function (c, i) { o[c] = r[i]; }); return o; });
+  var STORES_PY = S.map(function (r) { var o = {}; SCOLS.forEach(function (c, i) { o[c] = r[i]; }); return o; });
+
+  var starters = {
+    sql: function (t) { return "-- Tables: orders, stores\n-- Return these columns: " + t.out + " (" + t.order + ")\n\n"; },
+    py: function (t) {
+      return "# Ready to use:\n#   orders - list of dicts: order_id, order_date (\"2026-07-01\"), store_id, product, qty, unit_price, status\n#   stores - list of dicts: store_id, store_name, city\n" +
+        "# Finish with:  result = [ (...), (...) ]   one tuple per row with: " + t.out + "\n# Order: " + t.order + "\n\n";
+    }
+  };
+  var state = TASKS.map(function (t) {
+    return { tool: "sql", sql: starters.sql(t), py: starters.py(t), cells: {}, sel: "B2", verdict: { sql: null, py: null, xl: null }, solved: { sql: false, py: false, xl: false }, hints: 0, reveal: false, solTab: "sql", out: { sql: null, py: null }, typed: null };
+  });
+  var cur = 0;
+  var cards = document.getElementById("cards"), taskEl = document.getElementById("task");
+
+  /* ---------- SQL engine (sql.js, loaded on demand) ---------- */
+  var sqlEngine = { status: "idle", SQL: null, error: "" };
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script"); s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("Could not load " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensureSql() {
+    if (sqlEngine.status !== "idle") return;
+    sqlEngine.status = "loading"; paintSqlStatus();
+    loadScript("https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/sql-asm.js")
+      .then(function () { return window.initSqlJs(); })
+      .then(function (SQL) { sqlEngine.SQL = SQL; sqlEngine.status = "ready"; paintSqlStatus(); })
+      .catch(function (e) { sqlEngine.status = "failed"; sqlEngine.error = String(e && e.message || e); paintSqlStatus(); });
+  }
+  function paintSqlStatus() {
+    var el = document.getElementById("sql-status"), btn = document.getElementById("run-sql");
+    if (!el) return;
+    var st = sqlEngine.status;
+    el.className = "status" + (st === "failed" ? " bad" : "");
+    el.textContent = st === "ready" ? "SQL engine ready (SQLite). Press Ctrl+Enter or Cmd+Enter to run." : st === "failed" ? "The SQL engine could not be loaded (" + sqlEngine.error + "). Copy the data into your own SQL tool from the section above." : "Loading the SQL engine, about 1 MB...";
+    document.querySelectorAll(".needs-sql").forEach(function (b) { b.disabled = st !== "ready"; });
+  }
+
+  /* ---------- verdicts ---------- */
+  function setVerdict(tool, cmp, vals, extra) {
+    var T = TASKS[cur], st = state[cur], html, cls;
+    if (cmp.ok) {
+      cls = "ok"; html = "<b>Matches.</b><span>Your result equals the expected result." + (cmp.inOrder || tool === "xl" ? "" : " The rows are in a different order than asked (" + esc(T.order) + ").") + "</span>";
+      if (!st.solved[tool]) { st.solved[tool] = true; renderCards(); paintTabs(); paintTitleStatus(); }
+    } else {
+      var slip = T.slip(vals);
+      if (cmp.matched > 0) { cls = "part"; html = "<b>Close.</b><span>" + cmp.matched + " of " + cmp.total + " expected rows found" + (cmp.actualRows !== cmp.total ? ", and your result has " + cmp.actualRows + " rows" : "") + "." + (slip ? " " + esc(slip) : " Check the rows that are missing.") + "</span>"; }
+      else { cls = "bad"; html = "<b>Not yet.</b><span>No expected rows found." + (slip ? " " + esc(slip) : " Compare your numbers with the task: which orders count, and how are they grouped?") + "</span>"; }
+    }
+    st.verdict[tool] = { cls: cls, html: html };
+    var el = document.getElementById("verdict"); if (el) { el.className = "verdict " + cls; el.innerHTML = html; el.hidden = false; }
+  }
+  function toRowsFromJS(v) {
+    if (!Array.isArray(v)) return [[v]];
+    if (v.length && !Array.isArray(v[0])) return v.map(function (x) { return [x]; });
+    return v;
+  }
+
+  /* ---------- run SQL ---------- */
+  function runSql() {
+    var st = state[cur], box = document.getElementById("sql-out"), vd = document.getElementById("verdict");
+    if (sqlEngine.status !== "ready") return;
+    var db = null, r;
+    vd.hidden = true;
+    try {
+      db = new sqlEngine.SQL.Database(); db.exec(SQL_SETUP);
+      r = db.exec(st.sql);
+    } catch (e) { box.innerHTML = '<div class="errbox">' + esc(e && e.message ? e.message : String(e)) + "</div>"; st.out.sql = null; if (db) db.close(); return; }
+    db.close();
+    if (!r.length) { box.innerHTML = '<div class="note">The statement ran but returned no rows. Use SELECT to return a result.</div>'; return; }
+    var last = r[r.length - 1], rows = last.values;
+    box.innerHTML = '<div class="res-title">Your result (' + rows.length + " row" + (rows.length === 1 ? "" : "s") + ')</div><div class="tw tall">' + table(last.columns, rows.slice(0, 200), { num: last.columns.map(function (c, i) { return typeof (rows[0] || [])[i] === "number" ? i : -1; }).filter(function (i) { return i > -1; }) }) + "</div>";
+    setVerdict("sql", compareResult(res[String(cur + 1)].rows, rows), flatVals(rows));
+  }
+  function peek(tab) {
+    var box = document.getElementById("sql-out"), db;
+    try { db = new sqlEngine.SQL.Database(); db.exec(SQL_SETUP); var r = db.exec("SELECT * FROM " + tab + " LIMIT 8")[0]; db.close();
+      box.innerHTML = '<div class="res-title">First rows of ' + tab + '</div><div class="tw">' + table(r.columns, r.values) + "</div>"; document.getElementById("verdict").hidden = true;
+    } catch (e) { box.innerHTML = '<div class="errbox">' + esc(String(e && e.message || e)) + "</div>"; }
+  }
+
+  /* ---------- run Python ---------- */
+  function runPy() {
+    var st = state[cur], box = document.getElementById("py-out"), vd = document.getElementById("verdict");
+    vd.hidden = true;
+    var r;
+    try { r = MiniPy.run(st.py, { orders: ORDERS_PY, stores: STORES_PY }); }
+    catch (e) { box.innerHTML = '<div class="errbox">' + esc(MiniPy.describe(e)) + "</div>"; return; }
+    var html = r.out ? '<div class="res-title">Printed output</div><div class="outbox">' + esc(r.out) + "</div>" : "";
+    if (!r.scope.vars.has("result")) {
+      box.innerHTML = html + '<div class="note">Your code ran, but it did not create a variable named <code>result</code>. End with <code>result = [...]</code>, one tuple per row.</div>'; return;
+    }
+    var rows = toRowsFromJS(MiniPy.toJS(r.scope.vars.get("result")));
+    var width = rows.reduce(function (m, x) { return Math.max(m, Array.isArray(x) ? x.length : 1); }, 0);
+    var cols = []; for (var i = 0; i < width; i++) cols.push("col " + (i + 1));
+    rows = rows.map(function (x) { return Array.isArray(x) ? x : [x]; });
+    box.innerHTML = html + '<div class="res-title">Your result (' + rows.length + " row" + (rows.length === 1 ? "" : "s") + ')</div><div class="tw tall">' + table(cols, rows.slice(0, 200), { num: cols.map(function (c, i) { return typeof (rows[0] || [])[i] === "number" ? i : -1; }).filter(function (i) { return i > -1; }) }) + "</div>";
+    setVerdict("py", compareResult(res[String(cur + 1)].rows, rows), flatVals(rows));
+  }
+
+  /* ---------- Excel ---------- */
+  var XWB = null;
+  function xlBase() {
+    if (XWB) return;
+    XWB = new MiniXL.Workbook(); XWB.addSheet("orders"); XWB.addSheet("stores");
+    ["order_id", "order_date", "store_id", "product", "qty", "unit_price", "status", "line_total"].forEach(function (h, i) { XWB.setCell("orders", { r: 1, c: i + 1 }, { raw: h }); });
+    O.forEach(function (r, i) {
+      var row = i + 2, m = /(\d+)-(\d+)-(\d+)/.exec(r[1]);
+      XWB.setCell("orders", { r: row, c: 1 }, { raw: r[0] });
+      XWB.setCell("orders", { r: row, c: 2 }, { raw: MiniXL.toSerial(+m[1], +m[2], +m[3]), fmt: "date" });
+      for (var c = 2; c < 7; c++) XWB.setCell("orders", { r: row, c: c + 1 }, { raw: r[c] });
+      XWB.setCell("orders", { r: row, c: 8 }, { raw: "=E" + row + "*F" + row });
+    });
+    SCOLS.forEach(function (h, i) { XWB.setCell("stores", { r: 1, c: i + 1 }, { raw: h }); });
+    S.forEach(function (r, i) { r.forEach(function (v, j) { XWB.setCell("stores", { r: i + 2, c: j + 1 }, { raw: v }); }); });
+  }
+  function xlLocked(cfg) {
+    var set = {};
+    cfg.pre.forEach(function (row, ri) { row.forEach(function (v, ci) { if (v !== undefined && v !== null) set[MiniXL.addr(ri + 1, ci + 1)] = v; }); });
+    return set;
+  }
+  function xlSheet() {
+    xlBase();
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg);
+    XWB.addSheet("ans");
+    Object.keys(locked).forEach(function (a) {
+      var v = locked[a], pa = MiniXL.parseAddr(a);
+      XWB.setCell("ans", pa, typeof v === "object" ? { raw: MiniXL.parseInput(v.d).raw, fmt: "date" } : { raw: v });
+    });
+    Object.keys(st.cells).forEach(function (a) {
+      var inp = MiniXL.parseInput(st.cells[a]); if (inp) XWB.setCell("ans", MiniXL.parseAddr(a), inp);
+    });
+    return locked;
+  }
+  function xlLockedText(v) { return typeof v === "object" ? v.d : String(v); }
+  function xlCellInfo(a, locked, r) {
+    var st = state[cur], err = XWB.error("ans", a), val = XWB.value("ans", r.r, r.c);
+    return {
+      cls: (locked[a] !== undefined ? "lock " : "") + (r.r === 1 ? "hdr " : "") + (st.cells[a] ? "filled " : "") + (typeof val === "number" ? "num " : "") + (err ? "err " : "") + (st.sel === a ? "sel" : ""),
+      text: XWB.display("ans", a), title: err ? (err.msg || err.code) : ""
+    };
+  }
+  function renderXlGrid() {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlSheet(), grid = document.getElementById("xl-grid");
+    var tbl = grid.querySelector("table.xgrid");
+    if (tbl && tbl.getAttribute("data-task") === String(cur)) {
+      tbl.querySelectorAll("td[data-addr]").forEach(function (td) {
+        var a = td.getAttribute("data-addr"), p = MiniXL.parseAddr(a), info = xlCellInfo(a, locked, { r: p.r, c: p.c });
+        td.className = info.cls; if (td.textContent !== info.text) td.textContent = info.text;
+        if (info.title) td.setAttribute("title", info.title); else td.removeAttribute("title");
+      });
+    } else {
+      var head = '<th class="rn"></th>', r, c;
+      for (c = 1; c <= cfg.ncols; c++) head += "<th>" + MiniXL.colName(c) + "</th>";
+      var body = "";
+      for (r = 1; r <= cfg.rows; r++) {
+        body += '<tr><th class="rn">' + r + "</th>";
+        for (c = 1; c <= cfg.ncols; c++) {
+          var a2 = MiniXL.addr(r, c), info2 = xlCellInfo(a2, locked, { r: r, c: c });
+          body += '<td class="' + info2.cls + '" data-addr="' + a2 + '" tabindex="-1"' + (info2.title ? ' title="' + esc(info2.title) + '"' : "") + ">" + esc(info2.text) + "</td>";
+        }
+        body += "</tr>";
+      }
+      grid.innerHTML = '<table class="xgrid" data-task="' + cur + '"><thead><tr>' + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+    }
+    paintFormulaBar();
+    var e = XWB.error("ans", st.sel), msg = document.getElementById("xl-msg");
+    msg.textContent = e ? e.code + (e.msg ? ": " + e.msg : "") : "";
+    msg.className = "status" + (e ? " bad" : "");
+    xlVerdict();
+  }
+  function paintFormulaBar() {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg), a = st.sel, inp = document.getElementById("fx-input");
+    document.getElementById("fx-name").textContent = a;
+    var isLocked = locked[a] !== undefined;
+    inp.readOnly = isLocked;
+    inp.value = isLocked ? xlLockedText(locked[a]) : (st.cells[a] || "");
+    inp.placeholder = isLocked ? "" : "Type a value or a formula, then press Enter";
+  }
+  function xlVerdict() {
+    var cfg = TASKS[cur].xl, st = state[cur], rows = [], anyErr = null, filled = Object.keys(st.cells).length;
+    var el = document.getElementById("verdict");
+    if (!filled) { el.hidden = true; return; }
+    for (var r = 2; r <= cfg.rows; r++) {
+      var row = [];
+      cfg.cols.forEach(function (c) {
+        var v = XWB.value("ans", r, c);
+        if (MiniXL.isErr(v)) { anyErr = anyErr || v; row.push(null); } else row.push(v);
+      });
+      rows.push(row);
+    }
+    if (anyErr) { el.className = "verdict bad"; el.innerHTML = "<b>Check your formulas.</b><span>At least one cell shows an error (" + esc(anyErr.code) + "). Click a red cell to read the message.</span>"; el.hidden = false; return; }
+    setVerdict("xl", compareResult(res[String(cur + 1)].rows, rows.filter(function (row) { return row.some(function (x) { return x !== null; }); })), flatVals(rows));
+  }
+  function xlFill(mode) {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg), a = MiniXL.parseAddr(st.sel), text = st.cells[st.sel];
+    if (!text) return;
+    var endC = mode === "down" ? a.c : Math.max(a.c, cfg.rightLimit), endR = mode === "right" ? a.r : cfg.rows;
+    for (var r = a.r; r <= endR; r++) for (var c = a.c; c <= endC; c++) {
+      if (r === a.r && c === a.c) continue;
+      var t = MiniXL.addr(r, c); if (locked[t] !== undefined) continue;
+      st.cells[t] = MiniXL.shiftFormula(text, r - a.r, c - a.c);
+    }
+    renderXlGrid();
+  }
+  function xlLoadSolution() {
+    var cfg = TASKS[cur].xl, st = state[cur];
+    st.cells = {};
+    cfg.sol.forEach(function (s) { st.cells[s[0]] = s[1]; st.sel = s[0]; if (s[2] === "down") xlFill("down"); else if (s[2] === "both") xlFill("both"); });
+    st.sel = "B2"; renderXlGrid();
+  }
+  function xlCommit(text) {
+    var st = state[cur], locked = xlLocked(TASKS[cur].xl);
+    if (locked[st.sel] !== undefined) return;
+    if (text.trim() === "") delete st.cells[st.sel]; else st.cells[st.sel] = text;
+  }
+  function xlMove(dr, dc) {
+    var cfg = TASKS[cur].xl, st = state[cur], a = MiniXL.parseAddr(st.sel);
+    var r = Math.min(cfg.rows, Math.max(1, a.r + dr)), c = Math.min(cfg.ncols, Math.max(1, a.c + dc));
+    st.sel = MiniXL.addr(r, c);
+  }
+  function ordersSheetHtml() {
+    xlBase();
+    var cols = ["A", "B", "C", "D", "E", "F", "G", "H"], head = '<th class="rn"></th>' + cols.map(function (c) { return "<th>" + c + "</th>"; }).join("");
+    var body = "";
+    for (var r = 1; r <= LAST; r++) {
+      body += '<tr><td class="rn">' + r + "</td>";
+      for (var c = 1; c <= 8; c++) { var v = XWB.value("orders", r, c); body += '<td class="' + (typeof v === "number" && !(c === 2) ? "n" : "") + '">' + esc(XWB.display("orders", { r: r, c: c })) + "</td>"; }
+      body += "</tr>";
+    }
+    return '<div class="tw tall"><table class="orders-sheet"><thead><tr>' + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+  }
+
+  /* ---------- workspace rendering ---------- */
+  function wsHtml(tool) {
+    var st = state[cur], T = TASKS[cur];
+    if (tool === "sql") {
+      return '<div class="ws sql">' +
+        '<textarea class="editor" id="ed-sql" data-ed="sql" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="SQL editor">' + esc(st.sql) + "</textarea>" +
+        '<div class="copyrow"><button class="btn run-sql needs-sql" id="run-sql" data-act="run-sql" disabled>Run query</button>' +
+        '<button class="btn sm needs-sql" data-act="peek" data-t="orders" disabled>Peek at orders</button><button class="btn sm needs-sql" data-act="peek" data-t="stores" disabled>Peek at stores</button>' +
+        '<button class="btn sm" data-act="reset-sql">Reset</button></div>' +
+        '<div class="status" id="sql-status"></div><div id="sql-out"></div></div>';
+    }
+    if (tool === "py") {
+      return '<div class="ws py">' +
+        '<textarea class="editor" id="ed-py" data-ed="py" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Python editor">' + esc(st.py) + "</textarea>" +
+        '<div class="copyrow"><button class="btn run-py" data-act="run-py">Run code</button><button class="btn sm" data-act="reset-py">Reset</button></div>' +
+        '<div class="status">Ctrl+Enter or Cmd+Enter runs the code. Tab inserts spaces; press Esc, then Tab, to leave the editor. Supported: loops, if, def, lambda, dicts, lists, tuples, sets, comprehensions, f-strings, sorted, round, sum, min, max, enumerate, zip, math, collections.</div>' +
+        '<div id="py-out"></div></div>';
+    }
+    return '<div class="ws xl">' +
+      '<p class="xl-note">Work area: the <b>answer</b> sheet below. Click a cell, type a value or formula in the formula bar and press Enter. Formulas can read the <code>orders</code> sheet (A1:H' + LAST + ', column H is line_total = qty × unit_price) and the <code>stores</code> sheet (A1:C4). Grey cells are given.</p>' +
+      '<div class="fbar"><span class="nm" id="fx-name">B2</span><span class="fx">fx</span><input id="fx-input" type="text" autocomplete="off" spellcheck="false" aria-label="Formula bar"></div>' +
+      '<div class="tw" id="xl-grid"></div>' +
+      '<div class="status" id="xl-msg" role="status" aria-live="polite"></div>' +
+      '<div class="fillrow"><button class="btn sm" data-act="fill" data-m="down">Fill down ↓</button><button class="btn sm" data-act="fill" data-m="right">Fill right →</button><button class="btn sm" data-act="fill" data-m="both">Fill down and right</button><button class="btn sm" data-act="xl-clear">Clear my cells</button></div>' +
+      '<span class="xl-note">Fill copies the selected cell\'s formula into the cells below or beside it and shifts the references, except those with a $ sign.</span>' +
+      '<details><summary>Look at the orders sheet (A1:H' + LAST + ')</summary><div style="margin-top:8px">' + ordersSheetHtml() + "</div></details></div>";
+  }
+  function paintTabs() {
+    var st = state[cur];
+    document.querySelectorAll("#tool-tabs .tab").forEach(function (b) {
+      var t = b.getAttribute("data-tool");
+      b.setAttribute("aria-selected", String(st.tool === t));
+      var ok = b.querySelector(".ok"); if (ok) ok.textContent = st.solved[t] ? "✓" : "";
+    });
+  }
+  function paintTitleStatus() {
+    var st = state[cur], n = (st.solved.sql ? 1 : 0) + (st.solved.py ? 1 : 0) + (st.solved.xl ? 1 : 0), el = document.getElementById("solved-line");
+    if (el) el.textContent = n === 0 ? "Not solved yet" : n === 3 ? "Solved in all three tools. Compare the approaches below." : "Solved in " + n + " of 3 tools";
+  }
+  function renderWs() {
+    var st = state[cur];
+    document.getElementById("ws").innerHTML = wsHtml(st.tool);
+    var vd = document.getElementById("verdict"); vd.hidden = true;
+    if (st.tool === "sql") { ensureSql(); paintSqlStatus(); }
+    if (st.tool === "xl") renderXlGrid();
+    var saved = st.verdict[st.tool];
+    if (saved && st.tool !== "xl") { vd.className = "verdict " + saved.cls; vd.innerHTML = saved.html; vd.hidden = false; }
+    paintTabs();
+  }
+  function renderCards() {
+    cards.innerHTML = TASKS.map(function (t, i) {
+      var s = state[i].solved;
+      return '<button class="tcard" role="tab" data-i="' + i + '" aria-selected="' + (i === cur) + '"><span class="lv">Task ' + (i + 1) + " · " + t.lv + '</span><span class="ttl">' + esc(t.title) + '</span><span class="sk">' + esc(t.skills) + '</span><span class="pips" aria-label="Solved in"><i class="pip sql ' + (s.sql ? "on" : "") + '"></i><i class="pip py ' + (s.py ? "on" : "") + '"></i><i class="pip xl ' + (s.xl ? "on" : "") + '"></i></span></button>';
+    }).join("");
+  }
+  function solutionHtml() {
+    var st = state[cur], k = String(cur + 1), t = st.solTab, T = TASKS[cur], body;
+    if (t === "sql") body = '<pre class="code">' + esc(DATA.sql[k]) + '</pre><div class="copyrow"><button class="btn sm" data-act="load-sql">Load into the SQL editor</button>' + copyBtn("sol-sql-" + k, DATA.sql[k], "Copy SQL") + "</div>";
+    else if (t === "py") body = '<div class="res-title">Plain Python (runs in the Python editor)</div><pre class="code">' + esc(DATA.pyPlain[k]) + '</pre><div class="copyrow"><button class="btn sm" data-act="load-py">Load into the Python editor</button>' + copyBtn("sol-py-" + k, DATA.pyPlain[k], "Copy Python") + '</div><div class="res-title">The same task with pandas (run it on your own computer)</div><pre class="code">' + esc(DATA.py[k]) + "</pre>" + '<div class="copyrow">' + copyBtn("sol-pd-" + k, DATA.py[k], "Copy pandas") + "</div>";
+    else {
+      var all = T.xl.sol.map(function (s) { return s[0] + ": " + s[1]; }).join("\n");
+      body = '<div class="formulas">' + T.xl.sol.map(function (s) { return '<div class="frow"><span class="cell">' + esc(s[0]) + '</span><pre class="code">' + esc(s[1]) + "</pre></div>"; }).join("") + '</div><div class="copyrow"><button class="btn sm" data-act="load-xl">Load into the sheet</button>' + copyBtn("sol-xl-" + k, all, "Copy formulas") +
+        '<span class="xl-note">' + (T.xl.sol.some(function (s) { return s[2] === "both"; }) ? "Fill the first formula down and right across the table." : "Fill each formula down to the last row of its table.") + "</span></div>";
+    }
+    return '<div class="sol"><div class="tabs" role="tablist"><button class="tab" role="tab" data-t="sql" aria-selected="' + (t === "sql") + '"><i class="dot sql"></i>SQL</button><button class="tab" role="tab" data-t="py" aria-selected="' + (t === "py") + '"><i class="dot py"></i>Python</button><button class="tab" role="tab" data-t="xl" aria-selected="' + (t === "xl") + '"><i class="dot xl"></i>Excel</button></div>' + body +
+      '<div class="res-title">Expected result</div><div class="tw">' + table(res[k].cols, res[k].rows, { num: res[k].cols.map(function (c, j) { return res[k].rows.some(function (x) { return typeof x[j] === "number"; }) ? j : -1; }).filter(function (j) { return j > -1; }) }) + "</div>" +
+      '<div class="res-title">How each tool thinks about it</div><div class="think"><div class="sql"><h4>SQL</h4><p>' + esc(T.think.sql) + '</p></div><div class="py"><h4>Python</h4><p>' + esc(T.think.py) + '</p></div><div class="xl"><h4>Excel</h4><p>' + esc(T.think.xl) + "</p></div></div></div>";
+  }
+  function renderLower() {
+    var st = state[cur], T = TASKS[cur];
+    var hints = T.hints.slice(0, st.hints).map(function (h, j) { return '<div class="hint"><b>Hint ' + (j + 1) + " of 3</b>" + esc(h) + "</div>"; }).join("");
+    document.getElementById("lower").innerHTML =
+      '<div class="hints">' + hints + "</div>" +
+      '<div class="copyrow"><button class="btn" data-act="hint" ' + (st.hints >= 3 ? "disabled" : "") + ">" + (st.hints >= 3 ? "No more hints" : "Show hint " + (st.hints + 1) + " of 3") + '</button><button class="btn" data-act="reveal">' + (st.reveal ? "Hide solutions" : "Reveal solutions") + "</button></div>" +
+      (st.reveal ? solutionHtml() : "") +
+      '<details><summary>Working in your own tool? Check one value here</summary><div style="display:grid;gap:10px;margin-top:10px"><div class="checkrow"><label class="fld" for="ans">' + esc(T.check.label) + (T.check.kind === "select" ? '<select id="ans"><option value="">Choose a product</option>' + PRODUCTS.map(function (p) { return '<option value="' + p + '">' + p + "</option>"; }).join("") + "</select>" : '<input id="ans" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(T.check.placeholder) + '">') + '</label><button class="btn primary" data-act="typed">Check answer</button></div><div class="fb-line" id="fb" role="status" aria-live="polite"></div></div></details>';
+  }
+  function renderTask() {
+    var T = TASKS[cur], st = state[cur];
+    document.getElementById("task").innerHTML =
+      "<h3>Task " + (cur + 1) + ": " + esc(T.title) + "</h3>" +
+      '<div class="goal"><span class="eyebrow">Question</span><div class="q">' + esc(T.q) + '</div><p class="muted">Return: <code>' + esc(T.out) + "</code> · Order: " + esc(T.order) + "</p></div>" +
+      '<div class="copyrow"><div class="tabs" role="tablist" id="tool-tabs" aria-label="Tool">' +
+        '<button class="tab" role="tab" data-tool="sql"><i class="dot sql"></i>SQL <span class="ok"></span></button>' +
+        '<button class="tab" role="tab" data-tool="py"><i class="dot py"></i>Python <span class="ok"></span></button>' +
+        '<button class="tab" role="tab" data-tool="xl"><i class="dot xl"></i>Excel <span class="ok"></span></button></div>' +
+        '<span class="status" id="solved-line"></span></div>' +
+      '<div id="ws"></div><div class="verdict" id="verdict" hidden></div><div id="lower" style="display:grid;gap:12px"></div>';
+    renderWs(); renderLower(); paintTitleStatus();
+  }
+
+  /* ---------- typed check (own tools) ---------- */
+  function typedCheck() {
+    var T = TASKS[cur], c = T.check, raw = document.getElementById("ans").value.trim(), fb = document.getElementById("fb");
+    var say = function (cls, msg) { fb.className = "fb-line " + cls; fb.textContent = msg; };
+    if (!raw) { say("warn", "Enter your answer first."); return; }
+    if (c.kind === "select") { say(raw === c.answer ? "good" : "bad", raw === c.answer ? "Correct." : "Not quite. Check which product earns the most revenue, not units."); return; }
+    var v = parseFloat(raw.replace(/[\s,]/g, "").replace("%", ""));
+    if (!isFinite(v)) { say("warn", "Enter a number, for example 1250 or 12.5."); return; }
+    if (Math.abs(v - c.answer) <= c.tol) { say("good", "Correct."); return; }
+    var slip = T.slip([v]);
+    say("bad", slip || "Not quite. Re-check which orders count and how you group them, or take a hint.");
+  }
+
+  /* ---------- events ---------- */
+  cards.addEventListener("click", function (e) { var b = e.target.closest(".tcard"); if (!b) return; cur = +b.getAttribute("data-i"); renderCards(); renderTask(); });
+  var taskRoot = document.getElementById("task");
+  taskRoot.addEventListener("click", function (e) {
+    var tool = e.target.closest("#tool-tabs .tab");
+    if (tool) { state[cur].tool = tool.getAttribute("data-tool"); renderWs(); return; }
+    var stab = e.target.closest(".sol .tab");
+    if (stab) { state[cur].solTab = stab.getAttribute("data-t"); renderLower(); return; }
+    var cell = e.target.closest("td[data-addr]");
+    if (cell) { state[cur].sel = cell.getAttribute("data-addr"); renderXlGrid(); cell.focus(); return; }
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var act = b.getAttribute("data-act"), st = state[cur];
+    switch (act) {
+      case "run-sql": runSql(); break;
+      case "run-py": runPy(); break;
+      case "peek": peek(b.getAttribute("data-t")); break;
+      case "reset-sql": st.sql = starters.sql(TASKS[cur]); document.getElementById("ed-sql").value = st.sql; break;
+      case "reset-py": st.py = starters.py(TASKS[cur]); document.getElementById("ed-py").value = st.py; break;
+      case "fill": xlFill(b.getAttribute("data-m")); break;
+      case "xl-clear": st.cells = {}; st.sel = "B2"; st.verdict.xl = null; renderXlGrid(); break;
+      case "hint": st.hints = Math.min(3, st.hints + 1); renderLower(); break;
+      case "reveal": st.reveal = !st.reveal; renderLower(); break;
+      case "typed": typedCheck(); break;
+      case "load-sql": st.sql = DATA.sql[String(cur + 1)] + "\n"; st.tool = "sql"; renderWs(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+      case "load-py": st.py = DATA.pyPlain[String(cur + 1)] + "\n"; st.tool = "py"; renderWs(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+      case "load-xl": st.tool = "xl"; renderWs(); xlLoadSolution(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+    }
+  });
+  taskRoot.addEventListener("input", function (e) {
+    var ed = e.target.getAttribute && e.target.getAttribute("data-ed");
+    if (ed) state[cur][ed] = e.target.value;
+  });
+  var tabTrap = true;
+  taskRoot.addEventListener("keydown", function (e) {
+    var t = e.target, ed = t.getAttribute && t.getAttribute("data-ed");
+    if (ed) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); if (ed === "sql") runSql(); else runPy(); return; }
+      if (e.key === "Escape") { tabTrap = false; return; }
+      if (e.key === "Tab" && !e.shiftKey && tabTrap) {
+        e.preventDefault(); var s = t.selectionStart; t.value = t.value.slice(0, s) + "    " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 4; state[cur][ed] = t.value; return;
+      }
+      if (e.key === "Enter" && ed === "py" && !e.shiftKey) {
+        var pos = t.selectionStart, before = t.value.slice(0, pos), line = before.slice(before.lastIndexOf("\n") + 1);
+        var indent = /^ */.exec(line)[0] + (/:\s*$/.test(line) ? "    " : "");
+        e.preventDefault(); t.value = before + "\n" + indent + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = pos + 1 + indent.length; state[cur][ed] = t.value; return;
+      }
+      tabTrap = true;
+      return;
+    }
+    if (t.id === "fx-input") {
+      if (e.key === "Enter") { e.preventDefault(); xlCommit(t.value); xlMove(1, 0); renderXlGrid(); document.getElementById("fx-input").focus(); }
+      else if (e.key === "Escape") { paintFormulaBar(); }
+      else if (e.key === "Tab") { e.preventDefault(); xlCommit(t.value); xlMove(0, e.shiftKey ? -1 : 1); renderXlGrid(); document.getElementById("fx-input").focus(); }
+    }
+    if (t.matches && t.matches("td[data-addr]")) {
+      var map = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+      if (map[e.key]) { e.preventDefault(); xlMove(map[e.key][0], map[e.key][1]); renderXlGrid(); var nt = document.querySelector('td[data-addr="' + state[cur].sel + '"]'); if (nt) nt.focus(); return; }
+      var fx = document.getElementById("fx-input");
+      if (fx && !fx.readOnly && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key.length === 1 || e.key === "Enter" || e.key === "F2")) {
+        e.preventDefault(); fx.focus();
+        if (e.key.length === 1) { fx.value = e.key; } else fx.setSelectionRange(fx.value.length, fx.value.length);
+      }
+    }
+  });
+  taskRoot.addEventListener("change", function (e) {
+    if (e.target.id === "fx-input" && !e.target.readOnly) { xlCommit(e.target.value); renderXlGrid(); }
+  });
+
+  renderCards(); renderTask();
+  setTimeout(ensureSql, 300);
+})();
+</script>
+</html>

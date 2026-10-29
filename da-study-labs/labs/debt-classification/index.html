@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debt Classification Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: brief and data on top, five task cards, one workspace (SQL, Python, Excel tabs) per task, wrap-up last. */
+:root {
+  --bg: #f1f4f8;
+  --surface: #ffffff;
+  --ink: #14202e;
+  --muted: #566577;
+  --line: #d8e0e9;
+  --sql: #0b6e69;
+  --sql-soft: #d6efec;
+  --py: #4a3fb5;
+  --py-soft: #e4e1fa;
+  --xl: #4a7c10;
+  --xl-soft: #e1efca;
+  --code-bg: #eaeff5;
+  --good: #1a7f45;
+  --bad: #b3261e;
+  --warn: #9a5b00;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+    --sql: #46c4ba; --sql-soft: #123230; --py: #a99fff; --py-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311;
+    --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80; --warn: #f0b45a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1520; --surface: #142130; --ink: #e5ecf4; --muted: #95a5b7; --line: #26374b;
+  --sql: #46c4ba; --sql-soft: #123230; --py: #a99fff; --py-soft: #26224c; --xl: #a5d65a; --xl-soft: #243311;
+  --code-bg: #0b121b; --good: #52c07f; --bad: #ff8a80; --warn: #f0b45a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2rem, 5.4vw, 3.2rem); font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.3rem, 3vw, 1.7rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+header { display: flex; flex-direction: column; gap: 14px; }
+header .lead { max-width: 62ch; font-size: 1.08rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 500; border: 1px solid var(--line); background: var(--surface); }
+.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+.dot.sql { background: var(--sql); } .dot.py { background: var(--py); } .dot.xl { background: var(--xl); }
+
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.tw { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; max-width: 100%; }
+.tw.tall { max-height: 340px; overflow-y: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 12px; white-space: nowrap; }
+th { font-family: var(--font-mono); font-size: 0.74rem; font-weight: 500; color: var(--muted); background: var(--code-bg); position: sticky; top: 0; }
+td { border-top: 1px solid var(--line); }
+td.n, th.n { text-align: right; }
+td .nul { color: var(--muted); font-style: italic; }
+.schema { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-mono); font-size: 0.78rem; padding: 2px 10px; border-radius: 6px; background: var(--code-bg); border: 1px solid var(--line); }
+
+.btn { font: inherit; font-size: 0.9rem; font-weight: 600; min-height: 40px; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.btn:hover:not([disabled]) { border-color: var(--ink); }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn.run-sql { background: var(--sql); border-color: var(--sql); color: var(--surface); }
+.btn.run-py { background: var(--py); border-color: var(--py); color: var(--surface); }
+.btn.run-xl { background: var(--xl); border-color: var(--xl); color: var(--surface); }
+.btn.sm { min-height: 34px; padding: 3px 12px; font-size: 0.82rem; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible, td[tabindex]:focus-visible { outline: 3px solid var(--py); outline-offset: 2px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { font: inherit; font-weight: 600; font-size: 0.9rem; min-height: 40px; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.tab[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tab[data-tool="sql"][aria-selected="true"], .tab[data-t="sql"][aria-selected="true"] { border-color: var(--sql); box-shadow: inset 0 0 0 1px var(--sql); }
+.tab[data-tool="py"][aria-selected="true"], .tab[data-t="py"][aria-selected="true"] { border-color: var(--py); box-shadow: inset 0 0 0 1px var(--py); }
+.tab[data-tool="xl"][aria-selected="true"], .tab[data-t="xl"][aria-selected="true"] { border-color: var(--xl); box-shadow: inset 0 0 0 1px var(--xl); }
+.tab .ok { color: var(--good); font-weight: 700; }
+.steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 6px; }
+.copyrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+textarea.fb { width: 100%; min-height: 110px; margin-top: 10px; font-family: var(--font-mono); font-size: 0.78rem; background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+pre.code { margin: 0; padding: 12px 14px; background: var(--code-bg); border-radius: 10px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.65; }
+.note { padding: 10px 14px; border-radius: 10px; background: var(--code-bg); font-size: 0.92rem; }
+details > summary { cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+
+/* task cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.tcard { font: inherit; text-align: left; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tcard:hover { border-color: var(--ink); }
+.tcard[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tcard .lv { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.tcard .ttl { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; line-height: 1.2; }
+.tcard .sk { font-size: 0.82rem; color: var(--muted); }
+.pips { display: flex; gap: 6px; align-items: center; font-family: var(--font-mono); font-size: 0.7rem; color: var(--muted); }
+.pip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); display: inline-block; }
+.pip.sql.on { background: var(--sql); border-color: var(--sql); } .pip.py.on { background: var(--py); border-color: var(--py); } .pip.xl.on { background: var(--xl); border-color: var(--xl); }
+
+.goal { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; background: var(--bg); }
+.goal .q { font-family: var(--font-display); font-size: 1.2rem; font-weight: 500; line-height: 1.3; }
+.hints { display: grid; gap: 8px; }
+.hint { padding: 10px 14px; border-radius: 10px; border: 1px dashed var(--line); font-size: 0.93rem; }
+.hint b { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 2px; }
+.res-title { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+/* workspace */
+.ws { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ws.sql { border-top: 4px solid var(--sql); } .ws.py { border-top: 4px solid var(--py); } .ws.xl { border-top: 4px solid var(--xl); }
+textarea.editor { width: 100%; min-height: 190px; resize: vertical; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; tab-size: 4; background: var(--code-bg); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; white-space: pre; overflow: auto; }
+.status { font-size: 0.85rem; color: var(--muted); }
+.status.bad { color: var(--bad); }
+.outbox { font-family: var(--font-mono); font-size: 0.8rem; background: var(--code-bg); border-radius: 8px; padding: 8px 12px; white-space: pre-wrap; max-height: 160px; overflow: auto; }
+.errbox { font-family: var(--font-mono); font-size: 0.85rem; color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); border-radius: 8px; padding: 10px 12px; white-space: pre-wrap; }
+.verdict { padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); font-size: 0.93rem; display: flex; gap: 8px; }
+.verdict b { flex: none; }
+.verdict.ok { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.verdict.part { border-color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.verdict.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+.xl-note { font-size: 0.88rem; color: var(--muted); }
+.fbar { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.fbar .nm { font-family: var(--font-mono); font-size: 0.82rem; padding: 8px 12px; min-width: 4rem; text-align: center; background: var(--code-bg); border-right: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
+.fbar .fx { font-family: var(--font-mono); font-style: italic; color: var(--xl); padding: 0 10px; display: flex; align-items: center; border-right: 1px solid var(--line); }
+.fbar input { flex: 1; min-width: 0; border: 0; background: var(--surface); color: var(--ink); font-family: var(--font-mono); font-size: 0.88rem; padding: 8px 12px; min-height: 40px; }
+.fbar input[readonly] { color: var(--muted); }
+table.xgrid { width: auto; min-width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono); font-size: 0.85rem; }
+table.xgrid th { position: static; text-align: center; padding: 4px 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+table.xgrid td { border-top: 0; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 7px 12px; min-width: 100px; height: 36px; cursor: cell; user-select: none; background: var(--surface); }
+table.xgrid td.lock { background: var(--code-bg); color: var(--muted); }
+table.xgrid td.hdr { font-weight: 600; }
+table.xgrid td.filled { background: var(--xl-soft); }
+table.xgrid td.num { text-align: right; }
+table.xgrid td.err { color: var(--bad); font-weight: 600; }
+table.xgrid td.sel { outline: 2px solid var(--xl); outline-offset: -2px; }
+table.xgrid th.rn { min-width: 2.2rem; }
+.fillrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.orders-sheet th.rn, .orders-sheet td.rn { background: var(--code-bg); color: var(--muted); text-align: center; position: static; }
+
+.sol { display: grid; gap: 12px; }
+.formulas { display: grid; gap: 8px; }
+.frow { display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: start; }
+.frow .cell { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; color: var(--xl); padding-top: 12px; }
+.frow pre.code { padding: 10px 14px; white-space: pre-wrap; word-break: break-word; }
+.frow .plain { padding: 10px 0; color: var(--muted); font-size: 0.92rem; }
+.think { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.think > div { min-width: 0; border: 1px solid var(--line); border-top: 4px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; font-size: 0.92rem; }
+.think .sql { border-top-color: var(--sql); } .think .py { border-top-color: var(--py); } .think .xl { border-top-color: var(--xl); }
+.think h4 { margin: 0; font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.checkrow { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.fld { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); min-width: 0; flex: 1 1 220px; max-width: 360px; }
+.fld input, .fld select { font: inherit; font-family: var(--font-mono); font-size: 0.95rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-height: 42px; }
+.fb-line { min-height: 1.5em; font-size: 0.93rem; }
+.fb-line.good { color: var(--good); font-weight: 600; } .fb-line.bad { color: var(--bad); } .fb-line.warn { color: var(--warn); }
+
+.wrapup th, .wrapup td { padding: 10px 14px; white-space: normal; vertical-align: top; }
+.wrapup th { position: static; }
+.wrapup td:first-child { font-weight: 600; }
+.wrapup td.c { font-family: var(--font-mono); font-size: 0.8rem; }
+.wrapup th.sql, .wrapup td.sql { color: var(--sql); } .wrapup th.py, .wrapup td.py { color: var(--py); } .wrapup th.xl, .wrapup td.xl { color: var(--xl); }
+.wrapup table { min-width: 640px; }
+footer { color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 520px) { .frow { grid-template-columns: 1fr; gap: 2px; } .frow .cell { padding-top: 0; } }
+@media (prefers-reduced-motion: no-preference) { .btn, .tab, .tcard { transition: border-color 0.15s, background-color 0.15s; } }
+.backlink { display: inline-flex; align-items: center; min-height: 36px; color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+.backlink:hover { color: var(--ink); text-decoration: underline; }
+.dl { font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <a class="backlink" href="../../index.html">← Set vs Loop Lab · all assignments</a>
+    <div class="eyebrow">Consumer finance · SQL · Python · Excel</div>
+    <h1>Debt Classification Lab</h1>
+    <p class="lead">You are a credit-risk analyst at a consumer finance company. Sort 120 loans into debt groups by days past due, work out the provisions, measure bad debt and see how loans move between groups. Write SQL, Python and Excel formulas right here and check each result.</p>
+    <div class="legend">
+      <span class="tag"><i class="dot sql"></i>SQL (SQLite)</span>
+      <span class="tag"><i class="dot py"></i>Python (core language)</span>
+      <span class="tag"><i class="dot xl"></i>Excel formulas</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="brief-h">
+    <h2 id="brief-h">The brief</h2>
+    <div class="panel">
+      <p>Lotus Consumer Finance (a made-up company) lends to individuals: personal loans, motorbike loans, credit cards and appliance installments. At every month-end the risk team puts each loan into one of five <b>debt groups</b> by <b>days past due</b> (<code>dpd</code>, the number of days the oldest unpaid amount is overdue) and sets aside a <b>provision</b> for each group. You have the loan book at <b>30 Sep 2026</b>, the same book one month earlier in the column <code>dpd_prev</code> (31 Aug 2026), and the rules table. All amounts are in VND.</p>
+      <p>The rules are a simplified version of Circular 11/2021/TT-NHNN (as amended by Circular 31/2024/TT-NHNN) on asset classification and provisioning in Vietnam. <b>Groups 3, 4 and 5 are bad debt</b> (non-performing loans, NPL). <b>Provision</b> for a loan = outstanding × the rate of its group. Collateral, restructured loans and the qualitative criteria are left out, so this is a teaching model and not compliance advice.</p>
+      <div class="two">
+        <div style="display:grid;gap:8px;min-width:0">
+          <h3>loans <span class="muted" style="font-weight:400;font-size:0.85rem">120 rows, 70 customers</span></h3>
+          <div class="schema" id="schema-loans"></div>
+          <div class="tw" id="loans-prev"></div>
+          <details><summary>Show all 120 rows</summary><div class="tw tall" id="loans-all" style="margin-top:8px"></div></details>
+        </div>
+        <div style="display:grid;gap:8px;align-content:start;min-width:0">
+          <h3>rules <span class="muted" style="font-weight:400;font-size:0.85rem">5 rows</span></h3>
+          <div class="schema" id="schema-rules"></div>
+          <div class="tw" id="rules-tab"></div>
+          <p class="muted" style="font-size:0.88rem;margin:0">A loan belongs to the group whose range contains its <code>dpd</code>. Boundaries count: 9 days is still group 1, 10 days is group 2.</p>
+        </div>
+      </div>
+      <details id="own-tools" data-zone>
+        <summary>Prefer your own tools? Copy the data</summary>
+        <div style="display:grid;gap:12px;margin-top:12px">
+          <div class="tabs" role="tablist" id="setup-tabs">
+            <button class="tab" role="tab" data-t="xl" aria-selected="true"><i class="dot xl"></i>Excel</button>
+            <button class="tab" role="tab" data-t="sql" aria-selected="false"><i class="dot sql"></i>SQL</button>
+            <button class="tab" role="tab" data-t="py" aria-selected="false"><i class="dot py"></i>Python</button>
+          </div>
+          <div id="setup-body"></div>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section aria-labelledby="tasks-h">
+    <h2 id="tasks-h">Five tasks</h2>
+    <p class="muted" style="max-width:66ch">Pick a task, then solve it in any of the three tools. Each tool checks your result against the expected answer. Solve a task in all three to compare how they think.</p>
+    <div class="cards" id="cards" role="tablist" aria-label="Tasks"></div>
+    <div class="panel" id="task" data-zone></div>
+  </section>
+
+  <section aria-labelledby="wrap-h" class="wrapup">
+    <h2 id="wrap-h">Same answers, different thinking</h2>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Task</th><th class="sql">SQL</th><th class="py">Python</th><th class="xl">Excel</th></tr></thead>
+        <tbody>
+          <tr><td>1. Classify the book</td><td class="c sql">JOIN rules ON dpd BETWEEN min AND max</td><td class="c py">function group_of(dpd), counters in dicts</td><td class="c xl">COUNTIFS / SUMIFS with the range limits from rules</td></tr>
+          <tr><td>2. Provision</td><td class="c sql">SUM(outstanding) * provision_rate per group</td><td class="c py">dict of rates, balance × rate</td><td class="c xl">INDEX the rate, multiply, ROUND</td></tr>
+          <tr><td>3. Portfolio KPIs</td><td class="c sql">SUM(CASE WHEN grp &gt;= 3 ...) in one pass</td><td class="c py">running totals in one loop</td><td class="c xl">a workings table, then SUM of its rows</td></tr>
+          <tr><td>4. One customer, one group</td><td class="c sql">MAX(grp) OVER (PARTITION BY customer)</td><td class="c py">two passes: worst per customer, then count</td><td class="c xl">helper columns: MATCH, then MAXIFS</td></tr>
+          <tr><td>5. Roll-rate matrix</td><td class="c sql">two joins to rules, SUM(CASE ...) pivot</td><td class="c py">nested dict matrix[from][to] += 1</td><td class="c xl">one COUNTIFS filled down and right</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="think">
+      <div class="sql"><h4>SQL</h4><p>The rules live in a table, so classification is a join on a range. Change a threshold in <code>rules</code> and every query follows. Window functions handle the customer-level rule without any loop.</p></div>
+      <div class="py"><h4>Python</h4><p>A small function holds the rule and loops apply it. It is the easiest place to add logic that does not fit a table, such as qualitative overrides or restructuring flags.</p></div>
+      <div class="xl"><h4>Excel</h4><p>Risk and finance teams can see every step: the group of each loan, the provision, the totals. The helper columns make audit easy, but the layout is manual, so a sixth group means new rows and new formulas.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <p><a class="dl" href="debt-classification-lab.xlsx" download>Download the Excel workbook</a> with the data and one reference solution per task.</p>
+    
+    <p>The data is generated for this lab and is not a real portfolio. The SQL runs on SQLite, the Python on a small built-in interpreter (loops, dicts, lists, comprehensions, functions, f-strings, math and collections), and the Excel formulas on a small built-in engine. All three give the same results on these 120 loans.</p>
+    <p>Rules and thresholds follow the public text of the regulation, simplified for teaching:
+      <a href="https://english.luatvietnam.vn/circular-no-11-2021-tt-nhnn-dated-july-30-2021-of-the-state-bank-of-vietnam-providing-the-classification-of-assets-risk-provisioning-levels-and-met-206806-doc1.html" target="_blank" rel="noopener">Circular 11/2021/TT-NHNN (English)</a>,
+      <a href="https://lawnet.vn/ngan-hang-phap-luat/en/tu-van-phap-luat/tien-te--ngan-hang/provisioning-rates-specific-to-debt-groups-of-credit-institutions-in-vietnam-375619" target="_blank" rel="noopener">specific provision rates by group</a>,
+      <a href="https://www.homecredit.vn/blog/cac-nhom-no-la-gi-clx" target="_blank" rel="noopener">the five debt groups explained</a>,
+      <a href="https://thuvienphapluat.vn/news/headlines/37138/amounts-of-general-provisions-of-credit-institutions-are-now-specified" target="_blank" rel="noopener">general provisions (not used here)</a>.</p>
+  </footer>
+</div>
+
+
+<script src="../../assets/js/minipy.js"></script>
+<script src="../../assets/js/minixl.js"></script>
+<script>
+(function () {
+  var DATA = {"loans":[[7001,3037,"Credit card","2025-09-04",14000000,9000000,15,0],[7002,3035,"Motorbike loan","2025-08-04",55000000,26200000,0,0],[7003,3065,"Appliance installment","2024-12-16",15000000,6000000,21,0],[7004,3033,"Motorbike loan","2025-06-27",40000000,23100000,9,0],[7005,3056,"Credit card","2025-01-06",31000000,20600000,0,0],[7006,3017,"Personal loan","2025-01-19",44000000,20300000,69,39],[7007,3022,"Credit card","2025-04-03",22000000,11100000,0,0],[7008,3040,"Personal loan","2025-02-06",140000000,133000000,0,0],[7009,3004,"Motorbike loan","2024-08-03",52000000,40800000,0,0],[7010,3064,"Personal loan","2025-12-05",114000000,87400000,10,0],[7011,3040,"Credit card","2025-06-02",18000000,14900000,89,59],[7012,3040,"Personal loan","2026-04-03",163000000,118500000,26,0],[7013,3017,"Motorbike loan","2024-12-30",33000000,26900000,111,81],[7014,3061,"Motorbike loan","2024-08-10",28000000,16600000,80,50],[7015,3024,"Credit card","2026-04-16",7000000,5900000,0,0],[7016,3002,"Motorbike loan","2024-11-30",22000000,14800000,0,0],[7017,3046,"Personal loan","2025-04-01",137000000,68700000,0,56],[7018,3021,"Personal loan","2025-12-30",194000000,128300000,0,0],[7019,3027,"Personal loan","2025-01-03",50000000,46300000,181,151],[7020,3037,"Motorbike loan","2025-04-01",40000000,35000000,0,0],[7021,3063,"Motorbike loan","2025-02-02",22000000,17600000,7,0],[7022,3060,"Personal loan","2025-12-30",20000000,17400000,40,10],[7023,3039,"Personal loan","2025-12-14",149000000,120300000,210,180],[7024,3033,"Personal loan","2025-10-15",169000000,164500000,0,0],[7025,3021,"Appliance installment","2025-06-25",13000000,11000000,60,30],[7026,3033,"Credit card","2024-06-29",21000000,19000000,391,361],[7027,3004,"Personal loan","2025-04-29",88000000,46100000,34,4],[7028,3002,"Credit card","2025-06-07",9000000,3400000,0,0],[7029,3049,"Appliance installment","2025-10-23",17000000,10500000,39,9],[7030,3031,"Personal loan","2025-04-13",56000000,31400000,7,0],[7031,3030,"Motorbike loan","2024-07-18",41000000,24300000,0,0],[7032,3025,"Personal loan","2026-02-22",186000000,156500000,0,17],[7033,3025,"Motorbike loan","2024-11-10",21000000,18800000,0,92],[7034,3007,"Motorbike loan","2025-01-21",49000000,37600000,426,396],[7035,3016,"Appliance installment","2025-02-10",30000000,17200000,0,0],[7036,3011,"Motorbike loan","2025-12-09",16000000,9600000,0,0],[7037,3032,"Motorbike loan","2025-07-10",32000000,13100000,0,0],[7038,3009,"Motorbike loan","2024-11-15",45000000,37900000,0,0],[7039,3052,"Credit card","2025-10-23",11000000,4200000,121,91],[7040,3066,"Credit card","2026-02-25",7000000,6100000,91,61],[7041,3005,"Appliance installment","2024-08-22",16000000,11400000,0,62],[7042,3050,"Personal loan","2024-07-20",196000000,84700000,57,27],[7043,3054,"Personal loan","2025-03-10",20000000,16800000,0,0],[7044,3029,"Appliance installment","2025-08-09",18000000,16900000,17,0],[7045,3006,"Credit card","2024-10-22",18000000,15500000,0,0],[7046,3012,"Credit card","2024-11-12",36000000,24200000,0,0],[7047,3029,"Credit card","2026-04-14",24000000,15900000,0,0],[7048,3005,"Credit card","2025-05-07",26000000,18900000,360,330],[7049,3038,"Credit card","2025-11-07",46000000,25700000,0,43],[7050,3070,"Appliance installment","2025-06-03",10000000,7600000,361,331],[7051,3025,"Personal loan","2025-11-14",107000000,76400000,180,150],[7052,3068,"Credit card","2024-09-25",41000000,39400000,40,10],[7053,3003,"Motorbike loan","2025-02-24",20000000,17200000,0,0],[7054,3016,"Credit card","2025-03-21",32000000,23600000,0,0],[7055,3015,"Motorbike loan","2024-06-12",16000000,5700000,0,47],[7056,3007,"Credit card","2025-05-24",42000000,34800000,120,90],[7057,3019,"Credit card","2025-11-11",16000000,8900000,34,4],[7058,3043,"Motorbike loan","2025-09-05",49000000,23300000,0,0],[7059,3044,"Motorbike loan","2026-06-23",22000000,7800000,0,0],[7060,3069,"Motorbike loan","2026-03-17",20000000,9600000,67,37],[7061,3036,"Appliance installment","2026-04-13",28000000,20400000,2,0],[7062,3035,"Appliance installment","2024-12-09",5000000,2900000,0,0],[7063,3038,"Personal loan","2025-02-20",187000000,77500000,0,0],[7064,3017,"Credit card","2025-08-14",50000000,33100000,0,0],[7065,3051,"Motorbike loan","2025-10-01",31000000,12600000,0,48],[7066,3038,"Personal loan","2025-07-03",111000000,71900000,22,0],[7067,3013,"Personal loan","2024-12-06",192000000,126600000,0,0],[7068,3039,"Appliance installment","2024-08-29",16000000,13500000,0,0],[7069,3005,"Personal loan","2025-05-01",120000000,99700000,0,0],[7070,3030,"Motorbike loan","2024-09-24",33000000,22500000,0,0],[7071,3023,"Appliance installment","2026-03-12",26000000,21400000,90,60],[7072,3048,"Motorbike loan","2024-06-02",16000000,13600000,9,0],[7073,3059,"Personal loan","2024-07-29",172000000,105000000,0,0],[7074,3027,"Credit card","2024-11-05",21000000,20000000,0,0],[7075,3002,"Credit card","2025-12-20",15000000,12400000,211,181],[7076,3028,"Credit card","2026-02-21",36000000,33200000,61,31],[7077,3001,"Motorbike loan","2024-12-17",25000000,9000000,23,0],[7078,3009,"Appliance installment","2025-07-18",10000000,5700000,4,0],[7079,3028,"Personal loan","2025-04-02",145000000,94500000,0,0],[7080,3020,"Motorbike loan","2026-04-20",37000000,28000000,0,0],[7081,3005,"Appliance installment","2026-01-22",29000000,21800000,0,0],[7082,3005,"Personal loan","2026-06-18",178000000,107500000,0,0],[7083,3031,"Personal loan","2026-01-20",40000000,25700000,0,83],[7084,3058,"Motorbike loan","2025-12-28",55000000,51000000,0,0],[7085,3035,"Appliance installment","2024-08-02",16000000,12500000,0,0],[7086,3041,"Appliance installment","2025-11-08",9000000,6500000,0,0],[7087,3032,"Motorbike loan","2025-06-03",51000000,21700000,0,0],[7088,3055,"Personal loan","2025-04-18",91000000,53700000,0,0],[7089,3021,"Credit card","2026-02-05",33000000,31400000,0,0],[7090,3036,"Personal loan","2025-03-27",127000000,118600000,0,0],[7091,3016,"Credit card","2024-10-09",46000000,37600000,210,180],[7092,3018,"Motorbike loan","2024-06-27",48000000,34100000,0,0],[7093,3026,"Personal loan","2025-10-27",99000000,94000000,0,0],[7094,3062,"Credit card","2024-08-21",20000000,17500000,9,0],[7095,3008,"Motorbike loan","2024-10-16",33000000,19300000,0,82],[7096,3009,"Personal loan","2025-11-18",83000000,61600000,0,0],[7097,3032,"Credit card","2025-12-18",44000000,40900000,0,44],[7098,3007,"Appliance installment","2025-02-06",19000000,12900000,0,0],[7099,3008,"Appliance installment","2024-10-27",23000000,8900000,0,0],[7100,3012,"Motorbike loan","2026-01-24",29000000,22400000,0,77],[7101,3053,"Motorbike loan","2025-07-18",27000000,10000000,157,127],[7102,3006,"Personal loan","2025-06-18",58000000,22200000,137,107],[7103,3011,"Motorbike loan","2026-03-30",30000000,28200000,0,0],[7104,3042,"Personal loan","2025-01-24",159000000,150300000,390,360],[7105,3047,"Credit card","2025-01-07",25000000,17600000,0,0],[7106,3003,"Credit card","2024-07-22",16000000,7700000,0,18],[7107,3014,"Motorbike loan","2026-07-11",46000000,25300000,0,0],[7108,3010,"Appliance installment","2026-04-04",28000000,12400000,28,0],[7109,3033,"Motorbike loan","2026-06-09",18000000,12700000,9,0],[7110,3018,"Motorbike loan","2025-03-29",45000000,40800000,0,0],[7111,3026,"Credit card","2025-10-07",6000000,4500000,8,0],[7112,3045,"Personal loan","2024-09-20",93000000,61000000,0,0],[7113,3017,"Personal loan","2024-07-18",197000000,180300000,0,27],[7114,3021,"Personal loan","2025-12-10",151000000,139900000,0,0],[7115,3040,"Appliance installment","2024-08-12",16000000,10300000,340,310],[7116,3006,"Credit card","2025-11-27",11000000,10700000,0,62],[7117,3034,"Personal loan","2024-12-09",198000000,78100000,11,0],[7118,3057,"Motorbike loan","2026-03-29",51000000,24900000,0,27],[7119,3067,"Personal loan","2026-07-17",141000000,71900000,0,0],[7120,3015,"Personal loan","2024-09-22",112000000,41300000,0,0]],"rules":[[1,"Pass",0,9,0.0],[2,"Special mention",10,90,0.05],[3,"Substandard",91,180,0.2],[4,"Doubtful",181,360,0.5],[5,"Loss",361,99999,1.0]],"sql":{"1":"SELECT r.grp,\n       r.label,\n       COUNT(*)           AS loans,\n       SUM(l.outstanding) AS outstanding\nFROM loans l\nJOIN rules r ON l.dpd BETWEEN r.min_dpd AND r.max_dpd\nGROUP BY r.grp, r.label\nORDER BY r.grp;","2":"SELECT r.grp,\n       SUM(l.outstanding)                          AS outstanding,\n       r.provision_rate,\n       ROUND(SUM(l.outstanding) * r.provision_rate) AS provision\nFROM loans l\nJOIN rules r ON l.dpd BETWEEN r.min_dpd AND r.max_dpd\nGROUP BY r.grp, r.provision_rate\nORDER BY r.grp;","3":"WITH classified AS (\n  SELECT l.outstanding,\n         r.grp,\n         l.outstanding * r.provision_rate AS provision\n  FROM loans l\n  JOIN rules r ON l.dpd BETWEEN r.min_dpd AND r.max_dpd\n)\nSELECT SUM(outstanding) AS total_outstanding,\n       SUM(CASE WHEN grp >= 3 THEN outstanding ELSE 0 END) AS npl_outstanding,\n       ROUND(100.0 * SUM(CASE WHEN grp >= 3 THEN outstanding ELSE 0 END)\n             / SUM(outstanding), 2) AS npl_ratio_pct,\n       ROUND(SUM(provision)) AS total_provision,\n       ROUND(100.0 * SUM(provision)\n             / SUM(CASE WHEN grp >= 3 THEN outstanding ELSE 0 END), 2) AS coverage_pct\nFROM classified;","4":"WITH classified AS (\n  SELECT l.customer_id, l.outstanding, r.grp\n  FROM loans l\n  JOIN rules r ON l.dpd BETWEEN r.min_dpd AND r.max_dpd\n),\nwith_worst AS (\n  SELECT *,\n         MAX(grp) OVER (PARTITION BY customer_id) AS worst_grp\n  FROM classified\n)\nSELECT worst_grp         AS grp,\n       COUNT(*)          AS loans,\n       SUM(outstanding)  AS outstanding\nFROM with_worst\nGROUP BY worst_grp\nORDER BY worst_grp;","5":"SELECT f.grp AS from_grp,\n       SUM(CASE WHEN t.grp = 1 THEN 1 ELSE 0 END) AS to_1,\n       SUM(CASE WHEN t.grp = 2 THEN 1 ELSE 0 END) AS to_2,\n       SUM(CASE WHEN t.grp = 3 THEN 1 ELSE 0 END) AS to_3,\n       SUM(CASE WHEN t.grp = 4 THEN 1 ELSE 0 END) AS to_4,\n       SUM(CASE WHEN t.grp = 5 THEN 1 ELSE 0 END) AS to_5\nFROM loans l\nJOIN rules f ON l.dpd_prev BETWEEN f.min_dpd AND f.max_dpd\nJOIN rules t ON l.dpd      BETWEEN t.min_dpd AND t.max_dpd\nGROUP BY f.grp\nORDER BY f.grp;"},"pyPlain":{"1":"def group_of(dpd):\n    for r in rules:\n        if r[\"min_dpd\"] <= dpd <= r[\"max_dpd\"]:\n            return r[\"grp\"]\n\ncount = {}\nbalance = {}\nfor loan in loans:\n    g = group_of(loan[\"dpd\"])\n    count[g] = count.get(g, 0) + 1\n    balance[g] = balance.get(g, 0) + loan[\"outstanding\"]\n\nresult = [(r[\"grp\"], r[\"label\"], count[r[\"grp\"]], balance[r[\"grp\"]]) for r in rules]","2":"def group_of(dpd):\n    for r in rules:\n        if r[\"min_dpd\"] <= dpd <= r[\"max_dpd\"]:\n            return r[\"grp\"]\n\nrate = {r[\"grp\"]: r[\"provision_rate\"] for r in rules}\nbalance = {}\nfor loan in loans:\n    g = group_of(loan[\"dpd\"])\n    balance[g] = balance.get(g, 0) + loan[\"outstanding\"]\n\nresult = []\nfor g in sorted(balance):\n    result.append((g, balance[g], rate[g], round(balance[g] * rate[g])))","3":"def group_of(dpd):\n    for r in rules:\n        if r[\"min_dpd\"] <= dpd <= r[\"max_dpd\"]:\n            return r[\"grp\"]\n\nrate = {r[\"grp\"]: r[\"provision_rate\"] for r in rules}\ntotal = 0\nnpl = 0\nprovision = 0\nfor loan in loans:\n    g = group_of(loan[\"dpd\"])\n    total += loan[\"outstanding\"]\n    provision += loan[\"outstanding\"] * rate[g]\n    if g >= 3:\n        npl += loan[\"outstanding\"]\n\nresult = [(total, npl, round(100 * npl / total, 2), round(provision), round(100 * provision / npl, 2))]","4":"def group_of(dpd):\n    for r in rules:\n        if r[\"min_dpd\"] <= dpd <= r[\"max_dpd\"]:\n            return r[\"grp\"]\n\n# pass 1: the worst group of every customer\nworst = {}\nfor loan in loans:\n    g = group_of(loan[\"dpd\"])\n    c = loan[\"customer_id\"]\n    if c not in worst or g > worst[c]:\n        worst[c] = g\n\n# pass 2: every loan takes its customer's worst group\ncount = {}\nbalance = {}\nfor loan in loans:\n    g = worst[loan[\"customer_id\"]]\n    count[g] = count.get(g, 0) + 1\n    balance[g] = balance.get(g, 0) + loan[\"outstanding\"]\n\nresult = [(g, count[g], balance[g]) for g in sorted(count)]","5":"def group_of(dpd):\n    for r in rules:\n        if r[\"min_dpd\"] <= dpd <= r[\"max_dpd\"]:\n            return r[\"grp\"]\n\nmatrix = {}\nfor f in range(1, 6):\n    matrix[f] = {}\n    for t in range(1, 6):\n        matrix[f][t] = 0\n\nfor loan in loans:\n    matrix[group_of(loan[\"dpd_prev\"])][group_of(loan[\"dpd\"])] += 1\n\nresult = []\nfor f in range(1, 6):\n    row = [f]\n    for t in range(1, 6):\n        row.append(matrix[f][t])\n    result.append(tuple(row))"},"py":{"1":"bins = list(rules[\"min_dpd\"]) + [float(\"inf\")]\nloans[\"grp\"] = pd.cut(loans[\"dpd\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\n\nresult = (loans.merge(rules[[\"grp\", \"label\"]], on=\"grp\")\n               .groupby([\"grp\", \"label\"], as_index=False)\n               .agg(loans=(\"loan_id\", \"count\"), outstanding=(\"outstanding\", \"sum\")))","2":"bins = list(rules[\"min_dpd\"]) + [float(\"inf\")]\nloans[\"grp\"] = pd.cut(loans[\"dpd\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\n\nby_grp = loans.groupby(\"grp\", as_index=False)[\"outstanding\"].sum()\nresult = by_grp.merge(rules[[\"grp\", \"provision_rate\"]], on=\"grp\")\nresult[\"provision\"] = (result[\"outstanding\"] * result[\"provision_rate\"]).round()","3":"bins = list(rules[\"min_dpd\"]) + [float(\"inf\")]\nloans[\"grp\"] = pd.cut(loans[\"dpd\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\n\nloans = loans.merge(rules[[\"grp\", \"provision_rate\"]], on=\"grp\")\nloans[\"provision\"] = loans[\"outstanding\"] * loans[\"provision_rate\"]\n\ntotal = loans[\"outstanding\"].sum()\nnpl = loans.loc[loans[\"grp\"] >= 3, \"outstanding\"].sum()\nprovision = loans[\"provision\"].sum()\nresult = pd.DataFrame([{\n    \"total_outstanding\": total,\n    \"npl_outstanding\": npl,\n    \"npl_ratio_pct\": round(100 * npl / total, 2),\n    \"total_provision\": round(provision),\n    \"coverage_pct\": round(100 * provision / npl, 2),\n}])","4":"bins = list(rules[\"min_dpd\"]) + [float(\"inf\")]\nloans[\"grp\"] = pd.cut(loans[\"dpd\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\nloans[\"worst_grp\"] = loans.groupby(\"customer_id\")[\"grp\"].transform(\"max\")\n\nresult = (loans.groupby(\"worst_grp\", as_index=False)\n               .agg(loans=(\"loan_id\", \"count\"), outstanding=(\"outstanding\", \"sum\"))\n               .rename(columns={\"worst_grp\": \"grp\"}))","5":"bins = list(rules[\"min_dpd\"]) + [float(\"inf\")]\nloans[\"grp\"] = pd.cut(loans[\"dpd\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\nloans[\"grp_prev\"] = pd.cut(loans[\"dpd_prev\"], bins=bins, labels=rules[\"grp\"], right=False).astype(int)\n\nresult = (pd.crosstab(loans[\"grp_prev\"], loans[\"grp\"])\n            .reindex(index=range(1, 6), columns=range(1, 6), fill_value=0)\n            .add_prefix(\"to_\")\n            .rename_axis(index=\"from_grp\", columns=None)\n            .reset_index())"},"res":{"1":{"cols":["grp","label","loans","outstanding"],"rows":[[1,"Pass",81,3293300000],[2,"Special mention",22,743200000],[3,"Substandard",7,180600000],[4,"Doubtful",6,245800000],[5,"Loss",4,214500000]]},"2":{"cols":["grp","outstanding","provision_rate","provision"],"rows":[[1,3293300000,0,0],[2,743200000,0.05,37160000],[3,180600000,0.2,36120000],[4,245800000,0.5,122900000],[5,214500000,1,214500000]]},"3":{"cols":["total_outstanding","npl_outstanding","npl_ratio_pct","total_provision","coverage_pct"],"rows":[[4677400000,640900000,13.7,410680000,64.08]]},"4":{"cols":["grp","loans","outstanding"],"rows":[[1,51,1610300000],[2,28,1178500000],[3,13,581000000],[4,19,845100000],[5,9,462500000]]},"5":{"cols":["from_grp","to_1","to_2","to_3","to_4","to_5"],"rows":[[1,66,12,0,0,0],[2,14,10,3,0,0],[3,1,0,4,3,0],[4,0,0,0,3,2],[5,0,0,0,0,2]]}},"xl":{"1":{"rows":6,"ncols":4,"rightLimit":4,"cols":[1,2,3,4],"resRows":[2,6],"ends":{},"pre":[["grp","label","loans","outstanding"],[1],[2],[3],[4],[5]],"sol":[["B2","=INDEX(rules!$B$2:$B$6,A2)","down"],["C2","=COUNTIFS(loans!$G$2:$G$121,\">=\"&INDEX(rules!$C$2:$C$6,A2),loans!$G$2:$G$121,\"<=\"&INDEX(rules!$D$2:$D$6,A2))","down"],["D2","=SUMIFS(loans!$F$2:$F$121,loans!$G$2:$G$121,\">=\"&INDEX(rules!$C$2:$C$6,A2),loans!$G$2:$G$121,\"<=\"&INDEX(rules!$D$2:$D$6,A2))","down"]]},"2":{"rows":6,"ncols":4,"rightLimit":4,"cols":[1,2,3,4],"resRows":[2,6],"ends":{},"pre":[["grp","outstanding","provision_rate","provision"],[1],[2],[3],[4],[5]],"sol":[["B2","=SUMIFS(loans!$F$2:$F$121,loans!$G$2:$G$121,\">=\"&INDEX(rules!$C$2:$C$6,A2),loans!$G$2:$G$121,\"<=\"&INDEX(rules!$D$2:$D$6,A2))","down"],["C2","=INDEX(rules!$E$2:$E$6,A2)","down"],["D2","=ROUND(B2*C2,0)","down"]]},"3":{"rows":9,"ncols":5,"rightLimit":5,"cols":[1,2,3,4,5],"resRows":[2,2],"ends":{},"pre":[["total_outstanding","npl_outstanding","npl_ratio_pct","total_provision","coverage_pct"],[],[],["grp","outstanding","provision"],[1],[2],[3],[4],[5]],"sol":[["B5","=SUMIFS(loans!$F$2:$F$121,loans!$G$2:$G$121,\">=\"&INDEX(rules!$C$2:$C$6,A5),loans!$G$2:$G$121,\"<=\"&INDEX(rules!$D$2:$D$6,A5))","down"],["C5","=ROUND(B5*INDEX(rules!$E$2:$E$6,A5),0)","down"],["A2","=SUM(B5:B9)",null],["B2","=SUM(B7:B9)",null],["C2","=ROUND(100*B2/A2,2)",null],["D2","=SUM(C5:C9)",null],["E2","=ROUND(100*D2/B2,2)",null]]},"4":{"rows":121,"ncols":10,"rightLimit":10,"cols":[8,9,10],"resRows":[2,6],"ends":{"9":6,"10":6},"pre":[["loan_id","customer_id","outstanding","dpd","own_grp","worst_grp",null,"grp","loans","outstanding"],[7001,3037,9000000,15,null,null,null,1],[7002,3035,26200000,0,null,null,null,2],[7003,3065,6000000,21,null,null,null,3],[7004,3033,23100000,9,null,null,null,4],[7005,3056,20600000,0,null,null,null,5],[7006,3017,20300000,69,null,null,null],[7007,3022,11100000,0,null,null,null],[7008,3040,133000000,0,null,null,null],[7009,3004,40800000,0,null,null,null],[7010,3064,87400000,10,null,null,null],[7011,3040,14900000,89,null,null,null],[7012,3040,118500000,26,null,null,null],[7013,3017,26900000,111,null,null,null],[7014,3061,16600000,80,null,null,null],[7015,3024,5900000,0,null,null,null],[7016,3002,14800000,0,null,null,null],[7017,3046,68700000,0,null,null,null],[7018,3021,128300000,0,null,null,null],[7019,3027,46300000,181,null,null,null],[7020,3037,35000000,0,null,null,null],[7021,3063,17600000,7,null,null,null],[7022,3060,17400000,40,null,null,null],[7023,3039,120300000,210,null,null,null],[7024,3033,164500000,0,null,null,null],[7025,3021,11000000,60,null,null,null],[7026,3033,19000000,391,null,null,null],[7027,3004,46100000,34,null,null,null],[7028,3002,3400000,0,null,null,null],[7029,3049,10500000,39,null,null,null],[7030,3031,31400000,7,null,null,null],[7031,3030,24300000,0,null,null,null],[7032,3025,156500000,0,null,null,null],[7033,3025,18800000,0,null,null,null],[7034,3007,37600000,426,null,null,null],[7035,3016,17200000,0,null,null,null],[7036,3011,9600000,0,null,null,null],[7037,3032,13100000,0,null,null,null],[7038,3009,37900000,0,null,null,null],[7039,3052,4200000,121,null,null,null],[7040,3066,6100000,91,null,null,null],[7041,3005,11400000,0,null,null,null],[7042,3050,84700000,57,null,null,null],[7043,3054,16800000,0,null,null,null],[7044,3029,16900000,17,null,null,null],[7045,3006,15500000,0,null,null,null],[7046,3012,24200000,0,null,null,null],[7047,3029,15900000,0,null,null,null],[7048,3005,18900000,360,null,null,null],[7049,3038,25700000,0,null,null,null],[7050,3070,7600000,361,null,null,null],[7051,3025,76400000,180,null,null,null],[7052,3068,39400000,40,null,null,null],[7053,3003,17200000,0,null,null,null],[7054,3016,23600000,0,null,null,null],[7055,3015,5700000,0,null,null,null],[7056,3007,34800000,120,null,null,null],[7057,3019,8900000,34,null,null,null],[7058,3043,23300000,0,null,null,null],[7059,3044,7800000,0,null,null,null],[7060,3069,9600000,67,null,null,null],[7061,3036,20400000,2,null,null,null],[7062,3035,2900000,0,null,null,null],[7063,3038,77500000,0,null,null,null],[7064,3017,33100000,0,null,null,null],[7065,3051,12600000,0,null,null,null],[7066,3038,71900000,22,null,null,null],[7067,3013,126600000,0,null,null,null],[7068,3039,13500000,0,null,null,null],[7069,3005,99700000,0,null,null,null],[7070,3030,22500000,0,null,null,null],[7071,3023,21400000,90,null,null,null],[7072,3048,13600000,9,null,null,null],[7073,3059,105000000,0,null,null,null],[7074,3027,20000000,0,null,null,null],[7075,3002,12400000,211,null,null,null],[7076,3028,33200000,61,null,null,null],[7077,3001,9000000,23,null,null,null],[7078,3009,5700000,4,null,null,null],[7079,3028,94500000,0,null,null,null],[7080,3020,28000000,0,null,null,null],[7081,3005,21800000,0,null,null,null],[7082,3005,107500000,0,null,null,null],[7083,3031,25700000,0,null,null,null],[7084,3058,51000000,0,null,null,null],[7085,3035,12500000,0,null,null,null],[7086,3041,6500000,0,null,null,null],[7087,3032,21700000,0,null,null,null],[7088,3055,53700000,0,null,null,null],[7089,3021,31400000,0,null,null,null],[7090,3036,118600000,0,null,null,null],[7091,3016,37600000,210,null,null,null],[7092,3018,34100000,0,null,null,null],[7093,3026,94000000,0,null,null,null],[7094,3062,17500000,9,null,null,null],[7095,3008,19300000,0,null,null,null],[7096,3009,61600000,0,null,null,null],[7097,3032,40900000,0,null,null,null],[7098,3007,12900000,0,null,null,null],[7099,3008,8900000,0,null,null,null],[7100,3012,22400000,0,null,null,null],[7101,3053,10000000,157,null,null,null],[7102,3006,22200000,137,null,null,null],[7103,3011,28200000,0,null,null,null],[7104,3042,150300000,390,null,null,null],[7105,3047,17600000,0,null,null,null],[7106,3003,7700000,0,null,null,null],[7107,3014,25300000,0,null,null,null],[7108,3010,12400000,28,null,null,null],[7109,3033,12700000,9,null,null,null],[7110,3018,40800000,0,null,null,null],[7111,3026,4500000,8,null,null,null],[7112,3045,61000000,0,null,null,null],[7113,3017,180300000,0,null,null,null],[7114,3021,139900000,0,null,null,null],[7115,3040,10300000,340,null,null,null],[7116,3006,10700000,0,null,null,null],[7117,3034,78100000,11,null,null,null],[7118,3057,24900000,0,null,null,null],[7119,3067,71900000,0,null,null,null],[7120,3015,41300000,0,null,null,null]],"sol":[["E2","=MATCH(D2,rules!$C$2:$C$6,1)","down"],["F2","=MAXIFS($E$2:$E$121,$B$2:$B$121,B2)","down"],["I2","=COUNTIF($F$2:$F$121,H2)","down"],["J2","=SUMIFS($C$2:$C$121,$F$2:$F$121,H2)","down"]]},"5":{"rows":6,"ncols":6,"rightLimit":6,"cols":[1,2,3,4,5,6],"resRows":[2,6],"ends":{},"pre":[["from_grp",1,2,3,4,5],[1],[2],[3],[4],[5]],"sol":[["B2","=COUNTIFS(loans!$H$2:$H$121,\">=\"&INDEX(rules!$C$2:$C$6,$A2),loans!$H$2:$H$121,\"<=\"&INDEX(rules!$D$2:$D$6,$A2),loans!$G$2:$G$121,\">=\"&INDEX(rules!$C$2:$C$6,B$1),loans!$G$2:$G$121,\"<=\"&INDEX(rules!$D$2:$D$6,B$1))","both"]]}}};
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var fmt = function (v) { return v === null || v === undefined ? "" : typeof v === "number" ? v.toLocaleString("en-US", { maximumFractionDigits: 4 }) : String(v); };
+  var LN = DATA.loans, RU = DATA.rules;
+  var LCOLS = ["loan_id", "customer_id", "product", "disbursed", "principal", "outstanding", "dpd", "dpd_prev"];
+  var RCOLS = ["grp", "label", "min_dpd", "max_dpd", "provision_rate"];
+  var res = DATA.res;
+
+  /* ---------- tables ---------- */
+  function table(cols, rows, o) {
+    o = o || {};
+    var head = cols.map(function (c, i) { return '<th class="' + (o.num && o.num.indexOf(i) > -1 ? "n" : "") + '">' + esc(c) + "</th>"; }).join("");
+    var body = rows.map(function (r) {
+      return "<tr>" + r.map(function (v, i) {
+        var isNum = typeof v === "number";
+        return '<td class="' + (isNum ? "n" : "") + '">' + (v === null || v === undefined ? '<span class="nul">NULL</span>' : esc(isNum ? fmt(v) : v)) + "</td>";
+      }).join("") + "</tr>";
+    }).join("");
+    return "<table><thead><tr>" + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+  }
+  var textRows = LN.map(function (r) { return r.map(function (v, i) { return i < 2 ? String(v) : v; }); });
+  document.getElementById("schema-loans").innerHTML = LCOLS.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  document.getElementById("schema-rules").innerHTML = RCOLS.map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  document.getElementById("loans-prev").innerHTML = table(LCOLS, textRows.slice(0, 6), { num: [4, 5, 6, 7] });
+  document.getElementById("loans-all").innerHTML = table(LCOLS, textRows, { num: [4, 5, 6, 7] });
+  document.getElementById("rules-tab").innerHTML = table(RCOLS, RU.map(function (r) { return [String(r[0]), r[1], r[2], r[3] >= 99999 ? "no limit" : r[3], r[4]]; }), { num: [2, 3, 4] });
+
+  /* ---------- copy helper ---------- */
+  function copyText(btn, text) {
+    var label = btn.getAttribute("data-label") || btn.textContent;
+    btn.setAttribute("data-label", label);
+    var done = function () { btn.textContent = "Copied"; setTimeout(function () { btn.textContent = label; }, 1500); };
+    var fail = function () {
+      var zone = btn.closest("[data-zone]") || btn.parentNode;
+      var ta = zone.querySelector("textarea.fb");
+      if (!ta) { ta = document.createElement("textarea"); ta.className = "fb"; ta.readOnly = true; ta.setAttribute("aria-label", "Text to copy"); zone.appendChild(ta); }
+      ta.value = text; ta.hidden = false; ta.focus(); ta.select();
+      btn.textContent = "Press Ctrl+C"; setTimeout(function () { btn.textContent = label; }, 2500);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fail);
+      else fail();
+    } catch (e) { fail(); }
+  }
+  var copyStore = {};
+  var copyBtn = function (key, text, label) { copyStore[key] = text; return '<button class="btn sm" data-copy="' + key + '">' + esc(label || "Copy") + "</button>"; };
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy]"); if (!b) return;
+    copyText(b, copyStore[b.getAttribute("data-copy")]);
+  });
+
+  /* ---------- setup texts (own tools) ---------- */
+  var tsv = [LCOLS.join("\t")].concat(LN.map(function (r) { return r.join("\t"); })).join("\n");
+  var tsvRules = [RCOLS.join("\t")].concat(RU.map(function (r) { return r.join("\t"); })).join("\n");
+  var csv = [LCOLS.join(",")].concat(LN.map(function (r) { return r.join(","); })).join("\n");
+  var csvRules = [RCOLS.join(",")].concat(RU.map(function (r) { return r.join(","); })).join("\n");
+  var q = function (v) { return typeof v === "number" ? String(v) : "'" + String(v).replace(/'/g, "''") + "'"; };
+  var SQL_SETUP =
+    "CREATE TABLE rules (grp INTEGER, label TEXT, min_dpd INTEGER, max_dpd INTEGER, provision_rate REAL);\n" +
+    "INSERT INTO rules VALUES\n" + RU.map(function (r) { return "  (" + r.map(q).join(", ") + ")"; }).join(",\n") + ";\n\n" +
+    "CREATE TABLE loans (loan_id INTEGER, customer_id INTEGER, product TEXT, disbursed DATE, principal INTEGER, outstanding INTEGER, dpd INTEGER, dpd_prev INTEGER);\n" +
+    "INSERT INTO loans VALUES\n" + LN.map(function (r) { return "  (" + r.map(q).join(", ") + ")"; }).join(",\n") + ";";
+  var pySetup =
+    "import io\nimport pandas as pd\n\n" +
+    'loans = pd.read_csv(io.StringIO("""\n' + csv + '\n"""), parse_dates=["disbursed"])\n\n' +
+    'rules = pd.read_csv(io.StringIO("""\n' + csvRules + '\n"""))\n\n' +
+    "print(loans.shape, rules.shape)   # (120, 8) (5, 5)";
+  var setupTabs = {
+    xl: function () {
+      return '<ol class="steps"><li>Create a sheet named <code>loans</code>, click A1 and paste. ' + copyBtn("x-loans", tsv, "Copy loans for Excel") + "</li>" +
+        "<li>Check that column D holds real dates (right-aligned). If they are left-aligned text, use Data &gt; Text to Columns &gt; Finish.</li>" +
+        "<li>Create a sheet named <code>rules</code>, click A1 and paste. " + copyBtn("x-rules", tsvRules, "Copy rules for Excel") + "</li>" +
+        "<li>The formulas in the solutions read <code>loans!A2:H121</code> and <code>rules!A2:E6</code>. Put your answer on a third sheet.</li></ol>";
+    },
+    sql: function () {
+      return '<ol class="steps"><li>Open any SQLite, DuckDB or PostgreSQL tool.</li>' +
+        "<li>Run this script. It creates both tables and inserts all rows. " + copyBtn("s-sql", SQL_SETUP, "Copy SQL setup") + "</li>" +
+        "<li>The solutions use standard SQL, plus a window function in task 4. They run unchanged on all three databases.</li></ol>";
+    },
+    py: function () {
+      return '<ol class="steps"><li>Install pandas if needed: <code>pip install pandas</code>.</li>' +
+        "<li>Paste this into a notebook or script. It builds <code>loans</code> and <code>rules</code> DataFrames. " + copyBtn("p-py", pySetup, "Copy pandas setup") + "</li>" +
+        "<li>The pandas solutions in each task end with a variable named <code>result</code>.</li></ol>";
+    }
+  };
+  function renderSetup(t) {
+    document.querySelectorAll("#setup-tabs .tab").forEach(function (b) { b.setAttribute("aria-selected", String(b.getAttribute("data-t") === t)); });
+    document.getElementById("setup-body").innerHTML = setupTabs[t]();
+  }
+  document.getElementById("setup-tabs").addEventListener("click", function (e) { var b = e.target.closest(".tab"); if (b) renderSetup(b.getAttribute("data-t")); });
+  renderSetup("xl");
+
+  /* ---------- result comparison ---------- */
+  function valEq(a, b) {
+    if (typeof a === "number" && typeof b === "number") return Number.isInteger(a) && Number.isInteger(b) ? a === b : Math.abs(a - b) <= 0.051;
+    return a === b;
+  }
+  function rowMatches(actual, expected) {
+    var pool = actual.slice();
+    for (var i = 0; i < expected.length; i++) {
+      var ev = expected[i]; if (ev === null) continue;
+      var k = -1;
+      for (var j = 0; j < pool.length; j++) if (valEq(pool[j], ev)) { k = j; break; }
+      if (k < 0) return false;
+      pool.splice(k, 1);
+    }
+    return true;
+  }
+  function compareResult(expected, actual) {
+    var used = {}, matched = 0, order = [];
+    expected.forEach(function (e) {
+      for (var i = 0; i < actual.length; i++) if (!used[i] && rowMatches(actual[i], e)) { used[i] = true; matched++; order.push(i); return; }
+    });
+    var inOrder = order.every(function (v, i) { return i === 0 || order[i - 1] < v; });
+    return { matched: matched, total: expected.length, actualRows: actual.length, ok: matched === expected.length && actual.length === expected.length, inOrder: inOrder };
+  }
+
+  var LAST = LN.length + 1;
+
+  /* ---------- tasks ---------- */
+  var flatVals = function (rows) { var v = []; rows.forEach(function (r) { r.forEach(function (x) { v.push(x); }); }); return v; };
+  var hasNum = function (vals, n) { return vals.some(function (x) { return typeof x === "number" && Math.abs(x - n) < 0.051; }); };
+  var hasAny = function (vals, list) { return list.some(function (n) { return hasNum(vals, n); }); };
+  var colOf = function (k, j) { return res[k].rows.map(function (r) { return r[j]; }); };
+  var diffFrom = function (list, base) { return list.filter(function (n) { return !hasNum(base, n); }); };
+
+  var LB = RU.map(function (r) { return r[2]; });            /* lower bounds: 0, 10, 91, 181, 361 */
+  var grpOf = function (dpd, shiftIdx, shift) { var g = 1; for (var i = 1; i < LB.length; i++) if (dpd >= LB[i] + (i === shiftIdx ? shift : 0)) g = i + 1; return g; };
+  var RATE = {}; RU.forEach(function (r) { RATE[r[0]] = r[4]; });
+  /* wrong balances per group if one boundary is off by a day (strict instead of inclusive, or the other way) */
+  var altBalances = (function () {
+    var out = [];
+    [1, 2, 3, 4].forEach(function (i) { [-1, 1].forEach(function (s) {
+      var b = [0, 0, 0, 0, 0]; LN.forEach(function (l) { b[grpOf(l[6], i, s) - 1] += l[5]; }); out = out.concat(b);
+    }); });
+    return diffFrom(out, colOf("1", 3));
+  })();
+  var altProvPrincipal = (function () {
+    var p = {}; LN.forEach(function (l) { var g = grpOf(l[6]); p[g] = (p[g] || 0) + l[4]; });
+    return Object.keys(p).map(function (g) { return Math.round(p[g] * RATE[g]); });
+  })();
+  var total = res["3"].rows[0][0], npl = res["3"].rows[0][1], prov = res["3"].rows[0][3];
+  var cnt = { all: LN.length, bad: LN.filter(function (l) { return grpOf(l[6]) >= 3; }).length };
+  var balG = colOf("1", 3);
+  var nplWithG2 = Math.round(10000 * (balG[1] + npl) / total) / 100;
+  var nplByCount = Math.round(10000 * cnt.bad / cnt.all) / 100;
+  var covOnTotal = Math.round(10000 * prov / total) / 100;
+  var swapped = (function () {
+    var m = {}; for (var a = 1; a <= 5; a++) for (var b = 1; b <= 5; b++) m[a + "_" + b] = 0;
+    LN.forEach(function (l) { m[grpOf(l[6]) + "_" + grpOf(l[7])]++; });
+    var out = []; for (var a2 = 1; a2 <= 5; a2++) for (var b2 = 1; b2 <= 5; b2++) if (m[a2 + "_" + b2] > 1 && res["5"].rows[a2 - 1][b2] !== m[a2 + "_" + b2]) out.push(m[a2 + "_" + b2]);
+    return out;
+  })();
+
+  var XLC = function (k, extra) { var c = DATA.xl[String(k)]; for (var key in extra) c[key] = extra[key]; return c; };
+
+  var TASKS = [
+    {
+      lv: "Warm-up", title: "Classify the book", skills: "range join, group by",
+      q: "Put every loan into its debt group using its days past due. How many loans and how much outstanding balance sit in each group?",
+      out: "grp, label, loans, outstanding", order: "by grp, 1 to 5",
+      slip: function (vals) { return hasAny(vals, altBalances) ? "A balance looks like a loan on a boundary is in the wrong group. 10, 91, 181 and 361 days past due already belong to the worse group, while 9, 90, 180 and 360 do not." : null; },
+      check: { label: "Loans in group 2 (special mention)", answer: res["1"].rows[1][2], tol: 0.5, placeholder: "e.g. 22" },
+      hints: [
+        "Think in sets: the rules table already says which dpd range belongs to which group. Match each loan to the rule whose range contains its dpd.",
+        "SQL: JOIN rules ON dpd BETWEEN min_dpd AND max_dpd, then GROUP BY. Python: a small function group_of(dpd) and two dicts that you update in a loop. Excel: COUNTIFS and SUMIFS on dpd with a lower and an upper limit read from the rules sheet.",
+        "BETWEEN includes both ends. In Excel the limits are \">=\"&min and \"<=\"&max. The last group has max_dpd 99999, so it catches everything above 360."
+      ],
+      think: {
+        sql: "The rule lives in a table, so classification is just a join on a range. If the regulator moves a threshold, you edit one row and every query follows.",
+        py: "The rule becomes a function. You call it once per loan and keep the totals in dicts, so you decide how to handle a group that has no loans yet.",
+        xl: "Each group row asks two questions at once: how many loans fall inside the range, and what do they add up to? The limits sit in cells you can read and change."
+      },
+      xl: XLC(1, { start: "B2", note: "Work area: the <b>answer</b> sheet below. Column A holds the group numbers. Fill B, C and D: the group name, the number of loans and the outstanding balance of loans whose dpd is inside the group's range on the <code>rules</code> sheet." })
+    },
+    {
+      lv: "Core", title: "Provision per group", skills: "lookup, multiply, round",
+      q: "How much provision must be set aside for each group? Provision = the group's outstanding balance × its provision rate. Round the provision to whole VND.",
+      out: "grp, outstanding, provision_rate, provision", order: "by grp, 1 to 5",
+      slip: function (vals) { return hasAny(vals, altProvPrincipal) ? "A provision looks like it was calculated on the original principal. Use the outstanding balance, which is what the customer still owes." : null; },
+      check: { label: "Total provision (VND)", answer: prov, tol: 0.5, placeholder: "e.g. 410000000" },
+      hints: [
+        "Same grouping as task 1, but now each group also carries a rate that you read from the rules table.",
+        "SQL: SUM(outstanding) * provision_rate, and ROUND the result. Python: a dict {grp: rate}, then round(balance * rate). Excel: INDEX the rate from the rules sheet using the group number, then ROUND the product.",
+        "Group 1 has rate 0, so its provision is 0. The rate is a fraction (0.05 means 5%). Provision is charged on the outstanding balance, not on the original principal."
+      ],
+      think: {
+        sql: "The rate comes along for free because the join already brought the whole rules row. Grouping by the rate as well keeps the query standard SQL.",
+        py: "Two small dicts do the work of a join: one for balances, one for rates. The multiplication happens after the loop, once per group.",
+        xl: "INDEX picks the rate by position, so the rate is a visible cell you could change to test a what-if. Round in the same row so the totals add up."
+      },
+      xl: XLC(2, { start: "B2", note: "Work area: the <b>answer</b> sheet below. Column A holds the group numbers. Fill B (outstanding), C (the rate from the <code>rules</code> sheet) and D (provision, rounded to whole VND)." })
+    },
+    {
+      lv: "Core", title: "Portfolio health KPIs", skills: "conditional totals, ratios",
+      q: "Give the risk committee one row: total outstanding, outstanding in bad debt (groups 3 to 5), the NPL ratio, the total provision, and the coverage ratio. NPL ratio = bad debt ÷ total outstanding. Coverage = total provision ÷ bad debt. Both as percentages with 2 decimals.",
+      out: "total_outstanding, npl_outstanding, npl_ratio_pct, total_provision, coverage_pct", order: "a single row",
+      slip: function (vals) {
+        if (hasNum(vals, nplWithG2)) return "That NPL ratio includes group 2. Special mention is not bad debt: NPL means groups 3, 4 and 5 only.";
+        if (hasNum(vals, nplByCount)) return "That NPL ratio counts loans. Use balances: bad debt outstanding ÷ total outstanding.";
+        if (hasNum(vals, covOnTotal)) return "Coverage divides the provision by the bad debt, not by the whole portfolio.";
+        var frac = vals.some(function (x) { return typeof x === "number" && x > 0 && x < 1; });
+        return frac ? "Give ratios as percentages, so multiply the fraction by 100." : null;
+      },
+      check: { label: "NPL ratio (%)", answer: res["3"].rows[0][2], tol: 0.05, placeholder: "e.g. 13.7" },
+      hints: [
+        "Everything you need is one number per group. Classify first, then add up with conditions.",
+        "SQL: SUM(CASE WHEN grp >= 3 THEN outstanding ELSE 0 END) next to SUM(outstanding), all in one SELECT. Python: three running totals updated in one loop. Excel: use the workings table below the answer row (one line per group) and SUM parts of it.",
+        "NPL ratio = 100 × bad debt ÷ total. Coverage = 100 × total provision ÷ bad debt. Round both to 2 decimals and the provision to whole VND."
+      ],
+      think: {
+        sql: "A CASE expression turns a condition into a number, so one pass over the table gives all the totals side by side. No temporary variables are needed.",
+        py: "Running totals are the natural way to think here: add to the total, add to the provision, and add to bad debt only when the group is 3 or higher.",
+        xl: "A small workings table makes the logic visible. The headline row is just SUM over parts of it, so a reviewer can follow every number back to a group."
+      },
+      xl: XLC(3, { start: "A2", note: "Work area: the <b>answer</b> sheet below. Row 2 is the result you will report. Rows 4 to 9 are a workings table: fill B and C there first (outstanding and provision per group), then build the five results in row 2 from it." })
+    },
+    {
+      lv: "Stretch", title: "One customer, one group", skills: "group max, second pass",
+      q: "The regulation says a customer's loans at the same lender are classified in the customer's worst group. Give every loan the highest group among all loans of its customer, then count the loans and add up the outstanding balance in each group.",
+      out: "grp, loans, outstanding", order: "by grp, 1 to 5",
+      slip: function (vals) { return hasAny(vals, diffFrom(balG, colOf("4", 2))) ? "These balances are the ones from task 1. Apply the one-customer rule first: every loan takes the worst group of its customer." : null; },
+      check: { label: "Outstanding in group 5 after the rule (VND)", answer: res["4"].rows[4][2], tol: 0.5, placeholder: "e.g. 462500000" },
+      hints: [
+        "Two steps: first find the worst group of every customer, then give that group back to each of the customer's loans.",
+        "SQL: MAX(grp) OVER (PARTITION BY customer_id) adds the worst group to every row. Python: one loop that fills a dict {customer: worst group}, and a second loop that counts. Excel: a helper column with the loan's own group, and another with MAXIFS over the customer's loans.",
+        "In Excel, MATCH(dpd, rules!min_dpd, 1) with match type 1 finds the group directly, because the minimums are sorted. Then MAXIFS(own_grp, customer_id, this customer)."
+      ],
+      think: {
+        sql: "A window function keeps every loan row and attaches a number computed over its customer. The answer is still a set operation, with no loop.",
+        py: "You need two passes. The first builds a lookup of the worst group per customer, and only then can the second pass use it. The order of the steps matters.",
+        xl: "Helper columns show each step on each loan, which is great for audit. The price is 120 rows of formulas that you fill down and keep in sync with the data."
+      },
+      xl: XLC(4, { start: "E2", note: "Work area: the <b>answer</b> sheet below (scroll inside the grid). Columns A to D copy the loans. Fill E (own group) and F (worst group of the customer) for every loan, then the summary table in H to J." })
+    },
+    {
+      lv: "Stretch", title: "Roll-rate matrix", skills: "two classifications, pivot",
+      q: "Build the roll-rate matrix: rows show the group of a loan last month (from dpd_prev), columns show its group now (from dpd). Each cell counts loans. Cells on the diagonal stayed, cells left of it improved, cells to the right of it deteriorated.",
+      out: "from_grp, to_1, to_2, to_3, to_4, to_5", order: "by from_grp, 1 to 5",
+      slip: function (vals) { var n = 0; swapped.forEach(function (x) { if (hasNum(vals, x)) n++; }); return n >= 2 ? "It looks like the two months are swapped. Rows are last month's group (dpd_prev), columns are this month's group (dpd)." : null; },
+      check: { label: "Loans that moved from group 2 to group 3", answer: res["5"].rows[1][3], tol: 0.5, placeholder: "e.g. 3" },
+      hints: [
+        "Every loan has two groups now: one from dpd_prev and one from dpd. The matrix counts the loans for each pair.",
+        "SQL: join rules twice (alias them from and to), then SUM(CASE WHEN to.grp = n THEN 1 ELSE 0 END) for each column. Python: a nested dict matrix[from][to] and one += 1 per loan. Excel: one COUNTIFS with four conditions, filled down and right.",
+        "In Excel the row group is in column A and the column group in row 1. Use $A2 and B$1 so the references stay put when you fill, and read the limits with INDEX from the rules sheet."
+      ],
+      think: {
+        sql: "Joining the same table twice under two names is how SQL handles two classifications. The pivot into columns is a row of SUM(CASE ...) expressions.",
+        py: "A two-level dict is the matrix. One line inside the loop updates the right cell, and the layout (5 × 5) is decided by your two range loops.",
+        xl: "The matrix is a grid, which is what Excel is made for: one formula with mixed references, filled down and right, produces all 25 cells."
+      },
+      xl: XLC(5, { start: "B2", note: "Work area: the <b>answer</b> sheet below. Row labels (last month's group) are in column A, column labels (this month's group) in row 1. One COUNTIFS formula filled down and right gives all 25 cells." })
+    }
+  ];
+
+  var LOANS_PY = LN.map(function (r) { var o = {}; LCOLS.forEach(function (c, i) { o[c] = r[i]; }); return o; });
+  var RULES_PY = RU.map(function (r) { var o = {}; RCOLS.forEach(function (c, i) { o[c] = r[i]; }); return o; });
+
+  var starters = {
+    sql: function (t) { return "-- Tables: loans, rules\n-- Return these columns: " + t.out + " (" + t.order + ")\n\n"; },
+    py: function (t) {
+      return "# Ready to use:\n#   loans - list of dicts: loan_id, customer_id, product, disbursed, principal, outstanding, dpd, dpd_prev\n#   rules - list of dicts: grp, label, min_dpd, max_dpd, provision_rate\n" +
+        "# Finish with:  result = [ (...), (...) ]   one tuple per row with: " + t.out + "\n# Order: " + t.order + "\n\n";
+    }
+  };
+
+  var state = TASKS.map(function (t) {
+    return { tool: "sql", sql: starters.sql(t), py: starters.py(t), cells: {}, sel: t.xl.start, verdict: { sql: null, py: null, xl: null }, solved: { sql: false, py: false, xl: false }, hints: 0, reveal: false, solTab: "sql", out: { sql: null, py: null }, typed: null };
+  });
+  var cur = 0;
+  var cards = document.getElementById("cards"), taskEl = document.getElementById("task");
+
+  /* ---------- SQL engine (sql.js, loaded on demand) ---------- */
+  var sqlEngine = { status: "idle", SQL: null, error: "" };
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script"); s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("Could not load " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+  function ensureSql() {
+    if (sqlEngine.status !== "idle") return;
+    sqlEngine.status = "loading"; paintSqlStatus();
+    loadScript("https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/sql-asm.js")
+      .then(function () { return window.initSqlJs(); })
+      .then(function (SQL) { sqlEngine.SQL = SQL; sqlEngine.status = "ready"; paintSqlStatus(); })
+      .catch(function (e) { sqlEngine.status = "failed"; sqlEngine.error = String(e && e.message || e); paintSqlStatus(); });
+  }
+  function paintSqlStatus() {
+    var el = document.getElementById("sql-status"), btn = document.getElementById("run-sql");
+    if (!el) return;
+    var st = sqlEngine.status;
+    el.className = "status" + (st === "failed" ? " bad" : "");
+    el.textContent = st === "ready" ? "SQL engine ready (SQLite). Press Ctrl+Enter or Cmd+Enter to run." : st === "failed" ? "The SQL engine could not be loaded (" + sqlEngine.error + "). Copy the data into your own SQL tool from the section above." : "Loading the SQL engine, about 1 MB...";
+    document.querySelectorAll(".needs-sql").forEach(function (b) { b.disabled = st !== "ready"; });
+  }
+
+  /* ---------- verdicts ---------- */
+  function setVerdict(tool, cmp, vals, extra) {
+    var T = TASKS[cur], st = state[cur], html, cls;
+    if (cmp.ok) {
+      cls = "ok"; html = "<b>Matches.</b><span>Your result equals the expected result." + (cmp.inOrder || tool === "xl" ? "" : " The rows are in a different order than asked (" + esc(T.order) + ").") + "</span>";
+      if (!st.solved[tool]) { st.solved[tool] = true; renderCards(); paintTabs(); paintTitleStatus(); }
+    } else {
+      var slip = T.slip(vals);
+      if (cmp.matched > 0) { cls = "part"; html = "<b>Close.</b><span>" + cmp.matched + " of " + cmp.total + " expected rows found" + (cmp.actualRows !== cmp.total ? ", and your result has " + cmp.actualRows + " rows" : "") + "." + (slip ? " " + esc(slip) : " Check the rows that are missing.") + "</span>"; }
+      else { cls = "bad"; html = "<b>Not yet.</b><span>No expected rows found." + (slip ? " " + esc(slip) : " Compare your numbers with the task: which loans count, and which group does each one belong to?") + "</span>"; }
+    }
+    st.verdict[tool] = { cls: cls, html: html };
+    var el = document.getElementById("verdict"); if (el) { el.className = "verdict " + cls; el.innerHTML = html; el.hidden = false; }
+  }
+  function toRowsFromJS(v) {
+    if (!Array.isArray(v)) return [[v]];
+    if (v.length && !Array.isArray(v[0])) return v.map(function (x) { return [x]; });
+    return v;
+  }
+
+  /* ---------- run SQL ---------- */
+  function runSql() {
+    var st = state[cur], box = document.getElementById("sql-out"), vd = document.getElementById("verdict");
+    if (sqlEngine.status !== "ready") return;
+    var db = null, r;
+    vd.hidden = true;
+    try {
+      db = new sqlEngine.SQL.Database(); db.exec(SQL_SETUP);
+      r = db.exec(st.sql);
+    } catch (e) { box.innerHTML = '<div class="errbox">' + esc(e && e.message ? e.message : String(e)) + "</div>"; st.out.sql = null; if (db) db.close(); return; }
+    db.close();
+    if (!r.length) { box.innerHTML = '<div class="note">The statement ran but returned no rows. Use SELECT to return a result.</div>'; return; }
+    var last = r[r.length - 1], rows = last.values;
+    box.innerHTML = '<div class="res-title">Your result (' + rows.length + " row" + (rows.length === 1 ? "" : "s") + ')</div><div class="tw tall">' + table(last.columns, rows.slice(0, 200), { num: last.columns.map(function (c, i) { return typeof (rows[0] || [])[i] === "number" ? i : -1; }).filter(function (i) { return i > -1; }) }) + "</div>";
+    setVerdict("sql", compareResult(res[String(cur + 1)].rows, rows), flatVals(rows));
+  }
+  function peek(tab) {
+    var box = document.getElementById("sql-out"), db;
+    try { db = new sqlEngine.SQL.Database(); db.exec(SQL_SETUP); var r = db.exec("SELECT * FROM " + tab + " LIMIT 8")[0]; db.close();
+      box.innerHTML = '<div class="res-title">First rows of ' + tab + '</div><div class="tw">' + table(r.columns, r.values) + "</div>"; document.getElementById("verdict").hidden = true;
+    } catch (e) { box.innerHTML = '<div class="errbox">' + esc(String(e && e.message || e)) + "</div>"; }
+  }
+
+  /* ---------- run Python ---------- */
+  function runPy() {
+    var st = state[cur], box = document.getElementById("py-out"), vd = document.getElementById("verdict");
+    vd.hidden = true;
+    var r;
+    try { r = MiniPy.run(st.py, { loans: LOANS_PY, rules: RULES_PY }); }
+    catch (e) { box.innerHTML = '<div class="errbox">' + esc(MiniPy.describe(e)) + "</div>"; return; }
+    var html = r.out ? '<div class="res-title">Printed output</div><div class="outbox">' + esc(r.out) + "</div>" : "";
+    if (!r.scope.vars.has("result")) {
+      box.innerHTML = html + '<div class="note">Your code ran, but it did not create a variable named <code>result</code>. End with <code>result = [...]</code>, one tuple per row.</div>'; return;
+    }
+    var rows = toRowsFromJS(MiniPy.toJS(r.scope.vars.get("result")));
+    var width = rows.reduce(function (m, x) { return Math.max(m, Array.isArray(x) ? x.length : 1); }, 0);
+    var cols = []; for (var i = 0; i < width; i++) cols.push("col " + (i + 1));
+    rows = rows.map(function (x) { return Array.isArray(x) ? x : [x]; });
+    box.innerHTML = html + '<div class="res-title">Your result (' + rows.length + " row" + (rows.length === 1 ? "" : "s") + ')</div><div class="tw tall">' + table(cols, rows.slice(0, 200), { num: cols.map(function (c, i) { return typeof (rows[0] || [])[i] === "number" ? i : -1; }).filter(function (i) { return i > -1; }) }) + "</div>";
+    setVerdict("py", compareResult(res[String(cur + 1)].rows, rows), flatVals(rows));
+  }
+
+  /* ---------- Excel ---------- */
+  var XWB = null;
+  function xlBase() {
+    if (XWB) return;
+    XWB = new MiniXL.Workbook(); XWB.addSheet("loans"); XWB.addSheet("rules");
+    LCOLS.forEach(function (h, i) { XWB.setCell("loans", { r: 1, c: i + 1 }, { raw: h }); });
+    LN.forEach(function (r, i) {
+      var row = i + 2, m = /(\d+)-(\d+)-(\d+)/.exec(r[3]);
+      for (var c = 0; c < 8; c++) {
+        if (c === 3) XWB.setCell("loans", { r: row, c: 4 }, { raw: MiniXL.toSerial(+m[1], +m[2], +m[3]), fmt: "date" });
+        else XWB.setCell("loans", { r: row, c: c + 1 }, { raw: r[c] });
+      }
+    });
+    RCOLS.forEach(function (h, i) { XWB.setCell("rules", { r: 1, c: i + 1 }, { raw: h }); });
+    RU.forEach(function (r, i) { r.forEach(function (v, j) { XWB.setCell("rules", { r: i + 2, c: j + 1 }, { raw: v }); }); });
+  }
+  function xlLocked(cfg) {
+    var set = {};
+    cfg.pre.forEach(function (row, ri) { row.forEach(function (v, ci) { if (v !== undefined && v !== null) set[MiniXL.addr(ri + 1, ci + 1)] = v; }); });
+    return set;
+  }
+  function xlSheet() {
+    xlBase();
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg);
+    XWB.addSheet("ans");
+    Object.keys(locked).forEach(function (a) {
+      var v = locked[a], pa = MiniXL.parseAddr(a);
+      XWB.setCell("ans", pa, typeof v === "object" ? { raw: MiniXL.parseInput(v.d).raw, fmt: "date" } : { raw: v });
+    });
+    Object.keys(st.cells).forEach(function (a) {
+      var inp = MiniXL.parseInput(st.cells[a]); if (inp) XWB.setCell("ans", MiniXL.parseAddr(a), inp);
+    });
+    return locked;
+  }
+  function xlLockedText(v) { return typeof v === "object" ? v.d : String(v); }
+  function xlCellInfo(a, locked, r) {
+    var st = state[cur], err = XWB.error("ans", a), val = XWB.value("ans", r.r, r.c);
+    return {
+      cls: (locked[a] !== undefined ? "lock " : "") + (r.r === 1 ? "hdr " : "") + (st.cells[a] ? "filled " : "") + (typeof val === "number" ? "num " : "") + (err ? "err " : "") + (st.sel === a ? "sel" : ""),
+      text: XWB.display("ans", a), title: err ? (err.msg || err.code) : ""
+    };
+  }
+  function renderXlGrid() {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlSheet(), grid = document.getElementById("xl-grid");
+    grid.className = cfg.rows > 20 ? "tw tall" : "tw";
+    var tbl = grid.querySelector("table.xgrid");
+    if (tbl && tbl.getAttribute("data-task") === String(cur)) {
+      tbl.querySelectorAll("td[data-addr]").forEach(function (td) {
+        var a = td.getAttribute("data-addr"), p = MiniXL.parseAddr(a), info = xlCellInfo(a, locked, { r: p.r, c: p.c });
+        td.className = info.cls; if (td.textContent !== info.text) td.textContent = info.text;
+        if (info.title) td.setAttribute("title", info.title); else td.removeAttribute("title");
+      });
+    } else {
+      var head = '<th class="rn"></th>', r, c;
+      for (c = 1; c <= cfg.ncols; c++) head += "<th>" + MiniXL.colName(c) + "</th>";
+      var body = "";
+      for (r = 1; r <= cfg.rows; r++) {
+        body += '<tr><th class="rn">' + r + "</th>";
+        for (c = 1; c <= cfg.ncols; c++) {
+          var a2 = MiniXL.addr(r, c), info2 = xlCellInfo(a2, locked, { r: r, c: c });
+          body += '<td class="' + info2.cls + '" data-addr="' + a2 + '" tabindex="-1"' + (info2.title ? ' title="' + esc(info2.title) + '"' : "") + ">" + esc(info2.text) + "</td>";
+        }
+        body += "</tr>";
+      }
+      grid.innerHTML = '<table class="xgrid" data-task="' + cur + '"><thead><tr>' + head + "</tr></thead><tbody>" + body + "</tbody></table>";
+    }
+    paintFormulaBar();
+    var e = XWB.error("ans", st.sel), msg = document.getElementById("xl-msg");
+    msg.textContent = e ? e.code + (e.msg ? ": " + e.msg : "") : "";
+    msg.className = "status" + (e ? " bad" : "");
+    xlVerdict();
+  }
+  function paintFormulaBar() {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg), a = st.sel, inp = document.getElementById("fx-input");
+    document.getElementById("fx-name").textContent = a;
+    var isLocked = locked[a] !== undefined;
+    inp.readOnly = isLocked;
+    inp.value = isLocked ? xlLockedText(locked[a]) : (st.cells[a] || "");
+    inp.placeholder = isLocked ? "" : "Type a value or a formula, then press Enter";
+  }
+  function xlVerdict() {
+    var cfg = TASKS[cur].xl, st = state[cur], rows = [], anyErr = null, filled = Object.keys(st.cells).length;
+    var el = document.getElementById("verdict");
+    if (!filled) { el.hidden = true; return; }
+    for (var r = cfg.resRows[0]; r <= cfg.resRows[1]; r++) {
+      var row = [];
+      cfg.cols.forEach(function (c) {
+        var v = XWB.value("ans", r, c);
+        if (MiniXL.isErr(v)) { anyErr = anyErr || v; row.push(null); } else row.push(v);
+      });
+      rows.push(row);
+    }
+    if (anyErr) { el.className = "verdict bad"; el.innerHTML = "<b>Check your formulas.</b><span>At least one cell shows an error (" + esc(anyErr.code) + "). Click a red cell to read the message.</span>"; el.hidden = false; return; }
+    setVerdict("xl", compareResult(res[String(cur + 1)].rows, rows.filter(function (row) { return row.some(function (x) { return x !== null; }); })), flatVals(rows));
+  }
+  function xlFill(mode) {
+    var cfg = TASKS[cur].xl, st = state[cur], locked = xlLocked(cfg), a = MiniXL.parseAddr(st.sel), text = st.cells[st.sel];
+    if (!text) return;
+    var endC = mode === "down" ? a.c : Math.max(a.c, cfg.rightLimit), endR = mode === "right" ? a.r : ((cfg.ends && cfg.ends[String(a.c)]) || cfg.rows);
+    for (var r = a.r; r <= endR; r++) for (var c = a.c; c <= endC; c++) {
+      if (r === a.r && c === a.c) continue;
+      var t = MiniXL.addr(r, c); if (locked[t] !== undefined) continue;
+      st.cells[t] = MiniXL.shiftFormula(text, r - a.r, c - a.c);
+    }
+    renderXlGrid();
+  }
+  function xlLoadSolution() {
+    var cfg = TASKS[cur].xl, st = state[cur];
+    st.cells = {};
+    cfg.sol.forEach(function (s) { st.cells[s[0]] = s[1]; st.sel = s[0]; if (s[2] === "down") xlFill("down"); else if (s[2] === "both") xlFill("both"); });
+    st.sel = cfg.start; renderXlGrid();
+  }
+  function xlCommit(text) {
+    var st = state[cur], locked = xlLocked(TASKS[cur].xl);
+    if (locked[st.sel] !== undefined) return;
+    if (text.trim() === "") delete st.cells[st.sel]; else st.cells[st.sel] = text;
+  }
+  function xlMove(dr, dc) {
+    var cfg = TASKS[cur].xl, st = state[cur], a = MiniXL.parseAddr(st.sel);
+    var r = Math.min(cfg.rows, Math.max(1, a.r + dr)), c = Math.min(cfg.ncols, Math.max(1, a.c + dc));
+    st.sel = MiniXL.addr(r, c);
+  }
+  function loansSheetHtml() {
+    xlBase();
+    var cols = ["A", "B", "C", "D", "E", "F", "G", "H"], head = '<th class="rn"></th>' + cols.map(function (c) { return "<th>" + c + "</th>"; }).join("");
+    var body = "";
+    for (var r = 1; r <= LAST; r++) {
+      body += '<tr><td class="rn">' + r + "</td>";
+      for (var c = 1; c <= 8; c++) { var v = XWB.value("loans", r, c); body += '<td class="' + (typeof v === "number" && c !== 2 && c !== 4 && !(c === 1) ? "n" : "") + '">' + esc(XWB.display("loans", { r: r, c: c })) + "</td>"; }
+      body += "</tr>";
+    }
+    return '<div class="tw tall"><table class="orders-sheet"><thead><tr>' + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+  }
+
+  /* ---------- workspace rendering ---------- */
+  function wsHtml(tool) {
+    var st = state[cur], T = TASKS[cur];
+    if (tool === "sql") {
+      return '<div class="ws sql">' +
+        '<textarea class="editor" id="ed-sql" data-ed="sql" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="SQL editor">' + esc(st.sql) + "</textarea>" +
+        '<div class="copyrow"><button class="btn run-sql needs-sql" id="run-sql" data-act="run-sql" disabled>Run query</button>' +
+        '<button class="btn sm needs-sql" data-act="peek" data-t="loans" disabled>Peek at loans</button><button class="btn sm needs-sql" data-act="peek" data-t="rules" disabled>Peek at rules</button>' +
+        '<button class="btn sm" data-act="reset-sql">Reset</button></div>' +
+        '<div class="status" id="sql-status"></div><div id="sql-out"></div></div>';
+    }
+    if (tool === "py") {
+      return '<div class="ws py">' +
+        '<textarea class="editor" id="ed-py" data-ed="py" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="Python editor">' + esc(st.py) + "</textarea>" +
+        '<div class="copyrow"><button class="btn run-py" data-act="run-py">Run code</button><button class="btn sm" data-act="reset-py">Reset</button></div>' +
+        '<div class="status">Ctrl+Enter or Cmd+Enter runs the code. Tab inserts spaces; press Esc, then Tab, to leave the editor. Supported: loops, if, def, lambda, dicts, lists, tuples, sets, comprehensions, f-strings, sorted, round, sum, min, max, enumerate, zip, math, collections.</div>' +
+        '<div id="py-out"></div></div>';
+    }
+    return '<div class="ws xl">' +
+      '<p class="xl-note">' + T.xl.note + ' Click a cell, type a value or formula in the formula bar and press Enter. Formulas can read the <code>loans</code> sheet (A1:H' + LAST + ') and the <code>rules</code> sheet (A1:E6). Grey cells are given.</p>' +
+      '<div class="fbar"><span class="nm" id="fx-name">B2</span><span class="fx">fx</span><input id="fx-input" type="text" autocomplete="off" spellcheck="false" aria-label="Formula bar"></div>' +
+      '<div class="tw" id="xl-grid"></div>' +
+      '<div class="status" id="xl-msg" role="status" aria-live="polite"></div>' +
+      '<div class="fillrow"><button class="btn sm" data-act="fill" data-m="down">Fill down ↓</button><button class="btn sm" data-act="fill" data-m="right">Fill right →</button><button class="btn sm" data-act="fill" data-m="both">Fill down and right</button><button class="btn sm" data-act="xl-clear">Clear my cells</button></div>' +
+      '<span class="xl-note">Fill copies the selected cell\'s formula into the cells below or beside it and shifts the references, except those with a $ sign.</span>' +
+      '<details><summary>Look at the loans sheet (A1:H' + LAST + ')</summary><div style="margin-top:8px">' + loansSheetHtml() + "</div></details></div>";
+  }
+  function paintTabs() {
+    var st = state[cur];
+    document.querySelectorAll("#tool-tabs .tab").forEach(function (b) {
+      var t = b.getAttribute("data-tool");
+      b.setAttribute("aria-selected", String(st.tool === t));
+      var ok = b.querySelector(".ok"); if (ok) ok.textContent = st.solved[t] ? "✓" : "";
+    });
+  }
+  function paintTitleStatus() {
+    var st = state[cur], n = (st.solved.sql ? 1 : 0) + (st.solved.py ? 1 : 0) + (st.solved.xl ? 1 : 0), el = document.getElementById("solved-line");
+    if (el) el.textContent = n === 0 ? "Not solved yet" : n === 3 ? "Solved in all three tools. Compare the approaches below." : "Solved in " + n + " of 3 tools";
+  }
+  function renderWs() {
+    var st = state[cur];
+    document.getElementById("ws").innerHTML = wsHtml(st.tool);
+    var vd = document.getElementById("verdict"); vd.hidden = true;
+    if (st.tool === "sql") { ensureSql(); paintSqlStatus(); }
+    if (st.tool === "xl") renderXlGrid();
+    var saved = st.verdict[st.tool];
+    if (saved && st.tool !== "xl") { vd.className = "verdict " + saved.cls; vd.innerHTML = saved.html; vd.hidden = false; }
+    paintTabs();
+  }
+  function renderCards() {
+    cards.innerHTML = TASKS.map(function (t, i) {
+      var s = state[i].solved;
+      return '<button class="tcard" role="tab" data-i="' + i + '" aria-selected="' + (i === cur) + '"><span class="lv">Task ' + (i + 1) + " · " + t.lv + '</span><span class="ttl">' + esc(t.title) + '</span><span class="sk">' + esc(t.skills) + '</span><span class="pips" aria-label="Solved in"><i class="pip sql ' + (s.sql ? "on" : "") + '"></i><i class="pip py ' + (s.py ? "on" : "") + '"></i><i class="pip xl ' + (s.xl ? "on" : "") + '"></i></span></button>';
+    }).join("");
+  }
+  function solutionHtml() {
+    var st = state[cur], k = String(cur + 1), t = st.solTab, T = TASKS[cur], body;
+    if (t === "sql") body = '<pre class="code">' + esc(DATA.sql[k]) + '</pre><div class="copyrow"><button class="btn sm" data-act="load-sql">Load into the SQL editor</button>' + copyBtn("sol-sql-" + k, DATA.sql[k], "Copy SQL") + "</div>";
+    else if (t === "py") body = '<div class="res-title">Plain Python (runs in the Python editor)</div><pre class="code">' + esc(DATA.pyPlain[k]) + '</pre><div class="copyrow"><button class="btn sm" data-act="load-py">Load into the Python editor</button>' + copyBtn("sol-py-" + k, DATA.pyPlain[k], "Copy Python") + '</div><div class="res-title">The same task with pandas (run it on your own computer)</div><pre class="code">' + esc(DATA.py[k]) + "</pre>" + '<div class="copyrow">' + copyBtn("sol-pd-" + k, DATA.py[k], "Copy pandas") + "</div>";
+    else {
+      var all = T.xl.sol.map(function (s) { return s[0] + ": " + s[1]; }).join("\n");
+      body = '<div class="formulas">' + T.xl.sol.map(function (s) { return '<div class="frow"><span class="cell">' + esc(s[0]) + '</span><pre class="code">' + esc(s[1]) + "</pre></div>"; }).join("") + '</div><div class="copyrow"><button class="btn sm" data-act="load-xl">Load into the sheet</button>' + copyBtn("sol-xl-" + k, all, "Copy formulas") +
+        '<span class="xl-note">' + (T.xl.sol.some(function (s) { return s[2] === "both"; }) ? "Fill the first formula down and right across the table." : "Fill each formula down to the last row of its table.") + "</span></div>";
+    }
+    return '<div class="sol"><div class="tabs" role="tablist"><button class="tab" role="tab" data-t="sql" aria-selected="' + (t === "sql") + '"><i class="dot sql"></i>SQL</button><button class="tab" role="tab" data-t="py" aria-selected="' + (t === "py") + '"><i class="dot py"></i>Python</button><button class="tab" role="tab" data-t="xl" aria-selected="' + (t === "xl") + '"><i class="dot xl"></i>Excel</button></div>' + body +
+      '<div class="res-title">Expected result</div><div class="tw">' + table(res[k].cols, res[k].rows, { num: res[k].cols.map(function (c, j) { return res[k].rows.some(function (x) { return typeof x[j] === "number"; }) ? j : -1; }).filter(function (j) { return j > -1; }) }) + "</div>" +
+      '<div class="res-title">How each tool thinks about it</div><div class="think"><div class="sql"><h4>SQL</h4><p>' + esc(T.think.sql) + '</p></div><div class="py"><h4>Python</h4><p>' + esc(T.think.py) + '</p></div><div class="xl"><h4>Excel</h4><p>' + esc(T.think.xl) + "</p></div></div></div>";
+  }
+  function renderLower() {
+    var st = state[cur], T = TASKS[cur];
+    var hints = T.hints.slice(0, st.hints).map(function (h, j) { return '<div class="hint"><b>Hint ' + (j + 1) + " of 3</b>" + esc(h) + "</div>"; }).join("");
+    document.getElementById("lower").innerHTML =
+      '<div class="hints">' + hints + "</div>" +
+      '<div class="copyrow"><button class="btn" data-act="hint" ' + (st.hints >= 3 ? "disabled" : "") + ">" + (st.hints >= 3 ? "No more hints" : "Show hint " + (st.hints + 1) + " of 3") + '</button><button class="btn" data-act="reveal">' + (st.reveal ? "Hide solutions" : "Reveal solutions") + "</button></div>" +
+      (st.reveal ? solutionHtml() : "") +
+      '<details><summary>Working in your own tool? Check one value here</summary><div style="display:grid;gap:10px;margin-top:10px"><div class="checkrow"><label class="fld" for="ans">' + esc(T.check.label) + '<input id="ans" type="text" inputmode="decimal" autocomplete="off" placeholder="' + esc(T.check.placeholder) + '">' + '</label><button class="btn primary" data-act="typed">Check answer</button></div><div class="fb-line" id="fb" role="status" aria-live="polite"></div></div></details>';
+  }
+  function renderTask() {
+    var T = TASKS[cur], st = state[cur];
+    document.getElementById("task").innerHTML =
+      "<h3>Task " + (cur + 1) + ": " + esc(T.title) + "</h3>" +
+      '<div class="goal"><span class="eyebrow">Question</span><div class="q">' + esc(T.q) + '</div><p class="muted">Return: <code>' + esc(T.out) + "</code> · Order: " + esc(T.order) + "</p></div>" +
+      '<div class="copyrow"><div class="tabs" role="tablist" id="tool-tabs" aria-label="Tool">' +
+        '<button class="tab" role="tab" data-tool="sql"><i class="dot sql"></i>SQL <span class="ok"></span></button>' +
+        '<button class="tab" role="tab" data-tool="py"><i class="dot py"></i>Python <span class="ok"></span></button>' +
+        '<button class="tab" role="tab" data-tool="xl"><i class="dot xl"></i>Excel <span class="ok"></span></button></div>' +
+        '<span class="status" id="solved-line"></span></div>' +
+      '<div id="ws"></div><div class="verdict" id="verdict" hidden></div><div id="lower" style="display:grid;gap:12px"></div>';
+    renderWs(); renderLower(); paintTitleStatus();
+  }
+
+  /* ---------- typed check (own tools) ---------- */
+  function typedCheck() {
+    var T = TASKS[cur], c = T.check, raw = document.getElementById("ans").value.trim(), fb = document.getElementById("fb");
+    var say = function (cls, msg) { fb.className = "fb-line " + cls; fb.textContent = msg; };
+    if (!raw) { say("warn", "Enter your answer first."); return; }
+    var cleaned = raw.replace(/\s/g, "").replace("%", ""); if (/^\d{1,3}(\.\d{3})+$/.test(cleaned)) cleaned = cleaned.replace(/\./g, ""); var v = parseFloat(cleaned.replace(/,/g, ""));
+    if (!isFinite(v)) { say("warn", "Enter a number, for example 22 or 13.7."); return; }
+    if (Math.abs(v - c.answer) <= c.tol) { say("good", "Correct."); return; }
+    var slip = T.slip([v]);
+    say("bad", slip || "Not quite. Re-check which loans count and how you group them, or take a hint.");
+  }
+
+  /* ---------- events ---------- */
+  cards.addEventListener("click", function (e) { var b = e.target.closest(".tcard"); if (!b) return; cur = +b.getAttribute("data-i"); renderCards(); renderTask(); });
+  var taskRoot = document.getElementById("task");
+  taskRoot.addEventListener("click", function (e) {
+    var tool = e.target.closest("#tool-tabs .tab");
+    if (tool) { state[cur].tool = tool.getAttribute("data-tool"); renderWs(); return; }
+    var stab = e.target.closest(".sol .tab");
+    if (stab) { state[cur].solTab = stab.getAttribute("data-t"); renderLower(); return; }
+    var cell = e.target.closest("td[data-addr]");
+    if (cell) { state[cur].sel = cell.getAttribute("data-addr"); renderXlGrid(); cell.focus(); return; }
+    var b = e.target.closest("[data-act]"); if (!b) return;
+    var act = b.getAttribute("data-act"), st = state[cur];
+    switch (act) {
+      case "run-sql": runSql(); break;
+      case "run-py": runPy(); break;
+      case "peek": peek(b.getAttribute("data-t")); break;
+      case "reset-sql": st.sql = starters.sql(TASKS[cur]); document.getElementById("ed-sql").value = st.sql; break;
+      case "reset-py": st.py = starters.py(TASKS[cur]); document.getElementById("ed-py").value = st.py; break;
+      case "fill": xlFill(b.getAttribute("data-m")); break;
+      case "xl-clear": st.cells = {}; st.sel = TASKS[cur].xl.start; st.verdict.xl = null; renderXlGrid(); break;
+      case "hint": st.hints = Math.min(3, st.hints + 1); renderLower(); break;
+      case "reveal": st.reveal = !st.reveal; renderLower(); break;
+      case "typed": typedCheck(); break;
+      case "load-sql": st.sql = DATA.sql[String(cur + 1)] + "\n"; st.tool = "sql"; renderWs(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+      case "load-py": st.py = DATA.pyPlain[String(cur + 1)] + "\n"; st.tool = "py"; renderWs(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+      case "load-xl": st.tool = "xl"; renderWs(); xlLoadSolution(); document.getElementById("ws").scrollIntoView({ block: "nearest" }); break;
+    }
+  });
+  taskRoot.addEventListener("input", function (e) {
+    var ed = e.target.getAttribute && e.target.getAttribute("data-ed");
+    if (ed) state[cur][ed] = e.target.value;
+  });
+  var tabTrap = true;
+  taskRoot.addEventListener("keydown", function (e) {
+    var t = e.target, ed = t.getAttribute && t.getAttribute("data-ed");
+    if (ed) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); if (ed === "sql") runSql(); else runPy(); return; }
+      if (e.key === "Escape") { tabTrap = false; return; }
+      if (e.key === "Tab" && !e.shiftKey && tabTrap) {
+        e.preventDefault(); var s = t.selectionStart; t.value = t.value.slice(0, s) + "    " + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = s + 4; state[cur][ed] = t.value; return;
+      }
+      if (e.key === "Enter" && ed === "py" && !e.shiftKey) {
+        var pos = t.selectionStart, before = t.value.slice(0, pos), line = before.slice(before.lastIndexOf("\n") + 1);
+        var indent = /^ */.exec(line)[0] + (/:\s*$/.test(line) ? "    " : "");
+        e.preventDefault(); t.value = before + "\n" + indent + t.value.slice(t.selectionEnd); t.selectionStart = t.selectionEnd = pos + 1 + indent.length; state[cur][ed] = t.value; return;
+      }
+      tabTrap = true;
+      return;
+    }
+    if (t.id === "fx-input") {
+      if (e.key === "Enter") { e.preventDefault(); xlCommit(t.value); xlMove(1, 0); renderXlGrid(); document.getElementById("fx-input").focus(); }
+      else if (e.key === "Escape") { paintFormulaBar(); }
+      else if (e.key === "Tab") { e.preventDefault(); xlCommit(t.value); xlMove(0, e.shiftKey ? -1 : 1); renderXlGrid(); document.getElementById("fx-input").focus(); }
+    }
+    if (t.matches && t.matches("td[data-addr]")) {
+      var map = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+      if (map[e.key]) { e.preventDefault(); xlMove(map[e.key][0], map[e.key][1]); renderXlGrid(); var nt = document.querySelector('td[data-addr="' + state[cur].sel + '"]'); if (nt) nt.focus(); return; }
+      var fx = document.getElementById("fx-input");
+      if (fx && !fx.readOnly && !e.ctrlKey && !e.metaKey && !e.altKey && (e.key.length === 1 || e.key === "Enter" || e.key === "F2")) {
+        e.preventDefault(); fx.focus();
+        if (e.key.length === 1) { fx.value = e.key; } else fx.setSelectionRange(fx.value.length, fx.value.length);
+      }
+    }
+  });
+  taskRoot.addEventListener("change", function (e) {
+    if (e.target.id === "fx-input" && !e.target.readOnly) { xlCommit(e.target.value); renderXlGrid(); }
+  });
+
+  renderCards(); renderTask();
+  setTimeout(ensureSql, 300);
+})();
+</script>
+</html>
