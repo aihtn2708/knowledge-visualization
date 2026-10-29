@@ -246,7 +246,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
       <span class="tag"><i class="dot loop"></i>Python loop, row by row</span>
       <span class="tag"><i class="dot xl"></i>Excel, formulas in cells</span>
     </div>
-    <p style="margin:0"><a class="jump" href="#assign-h">Practise with seven hands-on labs ↓</a></p>
+    <p style="margin:0"><a class="jump" href="#assign-h">Practise with eight hands-on labs ↓</a></p>
   </header>
 
   <main style="display:flex;flex-direction:column;gap:40px">
@@ -367,7 +367,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
 
     <section aria-labelledby="assign-h" class="assign">
       <h2 id="assign-h">Assignments</h2>
-      <p class="sec-intro">Put the ideas to work on realistic data. New to analytics? Start with <a class="jump" href="foundation/index.html">Data Analytics Foundations</a>. Labs 1 to 3 run SQL, Python and Excel formulas in the browser, check your result against the expected answer and show how each tool approaches the same task. Labs 4 to 7 are industry business cases built on well-known open-source repositories.</p>
+      <p class="sec-intro">Put the ideas to work on realistic data. New to analytics? Start with <a class="jump" href="foundation/index.html">Data Analytics Foundations</a>. Labs 1 to 3 run SQL, Python and Excel formulas in the browser, check your result against the expected answer and show how each tool approaches the same task. Labs 4 to 8 are industry business cases built on well-known open-source repositories.</p>
       <div class="table-scroll">
         <table class="rosetta">
           <thead><tr><th>#</th><th>Assignment</th><th>Domain and data</th><th>Tasks</th><th class="c-set">Set-based ideas you practise</th><th>Level</th><th></th></tr></thead>
@@ -376,9 +376,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
             <tr><td class="n">2</td><td>Debt Classification Lab</td><td>Consumer finance, credit risk. 120 loans of 70 customers, two month-ends.</td><td>Classify by days past due, provision per group, NPL and coverage ratios, one group per customer, roll-rate matrix</td><td class="c-set">JOIN on a range (BETWEEN), conditional totals, MAX() OVER (PARTITION BY), pivot with SUM(CASE ...)</td><td>Intermediate</td><td><a class="open" href="labs/debt-classification/index.html">Open lab</a></td></tr>
             <tr><td class="n">3</td><td>Loan Recommendation Lab</td><td>Consumer finance, lending. 80 applicants, 132 past loans, 4 products.</td><td>Score bands, credit history profile, eligibility per product, recommend one product, offer and affordability</td><td class="c-set">NULL handling, LEFT JOIN, join on rules, ROW_NUMBER() first match, MIN / MAX caps</td><td>Intermediate to advanced</td><td><a class="open" href="labs/loan-recommendation/index.html">Open lab</a></td></tr>
             <tr><td class="n">4</td><td>Retail Demand Forecasting Lab</td><td>FMCG. US monthly retail sales 1992–2016, from facebook/prophet.</td><td>Seasonality, a 24-month backtest against Prophet, a buffered supply plan</td><td class="c-set">Moving averages, seasonal indices, MAPE backtesting</td><td>Intermediate</td><td><a class="open" href="industry/retail-demand-forecasting/index.html">Open lab</a></td></tr>
-            <tr><td class="n">5</td><td>Delivery Route Planning Lab</td><td>Supply chain. 16 stores and one warehouse, from google/or-tools.</td><td>Map demand, compare routing methods, choose the cheapest truck size</td><td class="c-set">Vehicle routing, savings heuristic, cost trade-offs</td><td>Intermediate</td><td><a class="open" href="industry/delivery-route-planning/index.html">Open lab</a></td></tr>
+            <tr><td class="n">5</td><td>OTIF Delivery Performance Lab</td><td>Supply chain. About 10,000 USAID health shipments 2006–2015, model from statsmodels.</td><td>On-time rates, root causes, a late-delivery model, promise-date buffers</td><td class="c-set">Grouped rates, logistic regression, odds ratios, percentiles</td><td>Intermediate</td><td><a class="open" href="industry/otif-delivery-performance/index.html">Open lab</a></td></tr>
             <tr><td class="n">6</td><td>Investment Risk and Return Lab</td><td>Finance. Shiller S&amp;P 500 data 1871–2023, metrics from ranaroussi/quantstats.</td><td>Returns, drawdowns, holding-period risk, an equity-share rule</td><td class="c-set">CAGR, volatility, Sharpe ratio, rolling windows</td><td>Intermediate</td><td><a class="open" href="industry/investment-risk-return/index.html">Open lab</a></td></tr>
             <tr><td class="n">7</td><td>Credit Scorecard Lab</td><td>Lending. 1,000 German credit applicants, from ShichenXie/scorecardpy.</td><td>WoE and IV, a points scorecard, test performance, a cost-based cut-off</td><td class="c-set">Binning, logistic regression, AUC and KS, cut-off optimisation</td><td>Intermediate to advanced</td><td><a class="open" href="industry/credit-scorecard/index.html">Open lab</a></td></tr>
+            <tr><td class="n">8</td><td>Freight Hedging Strategy Lab</td><td>Supply chain finance. BLS deep sea freight price index 1988–2026, volatility model from bashtage/arch.</td><td>Freight volatility, a GARCH forecast, a backtest of fixed-rate and cap hedges</td><td class="c-set">Log returns, GARCH, backtesting, risk tolerance rules</td><td>Intermediate to advanced</td><td><a class="open" href="industry/freight-hedging-strategy/index.html">Open lab</a></td></tr>
           </tbody>
         </table>
       </div>

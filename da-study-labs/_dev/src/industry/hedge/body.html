@@ -1,0 +1,91 @@
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:14px">
+    <a class="backlink" href="{{foundation}}"{{target}}>← Data Analytics Foundations</a>
+    <div class="eyebrow">Industry lab · Supply chain finance</div>
+    <h1>Freight Hedging Strategy Lab</h1>
+    <p class="lead">An exporter that sells at fixed prices pays ocean freight every month, so every rise in freight comes straight out of its margin. Measure how much freight costs move, model the risk for next year, and test how much of next year's freight to lock in with fixed-rate contracts or a price cap.</p>
+    <div class="repo">
+      <span class="nm">bashtage/arch</span>
+      <span class="meta"><span>★ about 1.6k</span><span>permissive open-source licence</span><span>Python</span></span>
+      <p>arch is the standard Python library for volatility models such as GARCH. This lab uses it to model how freight cost volatility clusters and to forecast next year's risk. The data is the US Bureau of Labor Statistics producer price index for deep sea freight transportation, monthly since June 1988, from FRED.</p>
+      <a class="go" href="https://github.com/bashtage/arch" target="_blank" rel="noopener">Open the repository</a>
+    </div>
+  </header>
+
+  <section class="sec" aria-labelledby="brief-h">
+    <h2 id="brief-h">The business question</h2>
+    <div class="brief">
+      <div><b class="k">Exposure</b>50 forty-foot containers a month, paid at the market rate. To keep the numbers readable, one index point is taken as 10 US dollars per container.</div>
+      <div><b class="k">Budget</b>Set each December for the next calendar year at the December rate. An overrun is the year's actual freight cost above that budget.</div>
+      <div><b class="k">Hedging tools</b>A fixed-rate annual contract (or a freight swap) locks the December rate plus a premium. A cap pays the market rate but never more than a ceiling, for an upfront fee.</div>
+      <div><b class="k">Decision</b>What share of next year's volume to lock, and whether a cap is better value.</div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="d-h">
+    <span class="stage s1"><i></i>Descriptive · how have freight costs moved?</span>
+    <h2 id="d-h">Thirty-eight years of deep sea freight prices</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="panel"><div id="ch-idx"></div></div>
+  </section>
+
+  <section class="sec" aria-labelledby="g-h">
+    <span class="stage s2"><i></i>Diagnostic · when does the risk bite?</span>
+    <h2 id="g-h">Big moves come in bursts</h2>
+    <div class="grid2">
+      <div class="panel"><h3>Change over 12 months</h3><p class="muted" style="font-size:0.9rem">Every month's price compared with the same month a year earlier.</p><div id="ch-hist"></div></div>
+      <div class="panel"><h3>The largest 12-month rises</h3><div class="tw" id="rise-table"></div></div>
+    </div>
+    <p class="sec-intro" id="diag-text"></p>
+  </section>
+
+  <section class="sec" aria-labelledby="p-h">
+    <span class="stage s3"><i></i>Predictive · how much could next year cost?</span>
+    <h2 id="p-h">A GARCH volatility forecast</h2>
+    <p class="sec-intro">A GARCH(1,1) model, fitted with arch, lets volatility rise after large moves and fade in calm periods. Its forecast for the next 12 months turns into a budget-at-risk figure: the rise in next year's freight that is exceeded only one year in twenty if changes are roughly normal.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-vol"></div></div>
+      <div class="controls"><div class="kpis" id="var-kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div><p class="muted" style="font-size:0.9rem" id="garch-note"></p></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="r-h">
+    <span class="stage s4"><i></i>Prescriptive · how much should we hedge?</span>
+    <h2 id="r-h">Backtest the strategies, then pick one</h2>
+    <p class="sec-intro">Each strategy is replayed on every calendar year from 1989 to 2025: the budget is set in December, then the year's actual prices are paid. Hedging costs a premium in calm years and pays off in the bad ones. The rule below picks the lowest hedge share whose worst year stayed within the budget tolerance.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-bt"></div><div class="tw" id="bt-table"></div></div>
+      <div class="controls">
+        <div class="slider"><label for="prem" id="prem-l"></label><input id="prem" type="range" min="0" max="10" step="0.5" value="3"></div>
+        <div class="slider"><label for="tol" id="tol-l"></label><input id="tol" type="range" min="2" max="20" step="1" value="8"></div>
+        <div class="slider"><label for="cap" id="cap-l"></label><input id="cap" type="range" min="0" max="30" step="1" value="10"></div>
+        <div class="slider"><label for="fee" id="fee-l"></label><input id="fee" type="range" min="0" max="8" step="0.5" value="2"></div>
+        <div class="memo" id="memo"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="x-h">
+    <div class="eyebrow">Your turn</div>
+    <h2 id="x-h">Exercises</h2>
+    <div class="ex-list" id="ex"></div>
+  </section>
+
+  <section class="sec" aria-labelledby="c-h">
+    <div class="eyebrow">Reproduce it</div>
+    <h2 id="c-h">Fit the GARCH model with arch</h2>
+    <p class="sec-intro">Install with <code>pip install pandas arch</code>. The script downloads the index from FRED, measures volatility, fits GARCH(1,1), and backtests the fixed-contract strategy.</p>
+    <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
+  </section>
+
+  <section class="sec sources" aria-labelledby="s-h">
+    <div class="eyebrow">Sources</div>
+    <h2 id="s-h">Data and methods</h2>
+    <ol>
+      <li><a href="https://fred.stlouisfed.org/data/PCU483111483111P" target="_blank" rel="noopener">FRED: Producer Price Index by Industry, Deep Sea Freight Transportation: Primary Services (PCU483111483111P)</a> <span>U.S. Bureau of Labor Statistics, index June 1988 = 100, monthly, not seasonally adjusted. Retrieved 29 October 2026, data to September 2026.</span></li>
+      <li><a href="https://github.com/bashtage/arch" target="_blank" rel="noopener">bashtage/arch</a> <span>ARCH and GARCH volatility models for Python.</span></li>
+      <li><a href="{{foundation}}"{{target}}>Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
+    </ol>
+  </section>
+  <footer>Teaching model, not trading advice. A producer price index reflects contract and spot prices together and moves far less than spot container indices, so real spot exposure is riskier than shown. Contract premiums, cap fees and the dollar scale are illustrative; real hedges also carry basis risk between the hedge's index and the lanes actually shipped, and counterparty risk.</footer>
+</div>

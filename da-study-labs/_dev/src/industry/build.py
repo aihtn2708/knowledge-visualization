@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "tools"))
 from sitekit import SITE, wrap_doc
 
-LABS = {"fmcg": "retail-demand-forecasting", "sc": "delivery-route-planning", "fin": "investment-risk-return", "lend": "credit-scorecard"}
+LABS = {"fmcg": "retail-demand-forecasting", "otif": "otif-delivery-performance", "hedge": "freight-hedging-strategy", "fin": "investment-risk-return", "lend": "credit-scorecard"}
 rd = lambda *p: open(os.path.join(HERE, *p), encoding="utf8").read()
 css = rd("base.css") + rd("lab.css")
 shared = rd("lab.js")

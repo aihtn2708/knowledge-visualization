@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Delivery Route Planning Lab</title>
+<title>OTIF Delivery Performance Lab</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: roadmap map on top (as in the course diagram), then Introduction, Key concepts, Types, two worked cases, quiz, sources. */
@@ -270,64 +270,68 @@ pre.code { margin: 0; background: var(--code-bg); border-radius: 10px; padding: 
   <header style="display:flex;flex-direction:column;gap:14px">
     <a class="backlink" href="../../foundation/index.html">← Data Analytics Foundations</a>
     <div class="eyebrow">Industry lab · Supply chain</div>
-    <h1>Delivery Route Planning Lab</h1>
-    <p class="lead">A distributor delivers to 16 stores every morning from one warehouse. Map the demand, see why simple planning wastes kilometres, compare routing methods, and choose the truck size that makes the daily round cheapest.</p>
+    <h1>OTIF Delivery Performance Lab</h1>
+    <p class="lead">A global health supply chain shipped about 10,000 orders of medicines and test kits to more than 40 countries. Measure how often they arrived on time, find where the misses come from, predict which shipments are at risk, and set delivery promises the network can keep.</p>
     <div class="repo">
-      <span class="nm">google/or-tools</span>
-      <span class="meta"><span>★ about 14.3k</span><span>Apache-2.0 licence</span><span>C++, Python, Java, C#</span></span>
-      <p>OR-Tools is Google's open-source software for optimisation. This lab uses the capacitated vehicle routing example from its documentation: one depot, 16 stops on a city grid, and a demand at each stop. The best routes on this page were solved with OR-Tools.</p>
-      <a class="go" href="https://developers.google.com/optimization/routing/cvrp" target="_blank" rel="noopener">Open the OR-Tools example</a>
+      <span class="nm">statsmodels/statsmodels</span>
+      <span class="meta"><span>★ about 11.7k</span><span>BSD-3-Clause licence</span><span>Python</span></span>
+      <p>statsmodels is the standard Python library for statistical models. This lab uses its logistic regression to explain and predict late deliveries. The data is USAID's Supply Chain Shipment Pricing Data (the PEPFAR SCMS delivery history, 2006 to 2015), from a public GitHub mirror. Only aggregated figures and model results are shown here.</p>
+      <a class="go" href="https://ossinsight.io/analyze/statsmodels/statsmodels" target="_blank" rel="noopener">About the repository</a>
     </div>
   </header>
 
   <section class="sec" aria-labelledby="brief-h">
     <h2 id="brief-h">The business question</h2>
     <div class="brief">
-      <div><b class="k">Decision</b>Which truck size to run, and which stores each truck visits in which order.</div>
-      <div><b class="k">Constraint</b>A truck cannot carry more roll cages than its capacity, and every truck starts and ends at the warehouse.</div>
-      <div><b class="k">Measure of success</b>Cost per day: a fixed cost for each truck used (driver, depreciation) plus a cost per kilometre (fuel, tolls, wear).</div>
-      <div><b class="k">Data</b>17 locations on a street grid (one block is 1.14 km east–west and 0.8 km north–south), with distances measured along the streets.</div>
+      <div><b class="k">What OTIF means</b>On time in full: the share of orders delivered by the promised date <i>and</i> with the full quantity. A late order and a short order both count as a miss.</div>
+      <div><b class="k">What this data can measure</b>The <b>on-time</b> part: each record has a scheduled and an actual delivery date. Delivered quantities are not recorded, so the in-full part is handled as an assumption in the last step.</div>
+      <div><b class="k">Decision</b>Which routes need attention, and how many days of buffer each route needs in its promised date to reach an OTIF target.</div>
+      <div><b class="k">Data</b><span id="data-line"></span></div>
     </div>
   </section>
 
   <section class="sec" aria-labelledby="d-h">
-    <span class="stage s1"><i></i>Descriptive · where is the demand?</span>
-    <h2 id="d-h">Sixty roll cages across sixteen stores</h2>
-    <div class="row2">
-      <div class="panel"><div id="map"></div><div class="legend" id="map-legend"></div></div>
-      <div class="controls">
-        <div class="kpis" id="kpis" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
-        <div class="tw" id="dem-table"></div>
-      </div>
+    <span class="stage s1"><i></i>Descriptive · how often were we on time?</span>
+    <h2 id="d-h">On-time rate by year and by transport mode</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="panel"><h3>On-time rate by year</h3><div id="ch-year"></div></div>
+      <div class="panel"><h3>On-time rate by mode</h3><div id="ch-mode"></div></div>
     </div>
   </section>
 
   <section class="sec" aria-labelledby="g-h">
-    <span class="stage s2"><i></i>Diagnostic · why is the current plan expensive?</span>
-    <h2 id="g-h">Out-and-back trips double the distance</h2>
+    <span class="stage s2"><i></i>Diagnostic · where do the misses come from?</span>
+    <h2 id="g-h">Route and mode explain most of the gap</h2>
+    <p class="sec-intro">Orders either shipped directly from the manufacturer or were picked from stock at a regional distribution centre (DC) closer to the country. Comparing the two, mode by mode, shows where the late orders concentrate.</p>
+    <div class="grid2">
+      <div class="panel"><h3>On-time rate by route and mode</h3><div class="tw" id="rm-table"></div></div>
+      <div class="panel"><h3>On-time rate by destination country</h3><div id="ch-country"></div></div>
+    </div>
     <p class="sec-intro" id="diag-text"></p>
   </section>
 
   <section class="sec" aria-labelledby="p-h">
-    <span class="stage s3"><i></i>Predictive · what would each plan cost?</span>
-    <h2 id="p-h">Compare routing methods</h2>
-    <p class="sec-intro">Pick a truck capacity and a method. The map above redraws the routes. Nearest neighbour drives to the closest store that still fits, which is quick to explain but greedy. The savings method (Clarke and Wright) starts with one trip per store and merges the two trips that save the most distance, again and again. OR-Tools searches far more combinations and finds the best routes it can within a time limit.</p>
-    <div class="panel controls">
-      <div><b style="font-size:0.9rem">Truck capacity</b><div class="seg" id="seg-cap" style="margin-top:6px"></div></div>
-      <div><b style="font-size:0.9rem">Method</b><div class="seg" id="seg-method" style="margin-top:6px"></div></div>
-      <div class="tw" id="cmp-table"></div>
+    <span class="stage s3"><i></i>Predictive · which shipments are at risk?</span>
+    <h2 id="p-h">A late-delivery model</h2>
+    <p class="sec-intro">A logistic regression, fitted with statsmodels on 70% of the orders, estimates the chance an order arrives late from its route, mode, product type, period and destination. Each bar is an odds ratio: above 1 means more likely to be late than the reference case, with its 95% confidence interval.</p>
+    <div class="row2">
+      <div class="panel"><div id="ch-or"></div></div>
+      <div class="controls">
+        <div class="panel"><h3>Risk of a new order</h3><div class="controls" id="risk"></div><div class="kpis" id="risk-kpi"></div></div>
+      </div>
     </div>
   </section>
 
   <section class="sec" aria-labelledby="r-h">
-    <span class="stage s4"><i></i>Prescriptive · what should we run?</span>
-    <h2 id="r-h">Choose the truck size</h2>
-    <p class="sec-intro">Bigger trucks need fewer trips but cost more per day and per kilometre. The table uses the OR-Tools routes for each truck type. Change the cost assumptions to see when the decision flips.</p>
+    <span class="stage s4"><i></i>Prescriptive · what should we promise?</span>
+    <h2 id="r-h">Set promise dates that hit the target</h2>
+    <p class="sec-intro">Adding buffer days to the promised date turns some late orders into on-time ones. Using each route's history of delays, find the smallest buffer that reaches the target. OTIF then also depends on the in-full rate: if shortages are unrelated to delays, OTIF ≈ on-time rate × in-full rate.</p>
     <div class="row2">
-      <div class="panel"><div id="ch-cost"></div><div class="tw" id="cost-table"></div></div>
+      <div class="panel"><div id="ch-buffer"></div><div class="tw" id="buf-table"></div></div>
       <div class="controls">
-        <div class="slider"><label for="km" id="km-l"></label><input id="km" type="range" min="50" max="200" step="10" value="100"></div>
-        <div class="slider"><label for="fx" id="fx-l"></label><input id="fx" type="range" min="50" max="200" step="10" value="100"></div>
+        <div class="slider"><label for="tgt" id="tgt-l"></label><input id="tgt" type="range" min="85" max="99" step="1" value="95"></div>
+        <div class="slider"><label for="inf" id="inf-l"></label><input id="inf" type="range" min="90" max="100" step="1" value="98"></div>
         <div class="memo" id="memo"></div>
       </div>
     </div>
@@ -341,8 +345,8 @@ pre.code { margin: 0; background: var(--code-bg); border-radius: 10px; padding: 
 
   <section class="sec" aria-labelledby="c-h">
     <div class="eyebrow">Reproduce it</div>
-    <h2 id="c-h">Solve the routes with OR-Tools in Python</h2>
-    <p class="sec-intro">Install with <code>pip install ortools</code>. The script rebuilds the street distances from the grid coordinates, solves the capacitated routing problem and prints each truck's stops.</p>
+    <h2 id="c-h">Fit the model with statsmodels</h2>
+    <p class="sec-intro">Install with <code>pip install pandas statsmodels scikit-learn</code>. The script downloads the CSV from the GitHub mirror, computes on-time rates and fits the same logistic regression.</p>
     <div class="panel"><div class="btnrow"><button class="btn" id="copy">Copy code</button></div><pre class="code" id="code"></pre></div>
   </section>
 
@@ -350,12 +354,12 @@ pre.code { margin: 0; background: var(--code-bg); border-radius: 10px; padding: 
     <div class="eyebrow">Sources</div>
     <h2 id="s-h">Data and methods</h2>
     <ol>
-      <li><a href="https://developers.google.com/optimization/routing/cvrp" target="_blank" rel="noopener">Google OR-Tools: Capacity Constraints (CVRP example)</a> <span>Locations, distance matrix and demands (documentation under CC BY 4.0, code under Apache 2.0). Repository: google/or-tools.</span></li>
-      <li><a href="https://developers.google.com/optimization/routing/vrp" target="_blank" rel="noopener">Google OR-Tools: Vehicle Routing Problem</a> <span>How the routing solver is set up.</span></li>
+      <li><a href="https://data.amerigeoss.org/dataset/supply-chain-shipment-pricing-data" target="_blank" rel="noopener">USAID: Supply Chain Shipment Pricing Data</a> <span>ARV and HIV test kit shipments under the PEPFAR SCMS project, posted by USAID with attribution to the partner. Used here through the mirror <a href="https://github.com/jrcinco/supply-chain-shipment-price-data/blob/master/SCMS_Delivery_History_Dataset.csv" target="_blank" rel="noopener">jrcinco/supply-chain-shipment-price-data</a>.</span></li>
+      <li><a href="https://ossinsight.io/analyze/statsmodels/statsmodels" target="_blank" rel="noopener">statsmodels/statsmodels</a> <span>(BSD-3-Clause). Logistic regression with confidence intervals.</span></li>
       <li><a href="../../foundation/index.html">Data Analytics Foundations</a> <span>The four types of analytics used to structure this lab.</span></li>
     </ol>
   </section>
-  <footer>Truck costs are invented round numbers in VND for teaching. Real route planning adds delivery time windows, driver hours, unloading times and traffic, which OR-Tools also supports.</footer>
+  <footer>USAID notes that conclusions about costs or lead times for specific products or countries drawn from this data may not be accurate. Orders delivered on the scheduled date count as on time. The model was fitted on a random 70% of orders and scored on the other 30%.</footer>
 </div>
 
 <script>
@@ -431,158 +435,103 @@ function copyButton(btnId, text) {
   });
 }
 
-var DATA = {"loc":[[4,4],[2,0],[8,0],[0,1],[1,1],[5,2],[7,2],[3,3],[6,3],[5,5],[8,5],[1,6],[2,6],[3,7],[6,7],[0,8],[7,8]],"dem":[0,1,1,2,4,2,4,8,8,1,2,1,2,4,4,8,8],"ortools":{"15":{"distance":6208,"routes":[[7,3,4,1],[14,16,10,9],[12,11,15,13],[8,2,6,5]]},"20":{"distance":5912,"routes":[[13,14,16,10,9],[8,2,6,5],[1,4,3,15,11,12],[7]]},"30":{"distance":4704,"routes":[[13,12,11,15,3,4,1,7],[5,8,6,2,10,16,14,9]]},"60":{"distance":4384,"routes":[[9,5,8,6,2,10,16,14,13,12,11,15,3,4,1,7]]}},"trucks":{"1.5-tonne van":{"cap":15,"fixed":450000,"rate":9000,"routes":[[7,4,3,1],[10,16,14,9],[12,11,15,13],[5,2,6,8]],"distance":6208,"km":62.08,"vehicles":4,"cost":2358720.0},"3.5-tonne truck":{"cap":30,"fixed":700000,"rate":12000,"routes":[[13,12,11,15,3,4,1,7],[5,8,6,2,10,16,14,9]],"distance":4704,"km":47.04,"vehicles":2,"cost":1964480.0},"8-tonne truck":{"cap":60,"fixed":1200000,"rate":18000,"routes":[[9,5,8,6,2,10,16,14,13,12,11,15,3,4,1,7]],"distance":4384,"km":43.84,"vehicles":1,"cost":1989120.0}}};
-var LOC = DATA.loc, DEM = DATA.dem, NL = LOC.length;
-var M = LOC.map(function (a) { return LOC.map(function (b) { return Math.abs(a[0] - b[0]) * 114 + Math.abs(a[1] - b[1]) * 80; }); });
-var km = function (u) { return u / 100; };          /* 1 distance unit = 10 m */
-var rdist = function (r) { var s = [0].concat(r).concat([0]), d = 0; for (var i = 1; i < s.length; i++) d += M[s[i - 1]][s[i]]; return d; };
-var total = function (routes) { return routes.reduce(function (a, r) { return a + rdist(r); }, 0); };
-function nearest(cap) {
-  var left = []; for (var i = 1; i < NL; i++) left.push(i);
-  var routes = [];
-  while (left.length) {
-    var load = 0, cur = 0, route = [];
-    for (;;) {
-      var cand = left.filter(function (c) { return load + DEM[c] <= cap; }); if (!cand.length) break;
-      cand.sort(function (a, b) { return M[cur][a] - M[cur][b] || a - b; });
-      var nx = cand[0]; route.push(nx); load += DEM[nx]; left.splice(left.indexOf(nx), 1); cur = nx;
-    }
-    routes.push(route);
-  }
-  return routes;
-}
-function twoOpt(route) {
-  var best = route.slice(), improved = true;
-  while (improved) {
-    improved = false;
-    for (var i = 0; i < best.length - 1; i++) for (var j = i + 1; j < best.length; j++) {
-      var cand = best.slice(0, i).concat(best.slice(i, j + 1).reverse()).concat(best.slice(j + 1));
-      if (rdist(cand) < rdist(best)) { best = cand; improved = true; }
-    }
-  }
-  return best;
-}
-function savings(cap) {
-  var routes = {}, owner = {}, load = {}, S = [], i, j;
-  for (i = 1; i < NL; i++) { routes[i] = [i]; owner[i] = i; load[i] = DEM[i]; }
-  for (i = 1; i < NL; i++) for (j = i + 1; j < NL; j++) S.push([M[0][i] + M[0][j] - M[i][j], i, j]);
-  S.sort(function (a, b) { return b[0] - a[0] || a[1] - b[1] || a[2] - b[2]; });
-  S.forEach(function (s) {
-    if (s[0] <= 0) return;
-    var a0 = owner[s[1]], b0 = owner[s[2]]; if (a0 === b0 || load[a0] + load[b0] > cap) return;
-    var a = routes[a0], b = routes[b0], x = s[1], y = s[2], nw = null;
-    if (a[a.length - 1] === x && b[0] === y) nw = a.concat(b);
-    else if (a[0] === x && b[b.length - 1] === y) nw = b.concat(a);
-    else if (a[0] === x && b[0] === y) nw = a.slice().reverse().concat(b);
-    else if (a[a.length - 1] === x && b[b.length - 1] === y) nw = a.concat(b.slice().reverse());
-    if (!nw) return;
-    routes[a0] = nw; load[a0] += load[b0]; delete routes[b0]; delete load[b0]; nw.forEach(function (c) { owner[c] = a0; });
-  });
-  return Object.keys(routes).map(function (k) { return routes[k]; });
-}
-var CAPS = [15, 30, 60], TRUCK = { 15: "1.5-tonne van", 30: "3.5-tonne truck", 60: "8-tonne truck" };
-var METHODS = [["nn", "Nearest neighbour"], ["nn2", "Nearest neighbour + 2-opt"], ["sv", "Savings"], ["ort", "OR-Tools"]];
-var plan = function (method, cap) {
-  if (method === "nn") return nearest(cap);
-  if (method === "nn2") return nearest(cap).map(twoOpt);
-  if (method === "sv") return savings(cap);
-  return DATA.trucks[TRUCK[cap]].routes;
-};
-var st = { cap: 15, method: "ort" };
+var DATA = {"total":9964,"ot":0.881372942593336,"years":[2006,2015],"byYear":[[2006,63,1.0,0.0],[2007,409,0.9682151589242054,25.692307692307693],[2008,934,0.9892933618843683,16.6],[2009,1253,0.9640861931364725,13.022222222222222],[2010,1204,0.8413621262458472,19.230366492146597],[2011,1011,0.7645895153313551,26.147058823529413],[2012,1273,0.9206598586017282,9.98019801980198],[2013,1272,0.8207547169811321,29.99561403508772],[2014,1528,0.8455497382198953,20.389830508474578],[2015,1017,0.8820058997050148,13.266666666666667]],"byMode":[["Air",6113,0.9039751349582856,23.303236797274277],["Air Charter",650,0.8846153846153846,12.786666666666667],["Ocean",371,0.8247978436657681,39.89230769230769],["Truck",2830,0.8392226148409894,17.58681318681319]],"byRoute":[["Direct from vendor",4872,0.9470443349753694,25.07751937984496],["Regional DC",5092,0.8185388845247447,20.306277056277057]],"byRouteMode":[["Direct from vendor","Air",3568,0.9489910313901345,20.54945054945055],["Direct from vendor","Air Charter",18,1.0,0.0],["Direct from vendor","Ocean",366,0.8224043715846995,39.89230769230769],["Direct from vendor","Truck",920,0.9880434782608696,12.454545454545455],["Regional DC","Air",2545,0.8408644400785854,24.54074074074074],["Regional DC","Air Charter",632,0.8813291139240507,12.786666666666667],["Regional DC","Ocean",5,1.0,0.0],["Regional DC","Truck",1910,0.7675392670157068,17.713963963963963]],"byCountry":[["C\u00f4te d'Ivoire",970,0.8628865979381444,15.203007518796992],["Haiti",653,0.9050535987748851,12.435483870967742],["Mozambique",631,0.8161648177496038,20.99137931034483],["Nigeria",1158,0.8773747841105354,14.73943661971831],["Other",2120,0.8764150943396226,29.65648854961832],["South Africa",1364,0.9164222873900293,39.824561403508774],["Tanzania",499,0.8717434869739479,21.453125],["Uganda",771,0.8728923476005188,11.908163265306122],["Vietnam",688,0.9912790697674418,20.666666666666668],["Zambia",584,0.815068493150685,16.11111111111111],["Zimbabwe",526,0.8536121673003803,15.558441558441558]],"byProduct":[["HIV test kits",1678,0.932657926102503,14.017699115044248],["Medicines",8286,0.870987207337678,22.122544434050514]],"byVendor":[["SCMS from RDC",5092,0.8185388845247447],["Orgenics, Ltd",754,0.870026525198939],["S. BUYS WHOLESALER",707,0.9844413012729845],["Aurobindo Pharma Limited",668,0.8592814371257484],["Trinity Biotech, Plc",356,0.9971910112359551],["ABBVIE LOGISTICS (FORMERLY ABBOTT LOGISTICS BV)",347,0.9884726224783862],["PHARMACY DIRECT",326,1.0],["MYLAN LABORATORIES LTD (FORMERLY MATRIX LABORATORIES)",317,0.9936908517350158],["HETERO LABS LIMITED",277,0.9927797833935018],["CIPLA LIMITED",175,0.8685714285714285]],"dist":{"Direct from vendor|Air":{"n":3568,"counts":[3386,24,12,15,11,13,8,9,8,0,4,1,2,4,5,2,1,2,0,5,0,3,1,0,1,0,0,4,3,2,1,0,0,1,1,2,1,0,2,0,1,1,1,2,1,1,0,1,4,4,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,1,1,0,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3]},"Direct from vendor|Ocean":{"n":366,"counts":[301,1,0,1,0,0,0,5,0,1,0,0,1,4,0,3,1,0,1,1,0,1,0,2,2,1,0,1,0,0,3,5,3,1,1,0,0,1,0,1,0,0,0,3,0,0,0,0,1,0,1,0,1,1,0,2,0,0,1,0,0,0,0,1,3,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,2]},"Direct from vendor|Truck":{"n":920,"counts":[909,2,1,0,2,0,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"Regional DC|Air":{"n":2545,"counts":[2140,38,16,16,18,10,16,26,20,15,11,7,8,13,15,7,13,5,7,20,7,0,13,5,6,0,7,3,3,2,3,1,0,1,3,4,1,1,1,0,0,0,10,1,0,2,0,0,2,0,0,7,0,1,0,0,3,0,0,1,0,3,0,0,0,0,0,0,1,0,0,0,1,0,0,2,1,1,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,24]},"Regional DC|Air Charter":{"n":632,"counts":[557,6,4,0,0,21,2,0,10,4,3,0,0,0,2,2,0,0,0,0,4,10,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"Regional DC|Truck":{"n":1910,"counts":[1466,19,15,17,32,17,18,21,12,17,33,9,17,24,19,8,4,9,6,17,15,1,8,1,3,9,10,3,1,2,6,4,3,0,5,3,2,0,0,2,1,1,1,0,1,1,6,1,0,0,3,4,0,0,2,0,5,3,0,4,3,0,5,0,0,0,0,1,6,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0]}},"model":{"coef":{"Intercept":-3.001230982370533,"C(route, Treatment('Direct from vendor'))[T.Regional DC]":1.9330966020572742,"C(mode, Treatment('Air'))[T.Air Charter]":-0.9242693709737089,"C(mode, Treatment('Air'))[T.Ocean]":1.4133075260687002,"C(mode, Treatment('Air'))[T.Truck]":0.007144746777529874,"C(product, Treatment('Medicines'))[T.HIV test kits]":0.3843484276371465,"C(period)[T.2012-2015]":0.5216460638949021,"C(country, Treatment('South Africa'))[T.C\u00f4te d'Ivoire]":-0.8042227762988851,"C(country, Treatment('South Africa'))[T.Haiti]":-0.8371576864648342,"C(country, Treatment('South Africa'))[T.Mozambique]":-0.40177260372078116,"C(country, Treatment('South Africa'))[T.Nigeria]":-0.2914358217259775,"C(country, Treatment('South Africa'))[T.Other]":-0.620255310211465,"C(country, Treatment('South Africa'))[T.Tanzania]":-0.6601016881505337,"C(country, Treatment('South Africa'))[T.Uganda]":-0.8727107682869008,"C(country, Treatment('South Africa'))[T.Vietnam]":-2.0393264609698,"C(country, Treatment('South Africa'))[T.Zambia]":-0.4551524407446077,"C(country, Treatment('South Africa'))[T.Zimbabwe]":-0.8762459597176583},"ci":{"Intercept":[-3.3096733550362027,-2.6927886097048632],"C(route, Treatment('Direct from vendor'))[T.Regional DC]":[1.6184354236066345,2.247757780507914],"C(mode, Treatment('Air'))[T.Air Charter]":[-1.3368514854558637,-0.5116872564915539],"C(mode, Treatment('Air'))[T.Ocean]":[1.0072873354260898,1.8193277167113107],"C(mode, Treatment('Air'))[T.Truck]":[-0.217170362864039,0.23145985641909878],"C(product, Treatment('Medicines'))[T.HIV test kits]":[0.051707578521726194,0.7169892767525667],"C(period)[T.2012-2015]":[0.3481584789207285,0.6951336488690757],"C(country, Treatment('South Africa'))[T.C\u00f4te d'Ivoire]":[-1.2578506259172897,-0.3505949266804804],"C(country, Treatment('South Africa'))[T.Haiti]":[-1.3201535031888296,-0.3541618697408389],"C(country, Treatment('South Africa'))[T.Mozambique]":[-0.8556762599718513,0.05213105253028899],"C(country, Treatment('South Africa'))[T.Nigeria]":[-0.787974659712115,0.20510301626016003],"C(country, Treatment('South Africa'))[T.Other]":[-1.0698704252862958,-0.1706401951366342],"C(country, Treatment('South Africa'))[T.Tanzania]":[-1.1505690004733196,-0.16963437582774799],"C(country, Treatment('South Africa'))[T.Uganda]":[-1.3405106066246124,-0.4049109299491891],"C(country, Treatment('South Africa'))[T.Vietnam]":[-3.0730941405961674,-1.0055587813434328],"C(country, Treatment('South Africa'))[T.Zambia]":[-0.9095420675693059,-0.0007628139199095108],"C(country, Treatment('South Africa'))[T.Zimbabwe]":[-1.3596109742219322,-0.3928809452133843]},"p":{"Intercept":4.398096996917699e-81,"C(route, Treatment('Direct from vendor'))[T.Regional DC]":2.166137133950927e-33,"C(mode, Treatment('Air'))[T.Air Charter]":1.1297325227818538e-05,"C(mode, Treatment('Air'))[T.Ocean]":8.95324104610242e-12,"C(mode, Treatment('Air'))[T.Truck]":0.9502223430937263,"C(product, Treatment('Medicines'))[T.HIV test kits]":0.023535278112570265,"C(period)[T.2012-2015]":3.786492077605322e-09,"C(country, Treatment('South Africa'))[T.C\u00f4te d'Ivoire]":0.0005113115554634959,"C(country, Treatment('South Africa'))[T.Haiti]":0.000680969502275049,"C(country, Treatment('South Africa'))[T.Mozambique]":0.08276539633357138,"C(country, Treatment('South Africa'))[T.Nigeria]":0.24999123613598118,"C(country, Treatment('South Africa'))[T.Other]":0.0068547534704288685,"C(country, Treatment('South Africa'))[T.Tanzania]":0.008343531629990937,"C(country, Treatment('South Africa'))[T.Uganda]":0.0002557430166597232,"C(country, Treatment('South Africa'))[T.Vietnam]":0.00011043311811362609,"C(country, Treatment('South Africa'))[T.Zambia]":0.04961663207303774,"C(country, Treatment('South Africa'))[T.Zimbabwe]":0.00038082065778037073},"auc":0.7080058337836013,"nTrain":6920,"nTest":3044},"levels":{"route":["Direct from vendor","Regional DC"],"mode":["Air","Air Charter","Ocean","Truck"],"product":["Medicines","HIV test kits"],"period":["2006-2011","2012-2015"],"country":["South Africa","C\u00f4te d'Ivoire","Haiti","Mozambique","Nigeria","Other","Tanzania","Uganda","Vietnam","Zambia","Zimbabwe"]}};
+var pc = function (v, d) { return fmt(100 * v, d === undefined ? 1 : d) + "%"; };
+$("data-line").textContent = fmt(DATA.total) + " orders scheduled for delivery " + DATA.years[0] + " to " + DATA.years[1] + ", with mode, route, product, vendor and destination.";
 
-/* ---------- map ---------- */
-var COLORS = ["--t1", "--t2", "--t3", "--t4", "--spine", "--muted"];
-function drawMap(routes) {
-  var W = 560, H = 440, pad = 34, sx = (W - 2 * pad) / 8, sy = (H - 2 * pad) / 8;
-  var P = function (k) { return [pad + LOC[k][0] * sx, H - pad - LOC[k][1] * sy]; };
-  var g = "";
-  for (var i = 0; i <= 8; i++) { g += '<line class="grid" x1="' + (pad + i * sx) + '" x2="' + (pad + i * sx) + '" y1="' + pad + '" y2="' + (H - pad) + '"/><line class="grid" y1="' + (pad + i * sy) + '" y2="' + (pad + i * sy) + '" x1="' + pad + '" x2="' + (W - pad) + '"/>'; }
-  (routes || []).forEach(function (r, ri) {
-    var seq = [0].concat(r).concat([0]), d = "";
-    seq.forEach(function (k, j) { var p = P(k); if (j === 0) d += "M" + p[0] + " " + p[1]; else { var q = P(seq[j - 1]); d += " L" + p[0] + " " + q[1] + " L" + p[0] + " " + p[1]; } });
-    g += '<path d="' + d + '" fill="none" stroke="var(' + COLORS[ri % COLORS.length] + ')" stroke-width="3" stroke-linejoin="round" opacity="0.85" transform="translate(' + (ri * 3 - 4) + "," + (ri * 3 - 4) + ')"/>';
-  });
-  for (var k = 1; k < NL; k++) { var p = P(k), rad = 6 + DEM[k] * 1.2; g += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="' + rad + '" fill="var(--node)" stroke="var(--ink)" stroke-width="1.5"/><text x="' + p[0] + '" y="' + (p[1] + 4) + '" text-anchor="middle" style="fill:var(--node-ink);font-weight:600">' + k + "</text>"; }
-  var d0 = P(0); g += '<rect x="' + (d0[0] - 12) + '" y="' + (d0[1] - 12) + '" width="24" height="24" rx="4" fill="var(--ink)"/><text x="' + d0[0] + '" y="' + (d0[1] + 4) + '" text-anchor="middle" style="fill:var(--bg);font-weight:600">W</text>';
-  $("map").innerHTML = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Map of stores and routes">' + g + "</svg>";
-  $("map-legend").innerHTML = '<span>W = warehouse; circle size = roll cages; numbers are store ids</span>' + (routes ? routes.map(function (r, ri) { return '<span><i style="background:var(' + COLORS[ri % COLORS.length] + ')"></i>Truck ' + (ri + 1) + ": " + r.reduce(function (a, c) { return a + DEM[c]; }, 0) + " cages, " + fmt(km(rdist(r)), 1) + " km</span>"; }).join("") : "");
-}
-var tot = DEM.reduce(function (a, b) { return a + b; }, 0), far = 0; for (var i = 1; i < NL; i++) far = Math.max(far, M[0][i]);
-$("kpis").innerHTML = [["Stores", NL - 1], ["Roll cages to deliver", tot], ["Largest drop", Math.max.apply(null, DEM) + " cages"], ["Farthest store", fmt(km(far), 1) + " km"]].map(function (k) { return '<div class="kpi"><small>' + k[0] + "</small><b>" + k[1] + "</b></div>"; }).join("");
-$("dem-table").innerHTML = '<table><thead><tr><th>Store</th><th class="n">Cages</th><th class="n">km from warehouse</th></tr></thead><tbody>' + LOC.slice(1).map(function (l, k) { return "<tr><td>" + (k + 1) + '</td><td class="n">' + DEM[k + 1] + '</td><td class="n">' + fmt(km(M[0][k + 1]), 2) + "</td></tr>"; }).join("") + "</tbody></table>";
-var outBack = 0; for (i = 1; i < NL; i++) outBack += 2 * M[0][i];
-var best15 = DATA.trucks[TRUCK[15]].distance;
-$("diag-text").innerHTML = "If each store were served by its own trip from the warehouse and back, the trucks would drive <b>" + fmt(km(outBack), 1) + " km</b> a day. Most of that is the same road driven twice. Linking nearby stores into one route removes the empty return legs: the best plan with 1.5-tonne vans drives <b>" + fmt(km(best15), 1) + " km</b>, " + fmt(100 * (1 - best15 / outBack)) +
-  "% less. The second driver is capacity: " + tot + " cages and 15 cages per van mean at least <b>" + Math.ceil(tot / 15) + " vans</b>, however clever the routes. Bigger trucks remove that limit, which is the trade-off explored below.";
+/* ---------- descriptive ---------- */
+var route = {}; DATA.byRoute.forEach(function (r) { route[r[0]] = r; });
+var lateN = Math.round(DATA.total * (1 - DATA.ot));
+$("kpis").innerHTML = [["Orders", fmt(DATA.total)], ["On time", pc(DATA.ot)], ["Late orders", fmt(lateN)], ["Average delay of a late order", fmt((function () { var s = 0, n = 0; DATA.byRoute.forEach(function (r) { var l = r[1] * (1 - r[2]); s += l * r[3]; n += l; }); return s / n; })()) + " days"]]
+  .map(function (k) { return '<div class="kpi"><small>' + k[0] + "</small><b>" + k[1] + "</b></div>"; }).join("");
+var yr = DATA.byYear.filter(function (r) { return r[1] >= 100; });
+$("ch-year").innerHTML = chart({ title: "On-time by year", h: 240, labels: yr.map(function (r) { return String(r[0]); }), series: [{ type: "bar", values: yr.map(function (r) { return 100 * r[2]; }), colors: yr.map(function (r) { return r[2] >= 0.95 ? "--t1" : "--t1-soft"; }), labels: yr.map(function (r) { return fmt(100 * r[2]); }) }], ymin: 0, ymax: 100, yfmt: function (v) { return fmt(v) + "%"; } });
+$("ch-mode").innerHTML = chart({ title: "On-time by mode", h: 240, labels: DATA.byMode.map(function (r) { return r[0] + " (" + fmt(r[1]) + ")"; }), series: [{ type: "bar", width: 0.5, values: DATA.byMode.map(function (r) { return 100 * r[2]; }), color: "--t1", labels: DATA.byMode.map(function (r) { return fmt(100 * r[2], 1); }) }], ymin: 0, ymax: 100, yfmt: function (v) { return fmt(v) + "%"; } });
 
-/* ---------- compare ---------- */
-function renderCompare() {
-  $("seg-cap").innerHTML = CAPS.map(function (c) { return '<button data-cap="' + c + '" aria-pressed="' + (c === st.cap) + '">' + c + " cages (" + TRUCK[c] + ")</button>"; }).join("");
-  $("seg-method").innerHTML = METHODS.map(function (m) { return '<button data-m="' + m[0] + '" aria-pressed="' + (m[0] === st.method) + '">' + m[1] + "</button>"; }).join("");
-  var rows = METHODS.map(function (m) { var r = plan(m[0], st.cap); return [m[1], r.length, total(r), m[0] === st.method]; }), best = Math.min.apply(null, rows.map(function (r) { return r[2]; }));
-  $("cmp-table").innerHTML = '<table><thead><tr><th>Method, ' + st.cap + '-cage trucks</th><th class="n">Trucks</th><th class="n">km per day</th><th class="n">vs best</th></tr></thead><tbody>' + rows.map(function (r) { return "<tr" + (r[3] ? ' style="background:var(--t3-soft)"' : "") + "><td>" + r[0] + '</td><td class="n">' + r[1] + '</td><td class="n">' + fmt(km(r[2]), 1) + '</td><td class="n">' + (r[2] === best ? "best" : "+" + fmt(100 * (r[2] / best - 1), 1) + "%") + "</td></tr>"; }).join("") + "</tbody></table>";
-  drawMap(plan(st.method, st.cap));
-}
-$("seg-cap").addEventListener("click", function (e) { var b = e.target.closest("[data-cap]"); if (b) { st.cap = +b.getAttribute("data-cap"); renderCompare(); } });
-$("seg-method").addEventListener("click", function (e) { var b = e.target.closest("[data-m]"); if (b) { st.method = b.getAttribute("data-m"); renderCompare(); } });
-renderCompare();
+/* ---------- diagnostic ---------- */
+$("rm-table").innerHTML = '<table><thead><tr><th>Route</th><th>Mode</th><th class="n">Orders</th><th class="n">On time</th><th class="n">Avg delay when late</th></tr></thead><tbody>' + DATA.byRouteMode.map(function (r) { var bad = r[3] < 0.85; return "<tr><td>" + r[0] + "</td><td>" + r[1] + '</td><td class="n">' + fmt(r[2]) + '</td><td class="n"' + (bad ? ' style="color:var(--bad);font-weight:600"' : "") + ">" + pc(r[3]) + '</td><td class="n">' + (r[3] < 1 ? fmt(r[4]) + " d" : "–") + "</td></tr>"; }).join("") + "</tbody></table>";
+var cs = DATA.byCountry.slice().sort(function (a, b) { return a[2] - b[2]; });
+$("ch-country").innerHTML = chart({ title: "On-time by country", h: 260, labels: cs.map(function (r) { return r[0].replace("Côte d'Ivoire", "Côte d'Iv.").replace("South Africa", "S. Africa").replace("Mozambique", "Mozamb."); }), series: [{ type: "bar", values: cs.map(function (r) { return 100 * r[2]; }), colors: cs.map(function (r) { return r[2] < 0.85 ? "--t4" : "--t2"; }), labels: cs.map(function (r) { return fmt(100 * r[2]); }) }], ymin: 0, ymax: 100, yfmt: function (v) { return fmt(v) + "%"; } });
+var dir = route["Direct from vendor"], rdc = route["Regional DC"];
+var rdcLate = rdc[1] * (1 - rdc[2]), allLate = DATA.byRoute.reduce(function (a, r) { return a + r[1] * (1 - r[2]); }, 0);
+$("diag-text").innerHTML = "Orders from a <b>regional DC</b> were on time " + pc(rdc[2]) + " of the time against " + pc(dir[2]) + " for orders shipped <b>direct from the vendor</b>. The DCs handled " + pc(rdc[1] / DATA.total, 0) + " of orders but caused <b>" + pc(rdcLate / allLate, 0) + " of all late deliveries</b>. Within direct shipments, ocean freight is the weak spot. On-time performance also fell after 2009 and never returned to the 2007–2008 level; the model in the next step checks whether that is a real change over time or only a different mix of routes and modes.";
 
-/* ---------- prescriptive ---------- */
-var kmMul = 1, fxMul = 1;
-function renderCost() {
-  $("km-l").textContent = "Cost per km: " + Math.round(kmMul * 100) + "% of the base rate (fuel, tolls, wear)";
-  $("fx-l").textContent = "Fixed cost per truck: " + Math.round(fxMul * 100) + "% of the base rate (driver, depreciation)";
-  var rows = CAPS.map(function (c) { var t = DATA.trucks[TRUCK[c]], fixed = t.vehicles * t.fixed * fxMul, run = t.km * t.rate * kmMul; return { name: TRUCK[c], cap: c, v: t.vehicles, km: t.km, fixed: fixed, run: run, cost: fixed + run, base: [t.fixed, t.rate] }; });
-  var best = rows.reduce(function (a, r) { return r.cost < a.cost ? r : a; }, rows[0]);
-  $("ch-cost").innerHTML = chart({ title: "Daily cost by truck type", h: 230, labels: rows.map(function (r) { return r.name; }), series: [{ type: "bar", width: 0.5, values: rows.map(function (r) { return r.cost / 1e6; }), colors: rows.map(function (r) { return r === best ? "--t4" : "--t4-soft"; }), labels: rows.map(function (r) { return fmt(r.cost / 1e6, 2) + "M"; }) }], yfmt: function (v) { return fmt(v, 1) + "M"; }, legend: [["Cost per day, million VND", "--t4"]] });
-  $("cost-table").innerHTML = '<table><thead><tr><th>Truck</th><th class="n">Base cost / day</th><th class="n">Base cost / km</th><th class="n">Trucks</th><th class="n">km</th><th class="n">Total / day</th></tr></thead><tbody>' + rows.map(function (r) { return "<tr" + (r === best ? ' style="background:var(--t4-soft)"' : "") + "><td>" + r.name + " (" + r.cap + ')</td><td class="n">' + fmt(r.base[0]) + '</td><td class="n">' + fmt(r.base[1]) + '</td><td class="n">' + r.v + '</td><td class="n">' + fmt(r.km, 1) + '</td><td class="n"><b>' + fmt(r.cost) + "</b></td></tr>"; }).join("") + "</tbody></table>";
-  var second = rows.filter(function (r) { return r !== best; }).reduce(function (a, r) { return r.cost < a.cost ? r : a; });
-  $("memo").innerHTML = '<b class="k">Recommendation</b><span>Run <b>' + best.v + " × " + best.name + "</b>: " + fmt(best.km, 1) + " km and <b>" + fmt(best.cost) + " VND</b> a day, " + fmt(second.cost - best.cost) + " VND (" + fmt(100 * (second.cost / best.cost - 1), 1) + "%) cheaper than the next option, " + second.name + ".</span><span>The margin is small, so check it against what the model leaves out: an 8-tonne truck doing all 16 stops alone takes much longer and may break delivery windows, while vans are easier to park at small stores.</span>";
+/* ---------- predictive: model ---------- */
+var M = DATA.model, C = M.coef;
+var key = { route: "C(route, Treatment('Direct from vendor'))[T.", mode: "C(mode, Treatment('Air'))[T.", product: "C(product, Treatment('Medicines'))[T.", period: "C(period)[T.", country: "C(country, Treatment('South Africa'))[T." };
+var ors = [];
+Object.keys(C).forEach(function (k) { if (k === "Intercept") return; var lab = k.replace(/^C\((\w+).*\[T\.(.*)\]$/, function (m, a, b) { return b + " (" + a + ")"; }); ors.push([lab, Math.exp(C[k]), Math.exp(M.ci[k][0]), Math.exp(M.ci[k][1]), M.p[k]]); });
+ors.sort(function (a, b) { return b[1] - a[1]; });
+(function () {
+  var W = 680, rowH = 22, T = 10, H = T + ors.length * rowH + 34, L = 210, R = 20, lo = Math.log(0.1), hi = Math.log(10);
+  var X = function (v) { return L + (W - L - R) * (Math.log(v) - lo) / (hi - lo); }, g = "";
+  [0.1, 0.2, 0.5, 1, 2, 5, 10].forEach(function (v) { g += '<line class="grid" x1="' + X(v) + '" x2="' + X(v) + '" y1="' + T + '" y2="' + (H - 30) + '"/><text x="' + X(v) + '" y="' + (H - 12) + '" text-anchor="middle">' + v + "</text>"; });
+  g += '<line x1="' + X(1) + '" x2="' + X(1) + '" y1="' + T + '" y2="' + (H - 30) + '" stroke="var(--ink)" stroke-width="1.5"/>';
+  ors.forEach(function (o, i) { var y = T + i * rowH + rowH / 2, col = o[4] < 0.05 ? (o[1] > 1 ? "--t4" : "--t2") : "--muted";
+    g += '<text x="' + (L - 8) + '" y="' + (y + 4) + '" text-anchor="end" style="fill:var(--ink)">' + esc(o[0].length > 30 ? o[0].slice(0, 29) + "…" : o[0]) + '</text><line x1="' + X(Math.max(0.1, o[2])) + '" x2="' + X(Math.min(10, o[3])) + '" y1="' + y + '" y2="' + y + '" stroke="var(' + col + ')" stroke-width="2"/><circle cx="' + X(Math.min(10, Math.max(0.1, o[1]))) + '" cy="' + y + '" r="5" fill="var(' + col + ')"/>'; });
+  $("ch-or").innerHTML = '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Odds ratios">' + g + '</svg><div class="legend"><span><i style="background:var(--t4)"></i>More likely late (p &lt; 0.05)</span><span><i style="background:var(--t2)"></i>Less likely late</span><span><i style="background:var(--muted)"></i>Not significant</span><span>Reference: direct from vendor, air, medicines, 2006–2011, South Africa. Test AUC ' + fmt(M.auc, 3) + "</span></div>";
+})();
+var L = DATA.levels, sel = { route: "Regional DC", mode: "Truck", product: "Medicines", period: "2012-2015", country: "Zambia" };
+var NAMES = { route: "Route", mode: "Mode", product: "Product", period: "Period", country: "Destination" };
+$("risk").innerHTML = Object.keys(NAMES).map(function (k) { return '<label class="num-in" for="rk-' + k + '">' + NAMES[k] + '<select id="rk-' + k + '" data-k="' + k + '" style="font:inherit;min-height:38px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--bg);color:var(--ink)">' + L[k].map(function (v) { return "<option" + (v === sel[k] ? " selected" : "") + ">" + esc(v) + "</option>"; }).join("") + "</select></label>"; }).join("");
+var prob = function (s) { var z = C.Intercept; Object.keys(key).forEach(function (k) { var c = C[key[k] + s[k] + "]"]; if (c !== undefined) z += c; }); return 1 / (1 + Math.exp(-z)); };
+function renderRisk() { var p = prob(sel); $("risk-kpi").innerHTML = '<div class="kpi"><small>Chance this order is late</small><b>' + pc(p) + '</b></div><div class="kpi"><small>Compared with the average order</small><b>' + fmt(p / (1 - DATA.ot), 1) + "×</b></div>"; }
+$("risk").addEventListener("change", function (e) { var k = e.target.getAttribute("data-k"); if (k) { sel[k] = e.target.value; renderRisk(); } });
+renderRisk();
+
+/* ---------- prescriptive: buffers ---------- */
+var LANES = Object.keys(DATA.dist), TGT = 95, INF = 98;
+var otWith = function (lane, b) { var c = DATA.dist[lane].counts, s = 0; for (var k = 0; k <= Math.min(b, 120); k++) s += c[k]; return s / DATA.dist[lane].n; };
+var bufFor = function (lane, t) { for (var b = 0; b <= 120; b++) if (otWith(lane, b) >= t) return b; return null; };
+function renderBuf() {
+  $("tgt-l").textContent = "On-time target: " + TGT + "%"; $("inf-l").textContent = "Assumed in-full rate: " + INF + "%";
+  var rows = LANES.map(function (l) { var p = l.split("|"); return { lane: p[0] + " · " + p[1], n: DATA.dist[l].n, ot0: otWith(l, 0), b: bufFor(l, TGT / 100) }; });
+  rows.forEach(function (r) { r.ot = r.b === null ? null : otWith(LANES[rows.indexOf(r)], r.b); });
+  $("ch-buffer").innerHTML = chart({ title: "Buffer needed", h: 240, labels: rows.map(function (r) { return r.lane.replace("Direct from vendor · ", "Direct ").replace("Regional DC · ", "DC ").replace("Air Charter", "charter").replace("Air", "air").replace("Ocean", "ocean").replace("Truck", "truck"); }), series: [{ type: "bar", width: 0.55, values: rows.map(function (r) { return r.b === null ? 120 : r.b; }), colors: rows.map(function (r) { return r.b > 14 ? "--t4" : "--t4-soft"; }), labels: rows.map(function (r) { return r.b === null ? ">120" : r.b + " d"; }) }], yfmt: function (v) { return fmt(v) + " d"; }, legend: [["Extra days in the promised date to reach " + TGT + "% on time", "--t4"]] });
+  $("buf-table").innerHTML = '<table><thead><tr><th>Route · mode</th><th class="n">Orders</th><th class="n">On time now</th><th class="n">Buffer</th><th class="n">OTIF with buffer</th></tr></thead><tbody>' + rows.map(function (r) { return "<tr><td>" + r.lane + '</td><td class="n">' + fmt(r.n) + '</td><td class="n">' + pc(r.ot0) + '</td><td class="n"><b>' + (r.b === null ? ">120 d" : r.b + " d") + '</b></td><td class="n">' + (r.ot === null ? "–" : pc(r.ot * INF / 100)) + "</td></tr>"; }).join("") + "</tbody></table>";
+  var worst = rows.filter(function (r) { return r.b !== null; }).sort(function (a, b) { return b.b - a.b; })[0];
+  var otifCap = INF;
+  $("memo").innerHTML = '<b class="k">Recommendation</b><span>Quote route-specific promise dates instead of one standard lead time. The biggest buffer is needed for <b>' + worst.lane + "</b>: " + worst.b + " extra days to reach " + TGT + "% on time.</span><span>Even with perfect timing, OTIF cannot exceed the in-full rate (" + otifCap + "%). If the OTIF target is above it, buffers alone will not get there; the fix is stock availability, not transport.</span><span>Buffers hide problems as well as absorb them. For the DC truck lanes, fixing the cause (stock at the DC, dispatch planning) is cheaper than promising customers a later date.</span>";
 }
-$("km").addEventListener("input", function (e) { kmMul = e.target.value / 100; renderCost(); });
-$("fx").addEventListener("input", function (e) { fxMul = e.target.value / 100; renderCost(); });
-renderCost();
+$("tgt").addEventListener("input", function (e) { TGT = +e.target.value; renderBuf(); });
+$("inf").addEventListener("input", function (e) { INF = +e.target.value; renderBuf(); });
+renderBuf();
 
 /* ---------- exercises ---------- */
-var nn15 = total(nearest(15)), ort15 = DATA.trucks[TRUCK[15]].distance;
+var orRdc = Math.exp(C[key.route + "Regional DC]"]);
 renderExercises("ex", [
-  { q: "What is the minimum number of 1.5-tonne vans (15 cages each) needed, whatever the routes?", type: "num", tol: 0.01, answer: function () { return Math.ceil(tot / 15); }, placeholder: "e.g. 3", hint: "Divide total demand by capacity and round up.", explain: function () { return tot + " cages ÷ 15 = " + fmt(tot / 15, 1) + ", so " + Math.ceil(tot / 15) + " vans."; } },
-  { q: "How many km a day does plain nearest neighbour drive with 1.5-tonne vans?", type: "num", tol: 0.06, answer: function () { return km(nn15); }, placeholder: "e.g. 70.5", hint: "Choose 15 cages and Nearest neighbour in the comparison.", explain: function () { return "A greedy rule is easy to follow but leaves long return legs."; } },
-  { q: "By what percentage does OR-Tools cut the distance of plain nearest neighbour for 1.5-tonne vans?", type: "num", tol: 0.15, answer: function () { return 100 * (1 - ort15 / nn15); }, placeholder: "e.g. 15", hint: "(nearest neighbour km − OR-Tools km) ÷ nearest neighbour km.", explain: function () { return "Over a year of daily rounds that is " + fmt(km(nn15 - ort15) * 300) + " km saved at 300 working days."; } },
-  { q: "Which truck type is cheapest at the base costs (both sliders at 100%)?", type: "select", options: CAPS.map(function (c) { return TRUCK[c]; }), answer: (function () { var b = null, bc = Infinity; CAPS.forEach(function (c) { var t = DATA.trucks[TRUCK[c]], cst = t.vehicles * t.fixed + t.km * t.rate; if (cst < bc) { bc = cst; b = TRUCK[c]; } }); return b; })(), hint: "Reset both sliders to 100% and read the cost table.", explain: function () { return "Fewer, mid-sized trucks balance fixed and running costs."; } }
+  { q: "What was the on-time rate across all orders, in %?", type: "num", tol: 0.05, answer: function () { return 100 * DATA.ot; }, placeholder: "e.g. 90.0", hint: "It is the second figure at the top of the descriptive section.", explain: function () { return "So roughly one order in eight arrived late."; } },
+  { q: "What was the on-time rate of orders trucked from a regional DC, in %?", type: "num", tol: 0.05, answer: function () { return 100 * DATA.byRouteMode.filter(function (r) { return r[0] === "Regional DC" && r[1] === "Truck"; })[0][3]; }, placeholder: "e.g. 80.0", hint: "Read the route and mode table.", explain: function () { return "The largest lane with the lowest on-time rate: the first place to look."; } },
+  { q: "By what factor does shipping from a regional DC multiply the odds of a late delivery, holding the other factors fixed?", type: "num", tol: 0.05, answer: function () { return orRdc; }, placeholder: "e.g. 2.5", hint: "It is the odds ratio for Regional DC in the model chart: e to the power of its coefficient.", explain: function () { return "The coefficient is " + fmt(C[key.route + "Regional DC]"], 3) + ", and e^" + fmt(C[key.route + "Regional DC]"], 3) + " ≈ " + fmt(orRdc, 2) + "."; } },
+  { q: "How many buffer days does a regional DC truck order need to reach 95% on time?", type: "num", tol: 0.01, answer: function () { return bufFor("Regional DC|Truck", 0.95); }, placeholder: "e.g. 10", hint: "Set the target to 95% and read the table.", explain: function () { return "That is the 95th percentile of its delays."; } }
 ]);
 
 /* ---------- code ---------- */
 var CODE = [
-  "from ortools.constraint_solver import pywrapcp, routing_enums_pb2",
+  "import numpy as np",
+  "import pandas as pd",
+  "import statsmodels.formula.api as smf",
   "",
-  "# Grid coordinates from the OR-Tools CVRP example; node 0 is the depot",
-  "LOC = " + JSON.stringify(LOC).replace(/\],\[/g, "), (").replace("[[", "[(").replace("]]", ")]"),
-  "DEMAND = " + JSON.stringify(DEM),
-  "CAPACITY, VEHICLES = 15, 4",
-  "# street distance: 114 units per block east-west, 80 north-south (1 unit = 10 m)",
-  "D = [[abs(a[0] - b[0]) * 114 + abs(a[1] - b[1]) * 80 for b in LOC] for a in LOC]",
+  'url = "https://raw.githubusercontent.com/jrcinco/supply-chain-shipment-price-data/master/SCMS_Delivery_History_Dataset.csv"',
+  'd = pd.read_csv(url, encoding="utf-8-sig")',
+  'sched = pd.to_datetime(d["Scheduled Delivery Date"], format="%d-%b-%y")',
+  'deliv = pd.to_datetime(d["Delivered to Client Date"], format="%d-%b-%y")',
+  'd["late"] = ((deliv - sched).dt.days > 0).astype(int)',
+  'd["route"] = d["Fulfill Via"].map({"Direct Drop": "Direct from vendor", "From RDC": "Regional DC"})',
+  'd["mode"] = d["Shipment Mode"]',
+  'd["product"] = np.where(d["Product Group"] == "HRDT", "HIV test kits", "Medicines")',
+  'd["period"] = np.where(sched.dt.year <= 2011, "2006-2011", "2012-2015")',
+  "top10 = d.Country.value_counts().index[:10]",
+  'd["country"] = np.where(d.Country.isin(top10), d.Country, "Other")',
+  "d = d.dropna(subset=[\"mode\"])",
   "",
-  "manager = pywrapcp.RoutingIndexManager(len(D), VEHICLES, 0)",
-  "routing = pywrapcp.RoutingModel(manager)",
-  "dist = routing.RegisterTransitCallback(lambda i, j: D[manager.IndexToNode(i)][manager.IndexToNode(j)])",
-  "routing.SetArcCostEvaluatorOfAllVehicles(dist)",
-  "demand = routing.RegisterUnaryTransitCallback(lambda i: DEMAND[manager.IndexToNode(i)])",
-  'routing.AddDimensionWithVehicleCapacity(demand, 0, [CAPACITY] * VEHICLES, True, "Capacity")',
+  'print("on time:", round(1 - d.late.mean(), 4))',
+  'print(1 - d.groupby(["route", "mode"]).late.mean())',
   "",
-  "params = pywrapcp.DefaultRoutingSearchParameters()",
-  "params.first_solution_strategy = routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC",
-  "params.local_search_metaheuristic = routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH",
-  "params.time_limit.FromSeconds(5)",
-  "solution = routing.SolveWithParameters(params)",
-  "",
-  "for v in range(VEHICLES):",
-  "    i, stops = routing.Start(v), []",
-  "    while not routing.IsEnd(i):",
-  "        stops.append(manager.IndexToNode(i))",
-  "        i = solution.Value(routing.NextVar(i))",
-  '    print(f"Truck {v + 1}: {stops + [0]}")',
-  'print("Total distance:", solution.ObjectiveValue() / 100, "km")'
+  "train = d.sample(frac=0.7, random_state=42)",
+  "model = smf.logit(\"late ~ C(route) + C(mode) + C(product, Treatment('Medicines')) + C(period)\"",
+  "                  \" + C(country, Treatment('South Africa'))\", data=train).fit()",
+  "print(np.exp(model.params).round(2))   # odds ratios"
 ].join("\n");
 $("code").textContent = CODE; copyButton("copy", CODE);
 
